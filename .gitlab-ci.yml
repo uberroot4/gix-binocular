@@ -45,6 +45,11 @@ bench-binocular:
     - git rev-list --count HEAD
     - git rev-list --count --no-merges HEAD
     - cd ..
+    - git clone --no-checkout https://github.com/apache/dubbo.git
+    - cd dubbo
+    - git rev-list --count HEAD
+    - git rev-list --count --no-merges HEAD
+    - cd ..
     - ls -lah .
     - ls -lah ./scripts
     - ./target/release/gitinfo --help

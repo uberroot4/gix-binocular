@@ -36,7 +36,8 @@ bench-binocular:
       artifacts: true
   image: alpine:3.18
   before_script:
-    - apk add git hyperfine
+    - apk add git hyperfine bash
+    - lscpu | egrep 'Model name|Socket|Thread|NUMA|CPU\(s\)'
   script:
     - git clone --no-checkout https://github.com/INSO-TUWien/Binocular.git
     - cd Binocular
@@ -46,3 +47,4 @@ bench-binocular:
     - cd ..
     - ls -lah .
     - ./target/release/gitinfo --help
+    - ./scripts/measure.sh

@@ -46,6 +46,7 @@ bench-binocular:
     - git rev-list --count --no-merges HEAD
     - cd ..
     - ls -lah .
+    - ls -lah ./scripts
     - ./target/release/gitinfo --help
     - ./scripts/measure.sh
   artifacts:

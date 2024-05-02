@@ -5,6 +5,9 @@ stages:
 build:gitinfo:release:
   stage: build
   image: rust:latest
+  before_script:
+    - rustc -V
+    - cargo --version
   script:
     - cargo build --verbose --release --bin gitinfo
   artifacts:

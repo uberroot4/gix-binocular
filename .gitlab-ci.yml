@@ -34,4 +34,6 @@ bench-binocular:
     - git checkout develop
     - git rev-list --count HEAD
     - git rev-list --count --no-merges HEAD
+    - cd ..
     - ls -lah .
+    - ./target/release/gitinfo --help

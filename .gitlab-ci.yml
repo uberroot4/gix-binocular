@@ -6,7 +6,7 @@ build:gitinfo:release:
   stage: build
   image: rust:1.74.1-alpine3.18
   before_script:
-    - apk add make cmake c++
+    - apk add make cmake gcc
     - rustc -V
     - cargo --version
   script:

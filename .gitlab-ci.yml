@@ -4,8 +4,9 @@ stages:
 
 build:gitinfo:release:
   stage: build
-  image: rust:latest
+  image: rust:1.74.1-alpine3.18
   before_script:
+    - apk install cmake
     - rustc -V
     - cargo --version
   script:
@@ -24,7 +25,7 @@ bench-binocular:
   needs:
     - job: build:gitinfo:release
       artifacts: true
-  image: alpine:latest
+  image: alpine:3.18
   before_script:
     - apk add git hyperfine
   script:

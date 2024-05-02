@@ -5,6 +5,15 @@ stages:
 build:gitinfo:release:
   stage: build
   image: rust:1.74.1-alpine3.18
+  cache:
+    - key:
+        files:
+          - Cargo.lock
+      fallback_keys:
+        - cache-$CI_DEFAULT_BRANCH
+        - cache-default
+      paths:
+        - ./target
   before_script:
     - apk add make cmake gcc g++
     - rustc -V

@@ -4,11 +4,9 @@ stages:
 
 build:gitinfo:release:
   stage: build
-  image: rust:1.74.1-bullseye
+  image: rust:1.74.1-alpine3.18
   before_script:
-    - apt update && apt upgrade
-    - apt install cmake
-    - cmake --version
+    - apk add make cmake
     - rustc -V
     - cargo --version
   script:
@@ -27,10 +25,9 @@ bench-binocular:
   needs:
     - job: build:gitinfo:release
       artifacts: true
-  image: debian:bullseye
+  image: alpine:3.18
   before_script:
-    - sudo apt update && sudo apt upgrade -y
-    - apt-get install git hyperfine
+    - apk add git hyperfine
   script:
     - git clone --no-checkout https://github.com/INSO-TUWien/Binocular.git
     - cd Binocular

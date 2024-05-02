@@ -28,7 +28,7 @@ build:gitinfo:release:
     paths:
       - "target/release/gitinfo"
 
-bench-binocular:
+.benchmark-base:
   stage:
     benchmark
   timeout: 5h
@@ -39,27 +39,34 @@ bench-binocular:
   before_script:
     - apk add git hyperfine bash
     - nproc --all
+  variables:
   script:
-    - git clone --no-checkout https://github.com/INSO-TUWien/Binocular.git
-    - cd Binocular
-    - git checkout develop
-    - git rev-list --count HEAD
-    - git rev-list --count --no-merges HEAD
-    - cd ..
-    - git clone --no-checkout https://github.com/apache/dubbo.git
-    - cd dubbo
+    - echo ${URL}, ${TARGET}
+    - git clone --no-checkout ${URL} ${TARGET}
+    - cd ${TARGET}
     - git rev-list --count HEAD
     - git rev-list --count --no-merges HEAD
     - cd ..
     - ls -lah .
     - ls -lah ./scripts
     - ./target/release/gitinfo --help
-    - ./scripts/measure.sh
+    - hyperfine --warmup 1 --runs 5 --export-json hyperfine.gitinfo.${TARGET}.json --export-csv hyperfine.gitinfo.${TARGET}.csv --parameter-list repo ${TARGET} --parameter-list workers 1,2,3,4,5,6,7,8 --parameter-list algorithm histogram,myers,myers-minimal './target/release/gitinfo --git-dir {repo} --threads {workers} --algorithm {algorithm}'
   artifacts:
     # untracked: false
     when: always
     # access: all
     expire_in: "30 days"
     paths:
-      - "gitinfo.binocular.1.json"
-      - "gitinfo.binocular.1.csv"
+      - "hyperfine.gitinfo.${TARGET}.json"
+      - "hyperfine.gitinfo.${TARGET}.csv"
+
+bench-binocular:
+  extends: .benchmark-base
+  variables:
+    URL: https://github.com/INSO-TUWien/Binocular.git
+    TARGET: binocular
+bench-dubbo:
+  extends: .benchmark-base
+  variables:
+    URL: https://github.com/apache/dubbo.git
+    TARGET: dubbo

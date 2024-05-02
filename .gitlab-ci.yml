@@ -48,7 +48,7 @@ bench-binocular:
     - ls -lah .
     - ls -lah ./scripts
     - ./target/release/gitinfo --help
-    - bash /scripts/measure.sh
+    - ./scripts/measure.sh
   artifacts:
     # untracked: false
     # when: on_success

@@ -48,3 +48,11 @@ bench-binocular:
     - ls -lah .
     - ./target/release/gitinfo --help
     - ./scripts/measure.sh
+  artifacts:
+    # untracked: false
+    # when: on_success
+    # access: all
+    expire_in: "30 days"
+    paths:
+      - "gitinfo.binocular.1.json"
+      - "gitinfo.binocular.1.csv"

@@ -1,0 +1,15 @@
+stages:
+  - benchmark
+
+bench-binocular:
+  stage:
+    benchmark
+  image: alpine:latest
+  before_script:
+    - apk add git hyperfine
+  script:
+    - git clone --no-checkout https://github.com/INSO-TUWien/Binocular.git
+    - cd Binocular
+    - git checkout develop
+    - git rev-list --count HEAD
+    - git rev-list --count --no-merges HEAD

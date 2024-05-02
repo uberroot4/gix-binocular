@@ -37,7 +37,7 @@ bench-binocular:
   image: alpine:3.18
   before_script:
     - apk add git hyperfine bash
-    - lscpu | egrep 'Model name|Socket|Thread|NUMA|CPU\(s\)'
+    - nproc --all
   script:
     - git clone --no-checkout https://github.com/INSO-TUWien/Binocular.git
     - cd Binocular

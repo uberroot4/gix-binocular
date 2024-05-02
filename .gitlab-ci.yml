@@ -29,7 +29,7 @@ bench-binocular:
       artifacts: true
   image: debian:bullseye
   before_script:
-    - apt update && apt upgrade
+    - sudo apt update && sudo apt upgrade -y
     - apt-get install git hyperfine
   script:
     - git clone --no-checkout https://github.com/INSO-TUWien/Binocular.git

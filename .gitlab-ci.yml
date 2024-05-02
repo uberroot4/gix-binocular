@@ -57,7 +57,7 @@ bench-binocular:
     - ./scripts/measure.sh
   artifacts:
     # untracked: false
-    # when: on_success
+    when: always
     # access: all
     expire_in: "30 days"
     paths:

@@ -6,7 +6,9 @@ build:gitinfo:release:
   stage: build
   image: rust:1.74.1-bullseye
   before_script:
-    # - apt install cmake
+    - apt update && apt upgrade
+    - apt install cmake
+    - cmake --version
     - rustc -V
     - cargo --version
   script:
@@ -27,6 +29,7 @@ bench-binocular:
       artifacts: true
   image: debian:bullseye
   before_script:
+    - apt update && apt upgrade
     - apt-get install git hyperfine
   script:
     - git clone --no-checkout https://github.com/INSO-TUWien/Binocular.git

@@ -31,6 +31,7 @@ build:gitinfo:release:
 bench-binocular:
   stage:
     benchmark
+  timeout: 5h
   needs:
     - job: build:gitinfo:release
       artifacts: true

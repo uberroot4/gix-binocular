@@ -1,0 +1,62 @@
+[package]
+edition = "2021"
+name = "gix-test"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# [[bin]]
+# name = "log"
+# path = "src/log.rs"
+
+[[bin]]
+name = "gitinfo"
+path = "src/gitinfo.rs"
+
+# [[bin]]
+# name = "lstree"
+# path = "src/ls-tree.rs"
+
+# [[bin]]
+# name = "estimate"
+# path = "src/estimate.rs"
+
+# [[bin]]
+# name = "parallel"
+# path = "src/parallel.rs"
+
+[workspace.dependencies]
+gix = {version = "^0.61.0", default-features = false}
+
+[dependencies]
+gix = {workspace = true, features = [
+  "max-performance-safe",
+  "revision",
+  "parallel-walkdir",
+  "blob-diff",
+  "mailmap",
+  "index",
+  "status",
+]}
+
+anyhow = "1.0.42"
+clap = {version = "4.1.1", features = ["derive", "cargo"]}
+clap_complete = "4.4.3"
+gix-features = {version = "0.38.1", features = ["zlib-ng", "parallel"]}
+
+crossbeam-channel = "0.5.9"
+
+[dependencies.gix-hash]
+[dependencies.gix-diff]
+features = ["blob"]
+
+[dependencies.gix-object]
+[dependencies.gix-odb]
+features = ["serde"]
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[bench]]
+name = "gitinfo"
+harness = false

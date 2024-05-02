@@ -1,9 +1,26 @@
 stages:
+  - build
   - benchmark
+
+build:gitinfo:release:
+  stage: build
+  image: rust:latest
+  script:
+    - cargo build --verbose --release --bin gitinfo
+  artifacts:
+    # untracked: false
+    # when: on_success
+    # access: all
+    expire_in: "30 days"
+    paths:
+      - "target/release/gitinfo"
 
 bench-binocular:
   stage:
     benchmark
+  needs:
+    - job: build:gitinfo:release
+      artifacts: true
   image: alpine:latest
   before_script:
     - apk add git hyperfine
@@ -13,3 +30,4 @@ bench-binocular:
     - git checkout develop
     - git rev-list --count HEAD
     - git rev-list --count --no-merges HEAD
+    - ls -lah .

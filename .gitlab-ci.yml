@@ -60,15 +60,15 @@ build:gitinfo:release:
       - "hyperfine.gitinfo.${TARGET}.json"
       - "hyperfine.gitinfo.${TARGET}.csv"
 
-bench-binocular:
+bench-binocular: # 1724 commits
   extends: .benchmark-base
   variables:
     URL: https://github.com/INSO-TUWien/Binocular.git
     TARGET: binocular
     WARMUPS: 1
-    RUNS: 5
+    RUNS: 10
 
-bench-dubbo:
+bench-dubbo: # 7492 commits
   extends: .benchmark-base
   variables:
     URL: https://github.com/apache/dubbo.git
@@ -76,18 +76,58 @@ bench-dubbo:
     WARMUPS: 1
     RUNS: 5
     
-bench-click:
+bench-click: # 2443 commits
   extends: .benchmark-base
   variables:
     URL: https://github.com/pallets/click.git
     TARGET: click
     WARMUPS: 1
-    RUNS: 5
+    RUNS: 10
 
-bench-jinja:
+bench-jinja: # 2794 commits
   extends: .benchmark-base
   variables:
     URL: https://github.com/pallets/jinja.git
     TARGET: jinja
     WARMUPS: 1
+    RUNS: 10
+
+bench-spring-ai: # 642 commits
+  extends: .benchmark-base
+  variables:
+    URL: https://github.com/spring-projects/spring-ai.git
+    TARGET: spring-ai
+    WARMUPS: 1
+    RUNS: 15
+
+bench-spring-graphql: # 1294 commits
+  extends: .benchmark-base
+  variables:
+    URL: https://github.com/spring-projects/spring-graphql.git
+    TARGET: spring-graphql
+    WARMUPS: 1
+    RUNS: 10
+
+bench-spring-kafka: # 2348 commits
+  extends: .benchmark-base
+  variables:
+    URL: https://github.com/spring-projects/spring-kafka.git
+    TARGET: spring-kafka
+    WARMUPS: 1
     RUNS: 5
+
+bench-spring-data-jpa: # 2143 commits
+  extends: .benchmark-base
+  variables:
+    URL: https://github.com/spring-projects/spring-data-jpa.git
+    TARGET: spring-data-jpa
+    WARMUPS: 1
+    RUNS: 5
+
+bench-spring-petclinic: # 893 commits
+  extends: .benchmark-base
+  variables:
+    URL: https://github.com/spring-projects/spring-petclinic.git
+    TARGET: spring-petclinic
+    WARMUPS: 1
+    RUNS: 15

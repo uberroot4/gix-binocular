@@ -5,25 +5,9 @@ version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-# [[bin]]
-# name = "log"
-# path = "src/log.rs"
-
 [[bin]]
 name = "gitinfo"
 path = "src/gitinfo.rs"
-
-# [[bin]]
-# name = "lstree"
-# path = "src/ls-tree.rs"
-
-# [[bin]]
-# name = "estimate"
-# path = "src/estimate.rs"
-
-# [[bin]]
-# name = "parallel"
-# path = "src/parallel.rs"
 
 [workspace.dependencies]
 gix = {version = "0.62.0", default-features = false}

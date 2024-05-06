@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
 use gix::diff::blob::Platform;
-use log::{debug, error, trace};
+use log::{debug, error, info, trace};
 
 pub fn traverse_commit_graph(
     repo: &gix::Repository,
@@ -19,10 +19,10 @@ pub fn traverse_commit_graph(
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
     breadth_first: bool,
     committish: Option<String>,
+    limit: Option<usize>,
 ) -> Result<Vec<GitDiffMetrics>> {
     let mailmap = repo.open_mailmap();
-    let has_commit_graph_traversal_ended = Arc::new(AtomicBool::default());
-    let total_number_of_commits = Arc::new(AtomicUsize::default());
+    // let total_number_of_commits = Arc::new(AtomicUsize::default());
 
     let num_threads = std::thread::available_parallelism()
         .map(|p| p.get())
@@ -65,7 +65,6 @@ pub fn traverse_commit_graph(
 
     let (churn_threads, churn_tx) = get_churn_channel(
         repo,
-        &has_commit_graph_traversal_ended,
         threads_used,
         &mailmap,
         diff_algorithm,
@@ -80,9 +79,11 @@ pub fn traverse_commit_graph(
         .all()?;
     let commits: Vec<_> = commit_iter_clone.collect(); // Collecting all commits into a vector
     trace!("Number of commits: {}", commits.len());
+    let limit = limit.unwrap_or(usize::MAX);
+    info!("Processing {} commit(s)", limit);
 
     let mut count = 0;
-    for commit in commit_iter {
+    for commit in commit_iter.take(limit) {
         let commit = commit?;
         {
             if no_merges && commit.parent_ids.len() > 1 {
@@ -100,9 +101,8 @@ pub fn traverse_commit_graph(
         }
     }
 
-    total_number_of_commits.store(count, Ordering::SeqCst);
-    has_commit_graph_traversal_ended.store(true, Ordering::SeqCst);
-    debug!("total_number_of_commits: {:?}", total_number_of_commits);
+    // total_number_of_commits.store(count, Ordering::SeqCst);
+    debug!("total_number_of_commits: {:?}", count);
 
     drop(churn_tx);
 
@@ -124,7 +124,6 @@ pub fn traverse_commit_graph(
 
 fn get_churn_channel(
     repo: &gix::Repository,
-    has_commit_graph_traversal_ended: &Arc<AtomicBool>,
     max_threads: usize,
     mailmap: &gix::mailmap::Snapshot,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
@@ -149,7 +148,6 @@ fn get_churn_channel(
             let repo = repo_sync.clone().to_thread_local();
             let rx_clone = rx.clone();
             let mut commits_vec = Vec::new();
-            let has_commit_graph_traversal_ended = has_commit_graph_traversal_ended.clone();
             let mut rewrite_cache = rewrite_cache.clone();
             let mailmap = mailmap.clone();
             rewrite_cache.clear_resource_cache();
@@ -169,11 +167,6 @@ fn get_churn_channel(
                     )?;
                     let author = mailmap.resolve(commit.author()?);
                     let committer = mailmap.resolve(commit.committer()?);
-
-                    // stop threads here if ended
-                    // if has_commit_graph_traversal_ended.load(Ordering::Relaxed) {
-                    //     break;
-                    // }
 
                     commits_vec.append(diff_result.as_mut())
                 }
@@ -196,7 +189,7 @@ fn compute_diff_with_parent(
         .filter(|p| p.object().is_ok())
         .map(|p| p.object().unwrap().into_commit())
         .collect();
-    let mut parent_trees = parent_commits.iter()
+    let mut parent_trees : Vec<(Option<&Commit>, gix::Tree)> = parent_commits.iter()
         .map(|parent_commit| {
             let parent_commit_id = parent_commit.id();
             match repo
@@ -205,38 +198,34 @@ fn compute_diff_with_parent(
                 .and_then(|c| c.peel_to_tree().ok())
             {
                 Some(tree) => {
-                    tree
+                    (Some(parent_commit), tree)
                 }
                 None => panic!("parent_commit could not be found"),
             }
-        }).collect::<Vec<gix::Tree>>();
+        }).collect();
     if parent_trees.is_empty() {
         debug!("Adding empty tree");
-        parent_trees.push(repo.empty_tree());
+        parent_trees.push((None, repo.empty_tree()));
     }
 
     trace!("commit {:?}\tparents {:?}", commit, parent_commits);
 
-    let diffs: Vec<GitDiffMetrics> = parent_commits.iter().filter_map(|parent_commit| {
-        match parent_commit.tree_id() {
-            Ok(tree_id) => {
-                let mut change_map = Default::default();
-                change_map = utils::git_helper::calculate_changes(
-                    &tree_id.object().unwrap().into_tree(),
-                    &commit.tree().unwrap(),
-                    rewrite_cache,
-                    &mut rewrite_cache.clone(),
-                );
-                Some(
-                    GitDiffMetrics::new(
-                        change_map,
-                        commit.id,
-                        Some(parent_commit.id),
-                    ).expect("Diff result should be processable")
-                )
+    let diffs: Vec<GitDiffMetrics> = parent_trees.iter().map(|(parent_commit, parent_tree)| {
+        let mut change_map = Default::default();
+        change_map = utils::git_helper::calculate_changes(
+            &parent_tree,
+            &commit.tree().unwrap(),
+            rewrite_cache,
+            &mut rewrite_cache.clone(),
+        );
+        GitDiffMetrics::new(
+            change_map,
+            commit.id,
+            match parent_commit {
+                Some(pc) => Some(pc.id),
+                None => None
             }
-            Err(_) => None
-        }
+        ).expect("Diff result should be processable")
     }).collect();
 
     debug!(
@@ -259,19 +248,6 @@ fn compute_diff_with_parent(
 
     Ok(diffs)
 }
-
-// fn get_no_bots_regex(no_bots: &Option<Option<MyRegex>>) -> Result<Option<MyRegex>> {
-//     let reg = if let Some(r) = no_bots.clone() {
-//         match r {
-//             Some(p) => Some(p),
-//             None => Some(MyRegex(Regex::from_str(r"(?:-|\s)[Bb]ot$|\[[Bb]ot\]")?)),
-//         }
-//     } else {
-//         None
-//     };
-
-//     Ok(reg)
-// }
 
 fn is_bot(author_name: &BString /*, bot_regex_pattern: &Option<MyRegex>*/) -> bool {
     // bot_regex_pattern.as_ref().map_or(false, |regex| {

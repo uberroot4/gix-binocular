@@ -71,7 +71,7 @@ fn run(args: Args) -> anyhow::Result<()> {
 
     use gix_test::traverse::traverse_commit_graph;
     if let Ok(result) =
-        traverse_commit_graph(&repo, args.threads.unwrap_or(1), args.no_merges, Some(algo), args.breadth_first, args.committish)
+        traverse_commit_graph(&repo, args.threads.unwrap_or(1), args.no_merges, Some(algo), args.breadth_first, args.committish, args.limit)
     {
         match args.output_format {
             OutputFormat::Render => {
@@ -97,7 +97,7 @@ fn run(args: Args) -> anyhow::Result<()> {
                 for row in result.iter() {
                     let mut table_row: Vec<comfy_table::Cell> = vec![];
                     table_row.push(comfy_table::Cell::new(row.commit.to_string()));
-                    table_row.push(comfy_table::Cell::new(row.parent.unwrap().to_string()));
+                    table_row.push(comfy_table::Cell::new(row.parent.map_or_else(|| "NULL".to_string(), |parent| parent.to_string())));
                     table_row.push(comfy_table::Cell::new(row.total_number_of_files_changed));
                     table_row.push(comfy_table::Cell::new(row.total_number_of_insertions));
                     table_row.push(comfy_table::Cell::new(row.total_number_of_deletions));

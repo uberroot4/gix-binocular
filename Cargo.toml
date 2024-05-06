@@ -26,7 +26,7 @@ path = "src/gitinfo.rs"
 # path = "src/parallel.rs"
 
 [workspace.dependencies]
-gix = {version = "^0.61.0", default-features = false}
+gix = {version = "0.62.0", default-features = false}
 
 [dependencies]
 gix = {workspace = true, features = [
@@ -38,6 +38,7 @@ gix = {workspace = true, features = [
   "index",
   "status",
 ]}
+log = "0.4.21"
 
 anyhow = "1.0.42"
 clap = {version = "4.1.1", features = ["derive", "cargo"]}
@@ -45,6 +46,9 @@ clap_complete = "4.4.3"
 gix-features = {version = "0.38.1", features = ["zlib-ng", "parallel"]}
 
 crossbeam-channel = "0.5.9"
+comfy-table = "7.1.0"
+env_logger = "0.11.3"
+chrono = "0.4.38"
 
 [dependencies.gix-hash]
 [dependencies.gix-diff]

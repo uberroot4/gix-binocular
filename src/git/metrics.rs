@@ -1,46 +1,41 @@
-use super::sig::Sig;
 use anyhow::Result;
 use gix::bstr::BString;
-use gix::date::Time;
 use std::collections::HashMap;
-use std::fmt;
-
+use gix_hash::ObjectId;
 
 #[derive(Debug)]
-pub struct GitMetrics {
-    pub number_of_commits_by_signature: HashMap<Sig, usize>,
-    pub number_of_commits_by_file_path: HashMap<BString, usize>,
-    pub total_number_of_authors: usize,
-    pub total_number_of_commits: usize,
-    pub churn_pool_size: usize,
-    pub time_of_most_recent_commit: gix::date::Time,
-    pub time_of_first_commit: gix::date::Time,
+pub struct GitDiffMetrics {
+    pub change_map: HashMap<BString, (u32, u32)>,
+    pub total_number_of_files_changed: usize,
+    pub total_number_of_insertions: u32,
+    pub total_number_of_deletions: u32,
+    pub commit: ObjectId,
+    pub parent: Option<ObjectId>,
 }
 
-impl GitMetrics {
+impl GitDiffMetrics {
     pub fn new(
-        number_of_commits_by_signature: HashMap<Sig, usize>,
-        number_of_commits_by_file_path: HashMap<BString, usize>,
-        churn_pool_size: usize,
-        time_of_first_commit: Option<Time>,
-        time_of_most_recent_commit: Option<Time>,
+        change_map: HashMap<BString, (u32, u32)>,
+        commit: ObjectId,
+        parent: Option<ObjectId>,
     ) -> Result<Self> {
-        let total_number_of_commits = number_of_commits_by_signature.values().sum();
-        let total_number_of_authors = number_of_commits_by_signature.len();
-
-        // This could happen if a branch pointed to non-commit object, so no traversal actually happens.
-        let (time_of_first_commit, time_of_most_recent_commit) = time_of_first_commit
-            .and_then(|a| time_of_most_recent_commit.map(|b| (a, b)))
-            .unwrap_or_default();
+        let total_number_of_files_changed = change_map.values().count();
+        let totals = change_map.values().fold((0u32, 0u32), |mut acc, val| {
+            (acc.0 + val.0, acc.1 + val.1)
+        });
+        /*change_map.iter().for_each(|cm| {
+            println!("cm.0.to_string(): {:?} {:?}", cm.0.to_string(),cm.1);
+        });*/
+        let total_number_of_insertions = totals.0;
+        let total_number_of_deletions = totals.1;
 
         Ok(Self {
-            number_of_commits_by_signature,
-            number_of_commits_by_file_path,
-            total_number_of_authors,
-            total_number_of_commits,
-            churn_pool_size,
-            time_of_first_commit,
-            time_of_most_recent_commit,
+            change_map,
+            total_number_of_files_changed,
+            total_number_of_insertions,
+            total_number_of_deletions,
+            commit,
+            parent,
         })
     }
 }

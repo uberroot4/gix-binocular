@@ -1,5 +1,6 @@
 use std::{path::Path, time::Instant};
 use std::io::Write;
+use gix::date::time::format;
 use log::{debug, error, trace};
 
 use gix_test::structs::{Args, DiffAlgorithm, OutputFormat};
@@ -49,7 +50,7 @@ fn init_logging(file_name: Option<String>) {
             println!("Verbosity level set, output to file: {}", file);
             let target = Box::new(std::fs::File::create(file).expect("Can't create file"));
             env_logger_build.target(env_logger::Target::Pipe(target))
-        },
+        }
         None => {
             println!("Verbosity turned on, no file specified");
             env_logger_build
@@ -91,6 +92,12 @@ fn run(args: Args) -> anyhow::Result<()> {
                 table_headers.push(comfy_table::Cell::new("total_number_of_files_changed").fg(header_color));
                 table_headers.push(comfy_table::Cell::new("total_number_of_insertions").fg(header_color));
                 table_headers.push(comfy_table::Cell::new("total_number_of_deletions").fg(header_color));
+                table_headers.push(comfy_table::Cell::new("committer_name").fg(header_color));
+                table_headers.push(comfy_table::Cell::new("committer_email").fg(header_color));
+                table_headers.push(comfy_table::Cell::new("commit_time").fg(header_color));
+                table_headers.push(comfy_table::Cell::new("author_name").fg(header_color));
+                table_headers.push(comfy_table::Cell::new("author_email").fg(header_color));
+                table_headers.push(comfy_table::Cell::new("author_time").fg(header_color));
                 table.set_header(table_headers);
 
                 // Add rows to the table
@@ -101,6 +108,30 @@ fn run(args: Args) -> anyhow::Result<()> {
                     table_row.push(comfy_table::Cell::new(row.total_number_of_files_changed));
                     table_row.push(comfy_table::Cell::new(row.total_number_of_insertions));
                     table_row.push(comfy_table::Cell::new(row.total_number_of_deletions));
+                    table_row.push(comfy_table::Cell::new(match &row.committer {
+                        Some(c) => c.name.to_string(),
+                        None => "NULL".to_string()
+                    }));
+                    table_row.push(comfy_table::Cell::new(match &row.committer {
+                        Some(c) => c.email.to_string(),
+                        None => "NULL".to_string()
+                    }));
+                    table_row.push(comfy_table::Cell::new(match &row.committer {
+                        Some(c) => c.time.format(format::ISO8601_STRICT),
+                        None => "NULL".to_string()
+                    }));
+                    table_row.push(comfy_table::Cell::new(match &row.author {
+                        Some(c) => c.name.to_string(),
+                        None => "NULL".to_string()
+                    }));
+                    table_row.push(comfy_table::Cell::new(match &row.author {
+                        Some(c) => c.email.to_string(),
+                        None => "NULL".to_string()
+                    }));
+                    table_row.push(comfy_table::Cell::new(match &row.author {
+                        Some(c) => c.time.format(format::ISO8601_STRICT),
+                        None => "NULL".to_string()
+                    }));
 
                     table.add_row(table_row);
                 }

@@ -168,6 +168,12 @@ fn get_churn_channel(
                     let author = mailmap.resolve(commit.author()?);
                     let committer = mailmap.resolve(commit.committer()?);
 
+                    for mut diff in &mut diff_result {
+                        diff.author = Some(author.clone().into());
+                        diff.committer = Some(committer.clone().into());
+                    }
+
+
                     commits_vec.append(diff_result.as_mut())
                 }
                 Ok(commits_vec)
@@ -224,7 +230,9 @@ fn compute_diff_with_parent(
             match parent_commit {
                 Some(pc) => Some(pc.id),
                 None => None
-            }
+            },
+            None,
+            None
         ).expect("Diff result should be processable")
     }).collect();
 
@@ -249,9 +257,3 @@ fn compute_diff_with_parent(
     Ok(diffs)
 }
 
-fn is_bot(author_name: &BString /*, bot_regex_pattern: &Option<MyRegex>*/) -> bool {
-    // bot_regex_pattern.as_ref().map_or(false, |regex| {
-    //     regex.0.is_match(author_name.to_str_lossy().as_ref())
-    // })
-    return false;
-}

@@ -3,7 +3,7 @@ use std::io::Write;
 use gix::date::time::format;
 use log::{debug, error, trace};
 
-use gix_test::structs::{Args, DiffAlgorithm, OutputFormat};
+use diff::structs::{Args, DiffAlgorithm, OutputFormat};
 
 fn main() {
     let args = <Args as clap::Parser>::parse_from(gix::env::args_os());
@@ -70,7 +70,7 @@ fn run(args: Args) -> anyhow::Result<()> {
         // None => gix::diff::blob::Algorithm::Histogram,
     };
 
-    use gix_test::traverse::traverse_commit_graph;
+    use diff::traverse::traverse_commit_graph;
     if let Ok(result) =
         traverse_commit_graph(&repo, args.threads.unwrap_or(1), args.no_merges, Some(algo), args.breadth_first, args.committish, args.limit)
     {

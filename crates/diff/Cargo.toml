@@ -1,0 +1,20 @@
+[package]
+name = "diff"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { workspace = true }
+clap_complete = { workspace = true }
+crossbeam-channel = "0.5.9"
+gix = { workspace = true, features = ["max-performance-safe", "blob-diff", "revision", "mailmap", ] }
+gix-diff = { version = "0.43.0", features = ["blob"] }
+#gix-hash = { version = "0.14.2" }
+#gix-features = { version = "0.38.1", features = ["zlib-ng", "parallel"] }
+
+log = { workspace = true }
+env_logger = { workspace = true }
+anyhow = { workspace = true }
+

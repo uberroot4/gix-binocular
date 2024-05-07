@@ -9,38 +9,29 @@ version = "0.1.0"
 name = "gitinfo"
 path = "src/gitinfo.rs"
 
+[workspace]
+members = [
+    "crates/diff",
+]
+
 [workspace.dependencies]
-gix = {version = "0.62.0", default-features = false}
+gix = { version = "0.62.0", default-features = false }
+clap = { version = "4.1.1", features = ["derive", "cargo"] }
+clap_complete = "4.4.3"
+log = "0.4.21"
+env_logger = "0.11.3"
+anyhow = "1.0.42"
 
 [dependencies]
-gix = {workspace = true, features = [
-  "max-performance-safe",
-  "revision",
-  "parallel-walkdir",
-  "blob-diff",
-  "mailmap",
-  "index",
-  "status",
-]}
-log = "0.4.21"
+diff = { path = "./crates/diff", version = "0.1.0" }
+clap = { workspace = true }
+gix = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+anyhow = { workspace = true }
 
-anyhow = "1.0.42"
-clap = {version = "4.1.1", features = ["derive", "cargo"]}
-clap_complete = "4.4.3"
-gix-features = {version = "0.38.1", features = ["zlib-ng", "parallel"]}
-
-crossbeam-channel = "0.5.9"
 comfy-table = "7.1.0"
-env_logger = "0.11.3"
 chrono = "0.4.38"
-
-[dependencies.gix-hash]
-[dependencies.gix-diff]
-features = ["blob"]
-
-[dependencies.gix-object]
-[dependencies.gix-odb]
-features = ["serde"]
 
 [dev-dependencies]
 criterion = "0.5.1"

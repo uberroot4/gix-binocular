@@ -217,8 +217,8 @@ fn compute_diff_with_parent(
     trace!("commit {:?}\tparents {:?}", commit, parent_commits);
 
     let diffs: Vec<GitDiffMetrics> = parent_trees.iter().map(|(parent_commit, parent_tree)| {
-        let mut change_map = Default::default();
-        change_map = utils::git_helper::calculate_changes(
+        // let mut change_map = Default::default();
+        let change_map = utils::git_helper::calculate_changes(
             &parent_tree,
             &commit.tree().unwrap(),
             rewrite_cache,

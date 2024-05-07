@@ -1,7 +1,7 @@
 use anyhow::Result;
 use gix::bstr::BString;
 use std::collections::HashMap;
-use gix_hash::ObjectId;
+use gix::ObjectId;
 use crate::git::sig::Sig;
 
 #[derive(Debug)]
@@ -25,12 +25,9 @@ impl GitDiffMetrics {
         author: Option<Sig>,
     ) -> Result<Self> {
         let total_number_of_files_changed = change_map.values().count();
-        let totals = change_map.values().fold((0u32, 0u32), |mut acc, val| {
+        let totals = change_map.values().fold((0u32, 0u32), |acc, val| {
             (acc.0 + val.0, acc.1 + val.1)
         });
-        /*change_map.iter().for_each(|cm| {
-            println!("cm.0.to_string(): {:?} {:?}", cm.0.to_string(),cm.1);
-        });*/
         let total_number_of_insertions = totals.0;
         let total_number_of_deletions = totals.1;
 

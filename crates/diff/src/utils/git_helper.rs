@@ -49,10 +49,7 @@ pub fn calculate_changes(
         previous,
         current,
         rewrite_cache,
-        //&mut files_changed,
         diff_cache,
-        //&mut deletions,
-        //&mut insertions,
     );
 
     change_map
@@ -61,12 +58,12 @@ pub fn calculate_changes(
 fn gitoxide_diff_calculation(
     previous: &gix::Tree<'_>,
     current: &gix::Tree<'_>,
-    rewrite_cache: &mut gix::diff::blob::Platform,
+    _rewrite_cache: &mut gix::diff::blob::Platform,
     diff_cache: &mut gix::diff::blob::Platform,
 ) -> HashMap<BString, (u32, u32)> {
     let mut platform = previous.changes().unwrap();
 
-    let rename_cfg = gix::diff::Rewrites {
+    let _rename_cfg = gix::diff::Rewrites {
         // copies: Some(gix::diff::rewrites::Copies::default()),
         copies: Some(gix::diff::rewrites::Copies {
             source: gix::diff::rewrites::CopySource::FromSetOfModifiedFiles, // --find-copies-harder
@@ -120,7 +117,7 @@ fn gitoxide_diff_calculation(
                 }
 
                 Ok(gix::object::tree::diff::Action::Continue)
-            }, // for_each_to_obtain_tree
+            },
         )
         .unwrap();
     // println!("outcome: {:?}", outcome);

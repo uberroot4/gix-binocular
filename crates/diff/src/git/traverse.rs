@@ -1,12 +1,12 @@
 use crate::git::metrics::{GitDiffMetrics};
 use crate::utils;
 use anyhow::Result;
-use gix::bstr::BString;
+// use gix::bstr::BString;
 use gix::traverse::commit::simple::Sorting;
 use gix::{Commit, ObjectId};
 use std::cmp::min_by;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::Arc;
+// use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+// use std::sync::Arc;
 use std::thread::JoinHandle;
 use gix::diff::blob::Platform;
 use log::{debug, error, info, trace};
@@ -168,7 +168,7 @@ fn get_churn_channel(
                     let author = mailmap.resolve(commit.author()?);
                     let committer = mailmap.resolve(commit.committer()?);
 
-                    for mut diff in &mut diff_result {
+                    for diff in &mut diff_result {
                         diff.author = Some(author.clone().into());
                         diff.committer = Some(committer.clone().into());
                     }

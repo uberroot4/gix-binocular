@@ -12,6 +12,7 @@ path = "src/gitinfo.rs"
 [workspace]
 members = [
     "crates/diff",
+    "crates/python"
 ]
 
 [workspace.dependencies]

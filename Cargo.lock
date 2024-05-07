@@ -1042,13 +1042,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gix-pyo3"
-version = "0.1.0"
-dependencies = [
- "pyo3",
-]
-
-[[package]]
 name = "gix-quote"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1179,7 +1172,6 @@ dependencies = [
  "diff",
  "env_logger",
  "gix",
- "gix-pyo3",
  "log",
 ]
 
@@ -1600,6 +1592,13 @@ name = "prodash"
 version = "28.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "744a264d26b88a6a7e37cbad97953fa233b94d585236310bcbc88474b4092d79"
+
+[[package]]
+name = "pyo3"
+version = "0.1.0"
+dependencies = [
+ "pyo3 0.21.2",
+]
 
 [[package]]
 name = "pyo3"

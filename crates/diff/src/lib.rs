@@ -1,9 +1,10 @@
 mod git {
     pub mod traverse;
     pub(crate) mod sig;
-    pub(crate) mod metrics;
+    pub mod metrics;
 }
 pub use crate::git::traverse;
+pub use crate::git::metrics;
 
 mod utils {
     pub mod structs;

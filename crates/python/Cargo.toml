@@ -18,3 +18,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.21.2", features = ["extension-module"] }
+diff = { path = "../diff", version = "0.1.0" }
+gix = { workspace = true }
+anyhow = { workspace = true }
+env_logger = { workspace = true }
+csv = "1.3.0"

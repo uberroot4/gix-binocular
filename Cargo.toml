@@ -12,7 +12,8 @@ path = "src/gitinfo.rs"
 [workspace]
 members = [
     "crates/diff",
-    "crates/python"
+    "crates/python",
+    "crates/neon-npm"
 ]
 
 [workspace.dependencies]

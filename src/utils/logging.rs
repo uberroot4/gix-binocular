@@ -22,7 +22,7 @@ pub fn init_logging(file_name: Option<String>) {
             env_logger_build.target(env_logger::Target::Pipe(target))
         }
         None => {
-            println!("Verbosity turned on, no file specified");
+            // println!("Verbosity turned on, no file specified");
             env_logger_build
         }
     };

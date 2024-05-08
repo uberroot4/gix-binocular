@@ -78,8 +78,8 @@ fork-join:python:
     - git rev-list --count HEAD
     - git rev-list --count --no-merges HEAD
     - cd ..
-    - hyperfine --warmup ${WARMUPS} --runs ${RUNS} --export-json hyperfine.pyrepositoryminer.${TARGET}.json --export-csv hyperfine.pyrepositoryminer.${TARGET}.csv --parameter-list repo ${TARGET} 'pyrepositoryminer branch --no-local --remote {repo} | pyrepositoryminer commits --no-simplify-first-parent --no-drop-duplicates {repo} | wc -l'
-    - pyrepositoryminer branch --no-local --remote ${TARGET} | pyrepositoryminer commits --no-simplify-first-parent --no-drop-duplicates ${TARGET} | wc -l
+    - hyperfine --warmup ${WARMUPS} --runs ${RUNS} --export-json hyperfine.pyrepositoryminer.${TARGET}.json --export-csv hyperfine.pyrepositoryminer.${TARGET}.csv --parameter-list repo ${TARGET} 'pyrepositoryminer branch --no-local --remote {repo} | grep -v -E '^origin/HEAD$' | pyrepositoryminer commits --no-simplify-first-parent --no-drop-duplicates {repo} | wc -l'
+    - pyrepositoryminer branch --no-local --remote ${TARGET} | grep -v -E '^origin/HEAD$' | pyrepositoryminer commits --no-simplify-first-parent --no-drop-duplicates ${TARGET} | wc -l
   artifacts:
     # untracked: false
     when: always

@@ -2,6 +2,25 @@ stages:
   - build
   - benchmark
 
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PY_VER: "python:3.12.0-slim-bullseye"
+
+.before_script:
+  before_script:
+    - python --version # For debugging
+    - pip install virtualenv
+    - virtualenv .venv
+    - source .venv/bin/activate
+
+.default_python:
+  extends: .before_script
+  image: $PY_VER
+  cache:
+    paths:
+      - .cache/pip
+      - .venv/
+
 build:gitinfo:release:
   stage: build
   image: rust:1.74.1-alpine3.18
@@ -42,6 +61,21 @@ fork-join:python:
   script:
     - echo "OK"
 
+.benchmark-base:python:
+  extends: .default_python
+  stage:
+    benchmark
+  needs:
+    - job: fork-join:python
+  image: $PY_VER
+  before_script:
+#    - pip install -i https://__token__:${ACCESS_TOKEN}@reset.inso.tuwien.ac.at/repo/api/v4/projects/4273/packages/pypi/simple
+    - pip install pyrepositoryminer --index-url https://__token__:${CI_JOB_TOKEN}@reset.inso.tuwien.ac.at/repo/api/v4/projects/4273/packages/pypi/simple
+    - pyrepositoryminer --help
+  script:
+    - echo ${URL}, ${TARGET}
+
+
 .benchmark-base:
   stage:
     benchmark
@@ -75,6 +109,17 @@ fork-join:python:
       - "hyperfine.gitinfo.${TARGET}.json"
       - "hyperfine.gitinfo.${TARGET}.csv"
 
+
+############################## PYTHON BENCHMARKS ##############################
+bench-binocular:python:
+  extends: .benchmark-base:python
+  variables:
+    URL: https://github.com/INSO-TUWien/Binocular.git
+    TARGET: binocular
+    WARMUPS: 1
+    RUNS: 10
+    
+############################## RUST BENCHMARKS ##############################
 bench-binocular: # 1724 commits
   extends: .benchmark-base
   variables:

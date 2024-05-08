@@ -65,10 +65,12 @@ fork-join:python:
   needs:
     - job: "fork-join:python"
   image: $PY_VER
+  variables:
   before_script:
-#    - pip install -i https://__token__:${ACCESS_TOKEN}@reset.inso.tuwien.ac.at/repo/api/v4/projects/4273/packages/pypi/simple
+    - apk add git hyperfine bash
     - pip install pyrepositoryminer --index-url https://gitlab-ci-token:${CI_JOB_TOKEN}@reset.inso.tuwien.ac.at/repo/api/v4/projects/4273/packages/pypi/simple
     - pyrepositoryminer --help
+    - nproc --all
   script:
     - echo ${URL}, ${TARGET}
     - git clone --no-checkout ${URL} ${TARGET}

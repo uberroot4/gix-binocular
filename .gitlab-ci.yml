@@ -4,7 +4,7 @@ stages:
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  PY_VER: "python:3.12.0-slim-bullseye"
+  PY_VER: "python:3.12.0-alpine3.18"
   RUST_VER: "rust:1.74.1-alpine3.18"
 
 .before_script:
@@ -67,7 +67,7 @@ fork-join:python:
   image: $PY_VER
   variables:
   before_script:
-    - apk add git hyperfine bash
+    - apk add git hyperfine bash libgit2 make cmake gcc g++
     - pip install pyrepositoryminer --index-url https://gitlab-ci-token:${CI_JOB_TOKEN}@reset.inso.tuwien.ac.at/repo/api/v4/projects/4273/packages/pypi/simple
     - pyrepositoryminer --help
     - nproc --all

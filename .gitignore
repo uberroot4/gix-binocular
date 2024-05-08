@@ -4,3 +4,6 @@ logs/**
 .idea
 *.xlsx
 **/.venv
+**/node_modules
+hyperfine/*
+!hyperfine/.gitkeep

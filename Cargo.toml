@@ -11,6 +11,7 @@ path = "src/gitinfo.rs"
 
 [workspace]
 members = [
+    "crates/cli",
     "crates/diff",
     "crates/python",
     "crates/neon-npm"
@@ -26,6 +27,7 @@ anyhow = "1.0.42"
 
 [dependencies]
 diff = { path = "./crates/diff", version = "0.1.0" }
+cli = { path = "./crates/cli", version = "0.1.0" }
 clap = { workspace = true }
 gix = { workspace = true }
 log = { workspace = true }

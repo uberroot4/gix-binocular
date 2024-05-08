@@ -24,7 +24,7 @@ fn traverse(py: Python<'_>, git_dir: String, threads: Option<usize>, no_merges: 
     use diff::traverse::traverse_commit_graph;
     let repo_sync = repo.clone().into_sync();
 
-    env_logger::init();
+    // env_logger::init();
     // println!("threads: {:?}", threads.unwrap_or(1));
 
     if let Ok(result) =

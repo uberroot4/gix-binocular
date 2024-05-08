@@ -28,6 +28,10 @@ build:gitinfo:release:
     paths:
       - "target/release/gitinfo"
 
+fork-join:rust:
+  stage: benchmark
+  when: manual
+
 .benchmark-base:
   stage:
     benchmark
@@ -35,6 +39,7 @@ build:gitinfo:release:
   needs:
     - job: build:gitinfo:release
       artifacts: true
+    - job: fork-join:rust
   image: alpine:3.18
   before_script:
     - apk add git hyperfine bash

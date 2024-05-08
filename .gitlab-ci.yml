@@ -71,6 +71,20 @@ fork-join:python:
     - pyrepositoryminer --help
   script:
     - echo ${URL}, ${TARGET}
+    - git clone --no-checkout ${URL} ${TARGET}
+    - cd ${TARGET}
+    - git rev-list --count HEAD
+    - git rev-list --count --no-merges HEAD
+    - cd ..
+    - hyperfine --warmup ${WARMUPS} --runs ${RUNS} --export-json hyperfine.pyrepositoryminer.${TARGET}.json --export-csv hyperfine.pyrepositoryminer.${TARGET}.csv --parameter-list repo ${TARGET} 'pyrepositoryminer branch --no-remote {repo} | pyrepositoryminer commits {repo} | wc -l'
+  artifacts:
+    # untracked: false
+    when: always
+    # access: all
+    expire_in: "30 days"
+    paths:
+      - "hyperfine.pyrepositoryminer.${TARGET}.json"
+      - "hyperfine.pyrepositoryminer.${TARGET}.csv"
 
 
 .benchmark-base:
@@ -113,6 +127,14 @@ bench-binocular:python:
   variables:
     URL: https://github.com/INSO-TUWien/Binocular.git
     TARGET: binocular
+    WARMUPS: 1
+    RUNS: 10
+
+bench-dubbo:python: # 7492 commits
+  extends: .benchmark-base:python
+  variables:
+    URL: https://github.com/apache/dubbo.git
+    TARGET: dubbo
     WARMUPS: 1
     RUNS: 10
 

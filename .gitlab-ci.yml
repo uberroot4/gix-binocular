@@ -31,8 +31,12 @@ build:gitinfo:release:
 fork-join:rust:
   stage: benchmark
   when: manual
+  image: alpine:3.18
   script:
     - echo "OK"
+
+fork-join:python:
+  extends: fork-join:rust
 
 .benchmark-base:
   stage:

@@ -79,6 +79,7 @@ fork-join:python:
     - git rev-list --count --no-merges HEAD
     - cd ..
     - hyperfine --warmup ${WARMUPS} --runs ${RUNS} --export-json hyperfine.pyrepositoryminer.${TARGET}.json --export-csv hyperfine.pyrepositoryminer.${TARGET}.csv --parameter-list repo ${TARGET} 'pyrepositoryminer branch --no-remote {repo} | pyrepositoryminer commits {repo} | wc -l'
+    - pyrepositoryminer branch --no-remote ${TARGET} | pyrepositoryminer commits ${TARGET} | wc -l
   artifacts:
     # untracked: false
     when: always
@@ -137,6 +138,14 @@ bench-dubbo:python: # 7492 commits
   variables:
     URL: https://github.com/apache/dubbo.git
     TARGET: dubbo
+    WARMUPS: 1
+    RUNS: 10
+
+bench-pandas:python: # 34933 commits
+  extends: .benchmark-base:python
+  variables:
+    URL: https://github.com/pandas-dev/pandas.git
+    TARGET: pandas
     WARMUPS: 1
     RUNS: 10
 

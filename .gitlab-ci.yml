@@ -31,6 +31,8 @@ build:gitinfo:release:
 fork-join:rust:
   stage: benchmark
   when: manual
+  script:
+    - echo "OK"
 
 .benchmark-base:
   stage:

@@ -78,14 +78,16 @@ fork-join:python:
     - git rev-list --count HEAD
     - git rev-list --count --no-merges HEAD
     - cd ..
-    - hyperfine --warmup ${WARMUPS} --runs ${RUNS} --export-json hyperfine.pyrepositoryminer.${TARGET}.json --export-csv hyperfine.pyrepositoryminer.${TARGET}.csv --parameter-list repo ${TARGET} 'pyrepositoryminer branch --no-local --remote {repo} | grep -v -E '^origin/HEAD$' | pyrepositoryminer commits --no-simplify-first-parent --no-drop-duplicates {repo} | wc -l'
-    - pyrepositoryminer branch --no-local --remote ${TARGET} | grep -v -E '^origin/HEAD$' | pyrepositoryminer commits --no-simplify-first-parent --no-drop-duplicates ${TARGET} | wc -l
+    - pyrepositoryminer branch --no-local --remote {repo} | grep -v -E '^origin/HEAD$' > branches.txt
+    - hyperfine --show-output --warmup ${WARMUPS} --runs ${RUNS} --export-json hyperfine.pyrepositoryminer.${TARGET}.json --export-csv hyperfine.pyrepositoryminer.${TARGET}.csv --parameter-list repo ${TARGET} 'cat branches.txt | pyrepositoryminer commits --no-simplify-first-parent --no-drop-duplicates {repo} | wc -l'
+    - cat branches.txt | pyrepositoryminer commits --no-simplify-first-parent --no-drop-duplicates ${TARGET} | wc -l
   artifacts:
     # untracked: false
     when: always
     # access: all
     expire_in: "30 days"
     paths:
+      - "branches.txt"
       - "hyperfine.pyrepositoryminer.${TARGET}.json"
       - "hyperfine.pyrepositoryminer.${TARGET}.csv"
 
@@ -113,7 +115,7 @@ fork-join:python:
     - ls -lah .
     - ls -lah ./scripts
     - ./target/release/gitinfo --help
-    - hyperfine --warmup ${WARMUPS} --runs ${RUNS} --export-json hyperfine.gitinfo.${TARGET}.json --export-csv hyperfine.gitinfo.${TARGET}.csv --parameter-list repo ${TARGET} --parameter-list workers 1,2,3,4,5,6,7,8 --parameter-list algorithm histogram,myers,myers-minimal './target/release/gitinfo --git-dir {repo} --threads {workers} --algorithm {algorithm}'
+    - hyperfine --warmup ${WARMUPS} --runs ${RUNS} --export-json hyperfine.gitinfo.${TARGET}.json --export-csv hyperfine.gitinfo.${TARGET}.csv --parameter-list repo ${TARGET} --parameter-list workers 1,2,3,4,5,6,7,8 --parameter-list algorithm histogram,myers,myers-minimal './target/release/gitinfo diff --git-dir {repo} --threads {workers} --algorithm {algorithm}'
   artifacts:
     # untracked: false
     when: always

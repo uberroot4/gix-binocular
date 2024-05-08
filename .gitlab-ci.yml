@@ -5,6 +5,7 @@ stages:
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   PY_VER: "python:3.12.0-slim-bullseye"
+  RUST_VER: "rust:1.74.1-alpine3.18"
 
 .before_script:
   before_script:
@@ -23,7 +24,7 @@ variables:
 
 build:gitinfo:release:
   stage: build
-  image: rust:1.74.1-alpine3.18
+  image: $RUST_VER
   cache:
     - key:
         files:
@@ -66,7 +67,7 @@ fork-join:python:
   stage:
     benchmark
   needs:
-    - job: fork-join:python
+    - job: "fork-join:python"
   image: $PY_VER
   before_script:
 #    - pip install -i https://__token__:${ACCESS_TOKEN}@reset.inso.tuwien.ac.at/repo/api/v4/projects/4273/packages/pypi/simple
@@ -81,9 +82,9 @@ fork-join:python:
     benchmark
   timeout: 5h
   needs:
-    - job: build:gitinfo:release
+    - job: "build:gitinfo:release"
       artifacts: true
-    - job: fork-join:rust
+    - job: "fork-join:rust"
   image: alpine:3.18
   before_script:
     - apk add git hyperfine bash
@@ -118,7 +119,7 @@ bench-binocular:python:
     TARGET: binocular
     WARMUPS: 1
     RUNS: 10
-    
+
 ############################## RUST BENCHMARKS ##############################
 bench-binocular: # 1724 commits
   extends: .benchmark-base

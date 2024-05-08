@@ -25,8 +25,8 @@ pub struct Args {
     #[clap(short, long, value_enum, default_value_t = DiffAlgorithm::Histogram)]
     pub algorithm: DiffAlgorithm,
     /// Alternative git directory to use
-    #[clap(short = 'o', long = "output-format", value_enum, default_value_t = OutputFormat::Render)]
-    pub output_format: OutputFormat,
+    #[clap(short = 'o', long = "output-format", value_enum, default_value_t = crate::output_format::OutputFormat::Render)]
+    pub output_format: crate::output_format::OutputFormat,
 }
 
 // gix::diff::blob::Algorithm
@@ -35,15 +35,4 @@ pub enum DiffAlgorithm {
     Histogram, //gix::diff::blob::Algorithm::Histogram
     Myers,        // gix::diff::blob::Algorithm::Myers
     MyersMinimal, // gix::diff::blob::Algorithm::MyersMinimal
-}
-
-#[derive(clap::ValueEnum, Debug, PartialEq, Clone)]
-/// Represent the different type of available formats
-pub enum OutputFormat {
-    /// Render the output as table
-    Render,
-    /// Print the output in json format
-    JSON,
-    /// Print the output in csv format
-    CSV,
 }

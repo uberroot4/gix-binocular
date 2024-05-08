@@ -4,7 +4,7 @@ use std::{path::Path, time::Instant};
 
 use clap::Parser;
 use gix::date::time::format;
-use log::{debug, trace};
+use log::{debug, info, trace};
 
 // use cli::diff::{Args, DiffAlgorithm, OutputFormat};
 use cli::cmd::{Cli, Commands};
@@ -35,6 +35,24 @@ fn main() {
             //     Err(e) => error!("error: {e}"),
             // }
         },
+        Commands::Commits(commit_args) => {
+            trace!("{:?}", commit_args);
+            use commits::traverse;
+            if let Ok(repo) = gix::discover(commit_args.git_dir) {
+                let commit_ids = traverse::traverse_commit_graph(repo, commit_args.branches);
+                match commit_ids {
+                    Ok(cids) => {
+                        info!("Found {:?} commits", cids.len());
+                        for gcm in cids.iter() {
+                            println!("{}", gcm.commit_str.to_string());
+                        }
+                    },
+                    Err(_) => panic!("Error traversing commit graph")
+                }
+            } else {
+                panic!("Repository not found");
+            }
+        }
         // None => {
         //     // args.re
         // }

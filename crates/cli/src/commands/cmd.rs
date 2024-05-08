@@ -14,12 +14,14 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Commands {
     /// Compare two commits
-    Diff(crate::commands::diff::Args)
+    Diff(crate::commands::diff::Args),
+    /// Get the commit ids of a repository.
+    Commits(crate::commands::commits::Args)
 }
 
 #[derive(Debug, clap::Args)]
 pub struct GlobalOpts {
     /// Print log to stdout or LOGFILE if specified
-    #[clap(short, long, value_name = "LOGFILE", action = clap::ArgAction::Set, default_missing_value = "", num_args = 0..=1)]
+    #[clap(short, long, value_name = "LOGFILE", action = clap::ArgAction::Set, default_missing_value = "", num_args = 0..=1, global=true)]
     pub verbose: Option<String>,
 }

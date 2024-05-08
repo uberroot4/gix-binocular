@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 #[derive(Debug, clap::Parser, Clone)]
-#[clap(name = "diff", about = "diff", version = option_env!("GIX_VERSION"))]
+#[clap(name = "diff", about = "diff")]
 pub struct Args {
     /// Alternative git directory to use
     #[clap(name = "dir", long = "git-dir")]

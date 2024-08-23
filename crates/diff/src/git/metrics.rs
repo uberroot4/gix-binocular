@@ -2,7 +2,6 @@ use anyhow::Result;
 use gix::bstr::BString;
 use std::collections::HashMap;
 use gix::ObjectId;
-use crate::git::sig::Sig;
 
 #[derive(Debug)]
 pub struct GitDiffMetrics {
@@ -12,8 +11,8 @@ pub struct GitDiffMetrics {
     pub total_number_of_deletions: u32,
     pub commit: ObjectId,
     pub parent: Option<ObjectId>,
-    pub committer: Option<Sig>,
-    pub author: Option<Sig>,
+    pub committer: Option<shared::Sig>,
+    pub author: Option<shared::Sig>,
 }
 
 impl GitDiffMetrics {
@@ -21,8 +20,8 @@ impl GitDiffMetrics {
         change_map: HashMap<BString, (u32, u32)>,
         commit: ObjectId,
         parent: Option<ObjectId>,
-        committer: Option<Sig>,
-        author: Option<Sig>,
+        committer: Option<shared::Sig>,
+        author: Option<shared::Sig>,
     ) -> Result<Self> {
         let total_number_of_files_changed = change_map.values().count();
         let totals = change_map.values().fold((0u32, 0u32), |acc, val| {

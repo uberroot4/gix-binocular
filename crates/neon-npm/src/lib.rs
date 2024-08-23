@@ -33,14 +33,14 @@ fn traverse(mut cx: FunctionContext) -> JsResult<JsString> /*anyhow::Result<Repo
     let algo = gix::diff::blob::Algorithm::Histogram;
     use diff::traverse::traverse_commit_graph;
 
-    if let Ok(result) =
-        traverse_commit_graph(&repo, arg_threads.unwrap_or(1), true, Some(algo), false, None, None)
-    {
-        if let Ok(csv) = to_csv(result) {
-            // println!("{}", csv);
-            return Ok(cx.string(csv.to_string()));
-        }
-    }
+    // if let Ok(result) =
+    //     traverse_commit_graph(&repo, arg_threads.unwrap_or(1), true, Some(algo), false, None, None)
+    // {
+    //     if let Ok(csv) = to_csv(result) {
+    //         // println!("{}", csv);
+    //         return Ok(cx.string(csv.to_string()));
+    //     }
+    // }
     Ok(cx.string("Nope"))
 
     // Ok(cx.string(repo.git_dir().display().to_string()))

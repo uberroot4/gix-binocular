@@ -1,6 +1,7 @@
 mod utils;
 
 use std::{path::Path, time::Instant};
+use std::path::PathBuf;
 
 use clap::Parser;
 use gix::date::time::format;
@@ -8,6 +9,8 @@ use log::{debug, info, trace};
 
 // use cli::diff::{Args, DiffAlgorithm, OutputFormat};
 use cli::cmd::{Cli, Commands};
+use cli::output_format::OutputFormat;
+use render::Renderable;
 use crate::utils::logging;
 
 fn main() {
@@ -34,19 +37,32 @@ fn main() {
             //     Ok(()) => {}
             //     Err(e) => error!("error: {e}"),
             // }
-        },
+        }
         Commands::Commits(commit_args) => {
             trace!("{:?}", commit_args);
             use commits::traverse;
-            if let Ok(repo) = gix::discover(commit_args.git_dir) {
-                let commit_ids = traverse::traverse_commit_graph(repo, commit_args.branches);
+            //if let Ok(git_dir) =
+            let git_dir = match args.global_opts.git_dir {
+                None => { panic!("No Path to .git Repository provided") }
+                Some(git_dir) => {
+                    git_dir
+                }
+            };
+            if let Ok(repo) = gix::discover(git_dir) {
+                let commit_ids = traverse::traverse_commit_graph(repo, commit_args.branches, args.global_opts.no_merges);
                 match commit_ids {
                     Ok(cids) => {
                         info!("Found {:?} commits", cids.len());
-                        for gcm in cids.iter() {
-                            println!("{}", gcm.commit_str.to_string());
-                        }
-                    },
+                        // cids.into();
+                        let cids2: commits::GitCommitMetricVector = cids.into();
+                        cids2.render(args.global_opts.output_format);
+                        // cids2.
+                        // (cids as commits::GitCommitMetricVector).render();
+                        // for gcm in cids.iter() {
+                        //     println!("{}", gcm.commit_str.to_string());
+                        // }
+                        // cids.iter().map(|c| c.)
+                    }
                     Err(_) => panic!("Error traversing commit graph")
                 }
             } else {

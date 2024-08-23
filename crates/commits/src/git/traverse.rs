@@ -5,7 +5,9 @@ use crate::git::metrics::GitCommitMetric;
 pub fn traverse_commit_graph(
     repo: gix::Repository,
     branches: Vec<String>,
+    no_merges: bool,
 ) -> anyhow::Result<Vec<GitCommitMetric>> {
+    let mailmap = repo.open_mailmap();
     let prefixed_branches: Vec<String> = branches.iter().map(|b|
         if b.contains("origin/") {
             format!("refs/remotes/{b}")
@@ -30,7 +32,7 @@ pub fn traverse_commit_graph(
     for branch in available_branches {
         let commits = if let Some(id) = branch.try_id() {
             if let Ok(revwalk) = id.ancestors().all() {
-                revwalk.filter(|r| r.is_ok()).map(|r| r.unwrap().id).collect()
+                revwalk.filter(|r| r.is_ok()).map(|r| r.unwrap()).collect()
             } else {
                 Vec::new()
             }
@@ -38,7 +40,36 @@ pub fn traverse_commit_graph(
             Vec::new()
         };
         // trace!("commit_count: {:?}", commits);
-        let mut val: Vec<GitCommitMetric> = commits.iter().map(|c| GitCommitMetric::from(*c)).collect();
+        let mut val: Vec<GitCommitMetric> = commits.iter()
+            .filter(|c| {
+                // no_merges && c.parent_ids.len() > 1
+                return if no_merges && c.parent_ids.len() > 1 {
+                    trace!("Skipping Merge Commit {:?}", c.id);
+                    false
+                } else { true };
+            })
+            .map(|c| {
+                let mut author: Option<shared::Sig> = None;
+                let mut committer: Option<shared::Sig> = None;
+                if let Ok(commit) = c.object() {
+                    author = if let Ok(author_sig) = commit.author() {
+                        Some(shared::Sig::from(mailmap.resolve(author_sig)))
+                    } else { None };
+
+                    committer = if let Ok(committer_sig) = commit.committer() {
+                        Some(shared::Sig::from(mailmap.resolve(committer_sig)))
+                    } else { None };
+                }
+                let mut gcm = GitCommitMetric::from((*c).clone());
+                // gcm.author = Some(author.into());
+                // gcm.committer = Some(committer.into());
+                gcm.author = Option::from(author.unwrap_or(gcm.author.unwrap()));
+                gcm.committer = Option::from(committer.unwrap_or(gcm.committer.unwrap()));
+                gcm.branch = Option::from(branch.name().shorten().to_string());
+
+                gcm
+            }
+            ).collect();
         commit_metric_vec.append(&mut val);
     }
 

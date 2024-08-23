@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 #[derive(Debug, clap::Parser, Clone)]
 #[clap(name = "diff", about = "diff")]
 pub struct Args {

@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 #[derive(Debug, clap::Parser, Clone)]
 #[clap(name = "commits", about = "commits")]
 pub struct Args {

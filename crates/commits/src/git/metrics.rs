@@ -1,4 +1,3 @@
-use std::any::Any;
 use render::{Renderable};
 use crate::GitCommitMetricVector;
 use base64::prelude::*;
@@ -59,9 +58,6 @@ impl Renderable for GitCommitMetricVector {
             "author_name".to_string(),
             "author_email".to_string(),
             "parents".to_string(),
-            // "total_number_of_files_changed".to_string(),
-            // "total_number_of_insertions".to_string(),
-            // "total_number_of_deletions".to_string(),
         ]
     }
 

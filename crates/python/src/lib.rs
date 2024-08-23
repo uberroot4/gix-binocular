@@ -1,19 +1,9 @@
 use gix::Repository;
 use pyo3::prelude::*;
-use csv::Writer;
 
 fn discover_repository(git_dir: String) -> anyhow::Result<Repository> {
     let repo = gix::discover(git_dir.clone().trim())?;
     Ok(repo)
-}
-
-fn to_csv(records: Vec<diff::metrics::GitDiffMetrics>) -> Result<String, Box<dyn std::error::Error>> {
-    let mut writer = Writer::from_writer(vec![]);
-    writer.write_record(["commit", "parent", "total_number_of_files_changed", "total_number_of_insertions", "total_number_of_deletions"])?;
-    for res in records {
-        writer.write_record([res.commit.to_string(), res.parent.map_or_else(|| "NULL".to_string(), |parent| parent.to_string()), res.total_number_of_files_changed.to_string(), res.total_number_of_insertions.to_string(), res.total_number_of_deletions.to_string()])?;
-    }
-    Ok(String::from_utf8(writer.into_inner()?)?)
 }
 
 #[pyfunction]

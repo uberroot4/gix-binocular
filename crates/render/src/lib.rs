@@ -1,5 +1,5 @@
 use std::string::ToString;
-use csv::{IntoInnerError, Writer};
+use csv::Writer;
 pub use cli::output_format::OutputFormat;
 
 

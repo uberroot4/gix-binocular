@@ -16,7 +16,7 @@ pub trait Renderable {
     fn headers() -> Vec<String>;
     fn values(&self) -> Vec<Vec<String>>;
 
-    fn render(&self, format: OutputFormat) {
+    fn format(&self, format: OutputFormat) -> String {
         match format {
             OutputFormat::Render => {
                 let mut table = comfy_table::Table::new();
@@ -44,9 +44,7 @@ pub trait Renderable {
 
                     table.add_row(table_row);
                 }
-
-                // Print table
-                println!("{table}");
+                format!("{table}")
             }
             OutputFormat::CSV => {
                 let mut writer = Writer::from_writer(vec![]);
@@ -80,12 +78,17 @@ pub trait Renderable {
                 // Print csv
                 match get_result(writer) {
                     Some(csv) => {
-                        println!("{}", csv);
+                        csv
                     }
-                    None => { eprintln!("Error writing content"); }
+                    None => { panic!("Error writing content"); }
                 }
             }
-            OutputFormat::JSON => {}
+            OutputFormat::JSON => {
+                todo!("Not yet implemented")
+            }
         }
+    }
+    fn render(&self, format: OutputFormat) {
+        println!("{}", self.format(format));
     }
 }

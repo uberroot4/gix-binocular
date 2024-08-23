@@ -5,9 +5,11 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use gix::date::time::format;
+use gix::discover::Error;
+use gix::Repository;
 use log::{debug, info, trace};
 
-// use cli::diff::{Args, DiffAlgorithm, OutputFormat};
+use cli::diff::DiffAlgorithm;
 use cli::cmd::{Cli, Commands};
 use cli::output_format::OutputFormat;
 use render::Renderable;
@@ -29,44 +31,53 @@ fn main() {
     }
 
     let now = Instant::now();
+    trace!("args: {:?}", args);
+    let git_dir = match args.global_opts.git_dir {
+        None => { panic!("No Path to .git Repository provided") }
+        Some(git_dir) => {
+            git_dir
+        }
+    };
+    let repo = match gix::discover(git_dir) {
+        Ok(r) => {
+            r
+        }
+        Err(_) => { panic!("Repository not found") }
+    };
 
     match args.command {
         Commands::Diff(diff_args) => {
             trace!("{:?}", diff_args);
-            // match run(args) {
-            //     Ok(()) => {}
-            //     Err(e) => error!("error: {e}"),
-            // }
+
+            let algo = match diff_args.algorithm {
+                DiffAlgorithm::Histogram => gix::diff::blob::Algorithm::Histogram,
+                DiffAlgorithm::Myers => gix::diff::blob::Algorithm::Myers,
+                DiffAlgorithm::MyersMinimal => gix::diff::blob::Algorithm::MyersMinimal,
+                // None => gix::diff::blob::Algorithm::Histogram,
+            };
+            use diff::traverse::traverse_commit_graph;
+
+            let result = traverse_commit_graph(&repo, diff_args.threads.unwrap_or(1), args.global_opts.no_merges, Some(algo), diff_args.breadth_first, diff_args.committish, args.global_opts.limit);
+            match result {
+                Ok(result) => {
+                    let printable_result: diff::GitDiffMetricsVector = result.into();
+                    printable_result.render(args.global_opts.output_format);
+                }
+                Err(_) => panic!("Error traversing diffs")
+            }
         }
         Commands::Commits(commit_args) => {
             trace!("{:?}", commit_args);
             use commits::traverse;
-            //if let Ok(git_dir) =
-            let git_dir = match args.global_opts.git_dir {
-                None => { panic!("No Path to .git Repository provided") }
-                Some(git_dir) => {
-                    git_dir
+            let commit_ids = traverse::traverse_commit_graph(repo, commit_args.branches, args.global_opts.no_merges);
+            match commit_ids {
+                Ok(cids) => {
+                    info!("Found {:?} commits", cids.len());
+                    // cids.into();
+                    let cids2: commits::GitCommitMetricVector = cids.into();
+                    cids2.render(args.global_opts.output_format);
                 }
-            };
-            if let Ok(repo) = gix::discover(git_dir) {
-                let commit_ids = traverse::traverse_commit_graph(repo, commit_args.branches, args.global_opts.no_merges);
-                match commit_ids {
-                    Ok(cids) => {
-                        info!("Found {:?} commits", cids.len());
-                        // cids.into();
-                        let cids2: commits::GitCommitMetricVector = cids.into();
-                        cids2.render(args.global_opts.output_format);
-                        // cids2.
-                        // (cids as commits::GitCommitMetricVector).render();
-                        // for gcm in cids.iter() {
-                        //     println!("{}", gcm.commit_str.to_string());
-                        // }
-                        // cids.iter().map(|c| c.)
-                    }
-                    Err(_) => panic!("Error traversing commit graph")
-                }
-            } else {
-                panic!("Repository not found");
+                Err(_) => panic!("Error traversing commit graph")
             }
         }
         // None => {
@@ -81,14 +92,8 @@ fn main() {
 // fn run(args: Args) -> anyhow::Result<()> {
 //     let repo = gix::discover(args.git_dir.as_deref().unwrap_or(Path::new(".")))?;
 //
-//     let algo = match args.algorithm {
-//         DiffAlgorithm::Histogram => gix::diff::blob::Algorithm::Histogram,
-//         DiffAlgorithm::Myers => gix::diff::blob::Algorithm::Myers,
-//         DiffAlgorithm::MyersMinimal => gix::diff::blob::Algorithm::MyersMinimal,
-//         // None => gix::diff::blob::Algorithm::Histogram,
-//     };
 //
-//     use diff::traverse::traverse_commit_graph;
+//
 //     if let Ok(result) =
 //         traverse_commit_graph(&repo, args.threads.unwrap_or(1), args.no_merges, Some(algo), args.breadth_first, args.committish, args.limit)
 //     {

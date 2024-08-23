@@ -12,6 +12,7 @@ crossbeam-channel = "0.5.9"
 gix = { workspace = true, features = ["max-performance-safe", "blob-diff", "revision", "mailmap", ] }
 gix-diff = { version = "0.43.0", features = ["blob"] }
 shared = { path = "../shared" }
+render = { path = "../render" }
 #gix-features = { version = "0.38.1", features = ["zlib-ng", "parallel"] }
 
 log = { workspace = true }

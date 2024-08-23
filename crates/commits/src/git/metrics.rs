@@ -101,9 +101,4 @@ impl Renderable for GitCommitMetricVector {
         }
         values
     }
-
-
-    // fn headers() -> Vec<String> {
-    //     vec![*"Commit"]
-    // }
 }

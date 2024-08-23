@@ -505,6 +505,7 @@ dependencies = [
  "gix",
  "gix-diff",
  "log",
+ "render",
  "shared",
 ]
 

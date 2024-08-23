@@ -2,6 +2,8 @@ use anyhow::Result;
 use gix::bstr::BString;
 use std::collections::HashMap;
 use gix::ObjectId;
+use crate::GitDiffMetricsVector;
+use render::{Renderable};
 
 #[derive(Debug)]
 pub struct GitDiffMetrics {
@@ -38,7 +40,54 @@ impl GitDiffMetrics {
             commit,
             parent,
             committer,
-            author
+            author,
         })
+    }
+}
+
+impl From<Vec<GitDiffMetrics>> for GitDiffMetricsVector {
+    fn from(value: Vec<GitDiffMetrics>) -> Self {
+        Self {
+            value_vector: value
+        }
+    }
+}
+
+impl Renderable for GitDiffMetricsVector {
+    fn headers() -> Vec<String> {
+        vec![
+            //"branch".to_string(),
+            "commit".to_string(),
+            "parent".to_string(),
+            "files_changed".to_string(),
+            "insertions".to_string(),
+            "deletions".to_string(),
+        ]
+    }
+    fn values(&self) -> Vec<Vec<String>> {
+        let mut values: Vec<Vec<String>> = Vec::new();
+        for val in &self.value_vector {
+            // let parent_str = match val.parent {
+            //     None => { render::const_values::NULL.clone() }
+            //     Some(prnt) => {
+            //         prnt.to_string()
+            //     }
+            // };
+
+            values.push(vec![
+                //val.branch.clone().unwrap_or(render::const_values::NULL.clone()),
+                val.commit.to_string(),
+                match val.parent {
+                    None => { render::const_values::NULL.clone() }
+                    Some(prnt) => {
+                        prnt.to_string()
+                    }
+                },
+                val.total_number_of_files_changed.to_string(),
+                val.total_number_of_insertions.to_string(),
+                val.total_number_of_deletions.to_string(),
+            ]);
+        }
+        values
     }
 }

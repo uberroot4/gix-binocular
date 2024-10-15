@@ -5,7 +5,7 @@ stages:
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   PY_VER: "python:3.12.0-alpine3.18"
-  RUST_VER: "rust:1.74.1-alpine3.18"
+  RUST_VER: "rust:1.81.0-alpine3.19"
 
 .before_script:
   before_script:
@@ -44,7 +44,7 @@ build:gitinfo:release:
     # untracked: false
     # when: on_success
     # access: all
-    expire_in: "30 days"
+    expire_in: "60 days"
     paths:
       - "target/release/gitinfo"
 

@@ -16,12 +16,12 @@ members = [
     "crates/commits",
     "crates/render",
     "crates/shared",
-    # "crates/python",
+    "crates/python",
     # "crates/neon-npm"
 ]
 
 [workspace.dependencies]
-gix = { version = "0.62.0", default-features = false }
+gix = { version = "0.66.0", default-features = false }
 clap = { version = "4.1.1", features = ["derive", "cargo"] }
 clap_complete = "4.4.3"
 log = "0.4.21"

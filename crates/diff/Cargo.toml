@@ -10,7 +10,6 @@ clap = { workspace = true }
 clap_complete = { workspace = true }
 crossbeam-channel = "0.5.13"
 gix = { workspace = true, features = ["max-performance-safe", "blob-diff", "revision", "mailmap", ] }
-gix-diff = { version = "0.46.0", features = ["blob"] }
 shared = { path = "../shared" }
 render = { path = "../render" }
 #gix-features = { version = "0.38.1", features = ["zlib-ng", "parallel"] }

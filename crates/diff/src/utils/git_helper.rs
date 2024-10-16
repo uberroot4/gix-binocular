@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use gix::bstr::BString;
+// use gix_diff::blob::platform::resource::Data;
 
 pub fn get_trees<'a>(
     commit: &'a gix::Commit,
@@ -96,7 +97,7 @@ fn gitoxide_diff_calculation(
                             gix::diff::blob::platform::prepare_diff::Operation::InternalDiff {
                                 algorithm,
                             } => {
-                                let counts = gix_diff::blob::diff(
+                                let counts = gix::diff::blob::diff(
                                     algorithm,
                                     &tokens,
                                     gix::diff::blob::sink::Counter::default(),

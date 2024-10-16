@@ -471,7 +471,6 @@ dependencies = [
  "crossbeam-channel",
  "env_logger",
  "gix",
- "gix-diff",
  "log",
  "render",
  "shared",

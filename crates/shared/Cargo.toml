@@ -7,3 +7,6 @@ edition = "2021"
 
 [dependencies]
 gix = { workspace = true }
+
+[lib]
+doctest = false

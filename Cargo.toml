@@ -8,11 +8,15 @@ version = "0.1.0"
 [[bin]]
 name = "gitinfo"
 path = "src/gitinfo.rs"
+doc = false
+test = false
+doctest = false
 
 [workspace]
 members = [
     "crates/cli",
     "crates/diff",
+    "crates/diff/tests",
     "crates/commits",
     "crates/render",
     "crates/shared",

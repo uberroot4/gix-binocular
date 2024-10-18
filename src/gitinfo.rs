@@ -1,17 +1,12 @@
 mod utils;
 
-use std::{path::Path, time::Instant};
-use std::path::PathBuf;
+use std::time::Instant;
 
 use clap::Parser;
-use gix::date::time::format;
-use gix::discover::Error;
-use gix::Repository;
 use log::{debug, info, trace};
 
 use cli::diff::DiffAlgorithm;
 use cli::cmd::{Cli, Commands};
-use cli::output_format::OutputFormat;
 use render::Renderable;
 use crate::utils::logging;
 
@@ -66,6 +61,26 @@ fn main() {
                 Err(_) => panic!("Error traversing diffs")
             }
         }
+        // Commands::DiffExtended(diff_args) => {
+        //     trace!("{:?}", diff_args);
+        //
+        //     let algo = match diff_args.algorithm {
+        //         DiffAlgorithm::Histogram => gix::diff::blob::Algorithm::Histogram,
+        //         DiffAlgorithm::Myers => gix::diff::blob::Algorithm::Myers,
+        //         DiffAlgorithm::MyersMinimal => gix::diff::blob::Algorithm::MyersMinimal,
+        //         // None => gix::diff::blob::Algorithm::Histogram,
+        //     };
+        //     use diff::traverse::traverse_commit_graph_extended;
+        //
+        //     let result = traverse_commit_graph_extended(&repo, diff_args.threads.unwrap_or(1), args.global_opts.no_merges, Some(algo), diff_args.breadth_first, diff_args.committish, args.global_opts.limit);
+        //     match result {
+        //         Ok(result) => {
+        //             let printable_result: diff::GitDiffExtendedMetricsVector = result.into();
+        //             printable_result.render(args.global_opts.output_format);
+        //         }
+        //         Err(_) => panic!("Error traversing diffs")
+        //     }
+        // }
         Commands::Commits(commit_args) => {
             trace!("{:?}", commit_args);
             use commits::traverse;
@@ -80,9 +95,9 @@ fn main() {
                 Err(_) => panic!("Error traversing commit graph")
             }
         }
-        // None => {
-        //     // args.re
-        // }
+        // Commands::DiffList {
+        //     ..
+        // } => todo!(),
     }
 
     let elapsed = now.elapsed();

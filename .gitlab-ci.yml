@@ -1,5 +1,8 @@
 stages:
   - build
+  - unit_test
+  - integration_test
+  - release
   - benchmark
 
 variables:
@@ -21,9 +24,7 @@ variables:
     paths:
       - .cache/pip
       - .venv/
-
-build:gitinfo:release:
-  stage: build
+.rust-base:
   image: $RUST_VER
   cache:
     - key:
@@ -38,6 +39,31 @@ build:gitinfo:release:
     - apk add make cmake gcc g++
     - rustc -V
     - cargo --version
+
+build:gitinfo:
+  extends: .rust-base
+  stage: build
+  script:
+    - cargo build --verbose --release --bin gitinfo
+  artifacts:
+    # untracked: false
+    # when: on_success
+    # access: all
+    expire_in: "60 days"
+    paths:
+      - "target/debug/gitinfo"
+
+integration_test:gitinfo:diff-test:
+  extends: .rust-base
+  stage: integration_test
+  script:
+    - cargo test --verbose -p diff-test
+
+build:gitinfo:release:
+  stage: release
+  extends: .rust-base
+  needs:
+    - integration_test:gitinfo:diff-test
   script:
     - cargo build --verbose --release --bin gitinfo
   artifacts:

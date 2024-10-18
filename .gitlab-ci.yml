@@ -24,6 +24,7 @@ variables:
     paths:
       - .cache/pip
       - .venv/
+
 .rust-base:
   image: $RUST_VER
   cache:
@@ -44,7 +45,7 @@ build:gitinfo:
   extends: .rust-base
   stage: build
   script:
-    - cargo build --verbose --release --bin gitinfo
+    - cargo build --verbose --bin gitinfo
   artifacts:
     # untracked: false
     # when: on_success
@@ -53,17 +54,56 @@ build:gitinfo:
     paths:
       - "target/debug/gitinfo"
 
-integration_test:gitinfo:diff-test:
+.test-default:
   extends: .rust-base
+  needs:
+    - build:gitinfo
+
+########## UNIT TESTS ##########
+
+unit_test:crate:commits:
+  extends: .test-default
+  stage: unit_test
+  script:
+    - cargo test --verbose -p commits
+
+unit_test:crate:diff:
+  extends: .test-default
+  stage: unit_test
+  script:
+    - cargo test --verbose -p diff
+
+unit_test:crate:render:
+  extends: .test-default
+  stage: unit_test
+  script:
+    - cargo test --verbose -p render
+
+unit_test:crate:shared:
+  extends: .test-default
+  stage: unit_test
+  script:
+    - cargo test --verbose -p shared
+
+########## INTEGRATION TESTS ##########
+
+integration_test:crate:diff-test:
+  extends: .test-default
   stage: integration_test
   script:
     - cargo test --verbose -p diff-test
+
+########## RELEASE ##########
 
 build:gitinfo:release:
   stage: release
   extends: .rust-base
   needs:
-    - integration_test:gitinfo:diff-test
+    - integration_test:crate:diff-test
+    - unit_test:crate:commits
+    - unit_test:crate:diff
+    - unit_test:crate:render
+    - unit_test:crate:shared
   script:
     - cargo build --verbose --release --bin gitinfo
   artifacts:
@@ -73,6 +113,8 @@ build:gitinfo:release:
     expire_in: "60 days"
     paths:
       - "target/release/gitinfo"
+
+########## BENCHMARKING ##########
 
 fork-join:rust:
   stage: benchmark

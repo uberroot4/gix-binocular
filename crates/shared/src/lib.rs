@@ -1,6 +1,6 @@
 use gix::bstr::BString;
 
-#[derive(Hash, PartialOrd, Ord, Eq, PartialEq, Debug)]
+#[derive(Hash, PartialOrd, Ord, Eq, PartialEq, Debug, Clone)]
 pub struct Sig {
     pub name: BString,
     pub email: BString,

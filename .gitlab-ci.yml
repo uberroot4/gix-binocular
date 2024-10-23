@@ -37,7 +37,7 @@ variables:
       paths:
         - ./target
   before_script:
-    - apk add make cmake gcc g++
+    - apk add make cmake gcc g++ bash
     - rustc -V
     - cargo --version
     - bash --version

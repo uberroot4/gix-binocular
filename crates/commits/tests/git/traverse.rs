@@ -1,10 +1,15 @@
 use crate::git::traverse::util::{get_demo_repo, get_demo_repo_merges};
 use commits::traverse::traverse_commit_graph;
 use shared::logging;
+// Marks a function or static variable as a library/executable constructor
 #[ctor::ctor]
 fn init() {
     logging::init_logging(None);
 }
+
+// Marks a function as a library/executable destructor
+#[ctor::dtor]
+fn teardown() {}
 
 #[test]
 fn check_correct_number_of_results_no_branches() {

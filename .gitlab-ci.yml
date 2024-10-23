@@ -99,10 +99,10 @@ integration_test:crate:diff-test:
   variables:
     PACKAGE: diff-test
 
-integration_test:crate:commit-test:
+integration_test:crate:commits-test:
   extends: .integration_test:base
   variables:
-    PACKAGE: commit-test
+    PACKAGE: commits-test
 
 ########## RELEASE ##########
 

@@ -40,6 +40,8 @@ variables:
     - apk add make cmake gcc g++
     - rustc -V
     - cargo --version
+    - bash --version
+    - /usr/bin/env bash --version
 
 build:gitinfo:
   extends: .rust-base

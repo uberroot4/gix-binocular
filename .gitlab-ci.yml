@@ -37,11 +37,12 @@ variables:
       paths:
         - ./target
   before_script:
-    - apk add make cmake gcc g++ bash
+    - apk add make cmake gcc g++ bash git
     - rustc -V
     - cargo --version
     - bash --version
     - /usr/bin/env bash --version
+    - git --version
 
 build:gitinfo:
   extends: .rust-base

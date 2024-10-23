@@ -111,7 +111,7 @@ build:gitinfo:release:
   extends: .rust-base
   needs:
     - integration_test:crate:diff-test
-    - integration_test:crate:commit-test
+    - integration_test:crate:commits-test
     - unit_test:crate:commits
     - unit_test:crate:diff
     - unit_test:crate:render

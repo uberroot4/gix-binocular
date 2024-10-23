@@ -1,5 +1,3 @@
-mod utils;
-
 use std::time::Instant;
 
 use clap::Parser;

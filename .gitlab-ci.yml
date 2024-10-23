@@ -86,18 +86,23 @@ unit_test:crate:shared:
     - RUST_LOG=TRACE cargo test --verbose -p shared
 
 ########## INTEGRATION TESTS ##########
+.integration_test:base:
+  extends: .test-default
+  stage: integration_test
+  variables:
+  script:
+    - echo ${PACKAGE}
+    - RUST_LOG=TRACE cargo test --verbose -p ${PACKAGE}
 
 integration_test:crate:diff-test:
-  extends: .test-default
-  stage: integration_test
-  script:
-    - RUST_LOG=TRACE cargo test --verbose -p diff-test
+  extends: .integration_test:base
+  variables:
+    PACKAGE: diff-test
 
 integration_test:crate:commit-test:
-  extends: .test-default
-  stage: integration_test
-  script:
-    - RUST_LOG=TRACE cargo test --verbose -p commit-test
+  extends: .integration_test:base
+  variables:
+    PACKAGE: commit-test
 
 ########## RELEASE ##########
 

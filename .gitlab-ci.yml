@@ -89,13 +89,10 @@ unit_test:crate:shared:
 .integration_test:base:
   extends: .test-default
   stage: integration_test
-  environment:
-    RUST_BACKTRACE: 1
-    RUST_LOG: TRACE
   variables:
   script:
     - echo ${PACKAGE} ${CRATE}
-    - cargo test --verbose -p ${PACKAGE} -- --test-threads 1
+    - RUST_BACKTRACE=1 RUST_LOG=TRACE cargo test --verbose -p ${PACKAGE} -- --test-threads 1
   artifacts:
     # untracked: false
     # when: on_success

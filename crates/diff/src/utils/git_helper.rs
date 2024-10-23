@@ -122,5 +122,5 @@ fn gitoxide_diff_calculation(
         )
         .unwrap();
     // println!("outcome: {:?}", outcome);
-    return change_map;
+    change_map
 }

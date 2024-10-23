@@ -77,6 +77,7 @@ pub fn traverse_commit_graph(
         .use_commit_graph(can_use_author_threads)
         .with_commit_graph(repo.commit_graph().ok())
         .all()?;
+
     let commits: Vec<_> = commit_iter_clone.collect(); // Collecting all commits into a vector
     trace!("Number of commits: {}", commits.len());
     let limit = limit.unwrap_or(usize::MAX);
@@ -119,6 +120,7 @@ pub fn traverse_commit_graph(
         }
     }
 
+    diff_results.truncate(limit);
     Ok(diff_results)
 }
 
@@ -195,7 +197,7 @@ fn compute_diff_with_parent(
         .filter(|p| p.object().is_ok())
         .map(|p| p.object().unwrap().into_commit())
         .collect();
-    let mut parent_trees : Vec<(Option<&Commit>, gix::Tree)> = parent_commits.iter()
+    let mut parent_trees: Vec<(Option<&Commit>, gix::Tree)> = parent_commits.iter()
         .map(|parent_commit| {
             let parent_commit_id = parent_commit.id();
             match repo
@@ -232,7 +234,7 @@ fn compute_diff_with_parent(
                 None => None
             },
             None,
-            None
+            None,
         ).expect("Diff result should be processable")
     }).collect();
 

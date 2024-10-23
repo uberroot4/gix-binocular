@@ -12,4 +12,6 @@ path = "main.rs"
 [dev-dependencies]
 gix-testtools = { version = "=0.15.0" }
 # gix-diff = { path = ".." }
+gix = { workspace = true, features = ["max-performance-safe", "blob-diff", "revision", "mailmap", ] }
 diff = { path = ".."  }
+shared = { path = "../../shared"  }

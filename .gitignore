@@ -7,3 +7,5 @@ logs/**
 **/node_modules
 hyperfine/*
 !hyperfine/.gitkeep
+crates/diff/tests/fixtures/generated-do-not-edit/**
+crates/diff/tests/fixtures/generated-archives/**

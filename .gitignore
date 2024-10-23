@@ -9,3 +9,5 @@ hyperfine/*
 !hyperfine/.gitkeep
 crates/diff/tests/fixtures/generated-do-not-edit/**
 crates/diff/tests/fixtures/generated-archives/**
+crates/commits/tests/fixtures/generated-do-not-edit/**
+crates/commits/tests/fixtures/generated-archives/**

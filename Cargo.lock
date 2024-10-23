@@ -302,6 +302,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "commit-test"
+version = "0.0.0"
+dependencies = [
+ "gix-testtools",
+]
+
+[[package]]
 name = "commits"
 version = "0.1.0"
 dependencies = [
@@ -507,7 +514,9 @@ name = "diff-test"
 version = "0.0.0"
 dependencies = [
  "diff",
+ "gix",
  "gix-testtools",
+ "shared",
 ]
 
 [[package]]

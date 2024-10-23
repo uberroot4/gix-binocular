@@ -93,6 +93,12 @@ integration_test:crate:diff-test:
   script:
     - cargo test --verbose -p diff-test
 
+integration_test:crate:commit-test:
+  extends: .test-default
+  stage: integration_test
+  script:
+    - cargo test --verbose -p commit-test
+
 ########## RELEASE ##########
 
 build:gitinfo:release:
@@ -100,6 +106,7 @@ build:gitinfo:release:
   extends: .rust-base
   needs:
     - integration_test:crate:diff-test
+    - integration_test:crate:commit-test
     - unit_test:crate:commits
     - unit_test:crate:diff
     - unit_test:crate:render

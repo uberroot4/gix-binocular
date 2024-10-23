@@ -1,0 +1,13 @@
+[package]
+name = "commit-test"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[[test]]
+doctest = false
+name = "commit"
+path = "main.rs"
+
+[dev-dependencies]
+gix-testtools = { version = "=0.15.0" }

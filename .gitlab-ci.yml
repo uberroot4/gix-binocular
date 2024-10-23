@@ -95,7 +95,7 @@ unit_test:crate:shared:
   variables:
   script:
     - echo ${PACKAGE} ${CRATE}
-    - RUST_BACKTRACE=full RUST_LOG=TRACE cargo test --verbose -p ${PACKAGE} -- --test-threads 1
+    - RUST_BACKTRACE=full RUST_LOG=TRACE cargo test --verbose -p ${PACKAGE}
   artifacts:
     # untracked: false
     when: always

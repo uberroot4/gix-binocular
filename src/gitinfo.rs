@@ -8,7 +8,7 @@ use log::{debug, info, trace};
 use cli::diff::DiffAlgorithm;
 use cli::cmd::{Cli, Commands};
 use render::Renderable;
-use crate::utils::logging;
+use shared::logging;
 
 fn main() {
     let args = Cli::parse_from(gix::env::args_os());

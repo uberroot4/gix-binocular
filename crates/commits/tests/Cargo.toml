@@ -1,13 +1,19 @@
 [package]
-name = "commit-test"
+name = "commits-test"
 version = "0.0.0"
 edition = "2021"
 publish = false
 
 [[test]]
 doctest = false
-name = "commit"
-path = "main.rs"
+name = "commits"
+path = "./main.rs"
 
 [dev-dependencies]
+ctor = { version = "0.2.8" }
 gix-testtools = { version = "=0.15.0" }
+gix = { workspace = true, features = ["max-performance-safe", "blob-diff", "revision", "mailmap", ] }
+log = { workspace = true }
+
+commits = { path = ".." }
+shared = { path = "../../shared" }

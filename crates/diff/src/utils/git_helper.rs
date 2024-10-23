@@ -89,7 +89,6 @@ fn gitoxide_diff_calculation(
             &current,
             // rewrite_cache,
             |change| -> Result<_, gix::object::blob::diff::init::Error> {
-
                 if let Ok(cache) = change.diff(diff_cache).map(|p| p.resource_cache) {
                     if let Ok(prep) = cache.prepare_diff() {
                         let tokens = prep.interned_input();
@@ -102,7 +101,7 @@ fn gitoxide_diff_calculation(
                                     &tokens,
                                     gix::diff::blob::sink::Counter::default(),
                                 );
-                                // println!("change {:?}\t|\t{:?}|{:?}:\t{:?}", change.location, counts.insertions, counts.removals, counts.removals+counts.insertions);
+                                // println!("change {:?}\t|\t{:?}|{:?}:\t{:?}", change.location, counts.insertions, counts.removals, counts.removals + counts.insertions);
                                 // println!(" {:?}", change.location);
                                 *change_map.entry(change.location.to_owned()).or_insert((
                                     u32::MIN,

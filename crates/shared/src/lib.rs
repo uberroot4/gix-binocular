@@ -1,5 +1,10 @@
 use gix::bstr::BString;
 
+mod utils {
+    pub mod logging;
+}
+pub use crate::utils::logging;
+
 #[derive(Hash, PartialOrd, Ord, Eq, PartialEq, Debug, Clone)]
 pub struct Sig {
     pub name: BString,

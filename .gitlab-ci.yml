@@ -92,7 +92,7 @@ unit_test:crate:shared:
   variables:
   script:
     - echo ${PACKAGE}
-    - RUST_LOG=TRACE cargo test --verbose -p ${PACKAGE}
+    - RUST_LOG=TRACE cargo test --verbose -p ${PACKAGE} -- --test-threads 1
 
 integration_test:crate:diff-test:
   extends: .integration_test:base

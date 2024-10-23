@@ -91,17 +91,26 @@ unit_test:crate:shared:
   stage: integration_test
   variables:
   script:
-    - echo ${PACKAGE}
+    - echo ${PACKAGE} ${CRATE}
     - RUST_LOG=TRACE cargo test --verbose -p ${PACKAGE} -- --test-threads 1
+  artifacts:
+    # untracked: false
+    # when: on_success
+    # access: all
+    expire_in: "60 days"
+    paths:
+      - "crates/${CRATE}/tests/fixtures"
 
 integration_test:crate:diff-test:
   extends: .integration_test:base
   variables:
+    CRATE: diff
     PACKAGE: diff-test
 
 integration_test:crate:commits-test:
   extends: .integration_test:base
   variables:
+    CRATE: commits
     PACKAGE: commits-test
 
 ########## RELEASE ##########

@@ -57,8 +57,14 @@ build:gitinfo:
     paths:
       - "target/debug/gitinfo"
 
-build:commits:webassembly:
+.webassembly-base:
   extends: .rust-base
+  before_script:
+    - cargo install wasm-pack
+    - wasm-pack --version
+
+build:commits:webassembly:
+  extends: .webassembly-base
   stage: build
   script:
     - cd crates/commits/webassembly

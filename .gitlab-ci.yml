@@ -57,6 +57,21 @@ build:gitinfo:
     paths:
       - "target/debug/gitinfo"
 
+build:commits:webassembly:
+  extends: .rust-base
+  stage: build
+  script:
+    - cd crates/commits/webassembly
+    - cargo build --verbose
+    - wasm-pack build --target web
+  artifacts:
+    # untracked: false
+    # when: on_success
+    # access: all
+    expire_in: "60 days"
+    paths:
+      - "crates/commits/webassembly/pkg"
+
 .test-default:
   extends: .rust-base
   needs:

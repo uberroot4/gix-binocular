@@ -1,0 +1,13 @@
+[package]
+name = "commits-wasm"
+version = "0.1.0"
+edition = "2021"
+autotests = false
+include = ["src/**/*"]
+authors = ["Manuel Stöger <manuel.stoeger@inso-world.com>"]
+
+[dependencies]
+wasm-bindgen = "0.2.95"
+
+[lib]
+crate-type = ["cdylib"]

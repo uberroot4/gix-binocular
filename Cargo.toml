@@ -20,6 +20,7 @@ members = [
     "crates/diff/tests",
     "crates/commits",
     "crates/commits/tests",
+    "crates/commits/webassembly",
     "crates/render",
     "crates/shared",
     "crates/python",

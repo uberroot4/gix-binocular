@@ -148,7 +148,7 @@ git add resolved-conflict.txt
 git commit -q -m c8
 
 git checkout main
-git merge different-branch-to-create-a-conflict || true
+git merge -q different-branch-to-create-a-conflict || true
 
 echo -e "line 1 conflict resolved\nline 2\n line 3" > resolved-conflict.txt
 git add resolved-conflict.txt
@@ -166,7 +166,7 @@ git add different-file-in-another-chain-of-ancestors.txt
 git commit -q -m c11
 
 git checkout main
-git merge different-branch-that-does-not-contain-file || true
+git merge -q different-branch-that-does-not-contain-file || true
 
 echo -e "line 1\nline 2\n line 3" > file-only-changed-in-branch.txt
 git add file-only-changed-in-branch.txt
@@ -179,28 +179,51 @@ git add file-only-changed-in-branch.txt
 git commit -q -m c13
 
 git checkout main
-git merge branch-that-has-one-commit || true
+git merge -q branch-that-has-one-commit || true
 
-git blame --porcelain simple.txt > .git/simple.baseline
-git blame --porcelain multiline-hunks.txt > .git/multiline-hunks.baseline
-git blame --porcelain deleted-lines.txt > .git/deleted-lines.baseline
-git blame --porcelain deleted-lines-multiple-hunks.txt > .git/deleted-lines-multiple-hunks.baseline
-git blame --porcelain changed-lines.txt > .git/changed-lines.baseline
-git blame --porcelain changed-line-between-unchanged-lines.txt > .git/changed-line-between-unchanged-lines.baseline
-git blame --porcelain added-lines.txt > .git/added-lines.baseline
-git blame --porcelain added-lines-around.txt > .git/added-lines-around.baseline
-git blame --porcelain switched-lines.txt > .git/switched-lines.baseline
-git blame --porcelain added-line-before-changed-line.txt > .git/added-line-before-changed-line.baseline
-git blame --porcelain same-line-changed-twice.txt > .git/same-line-changed-twice.baseline
-git blame --porcelain coalesce-adjacent-hunks.txt > .git/coalesce-adjacent-hunks.baseline
+git checkout -b mailmap-test
+echo -e "hello from Joe Developer" > mailmap-test-file.txt
+git add mailmap-test-file.txt
+GIT_COMMITTER_NAME="Joe Developer" GIT_COMMITTER_EMAIL="joe@example.com" git commit -q -m mailmap-JoeDeveloper --author="Joe Developer <joe@example.com>"
 
-git blame --porcelain resolved-conflict.txt > .git/resolved-conflict.baseline
-git blame --porcelain file-in-one-chain-of-ancestors.txt > .git/file-in-one-chain-of-ancestors.baseline
-git blame --porcelain different-file-in-another-chain-of-ancestors.txt > .git/different-file-in-another-chain-of-ancestors.baseline
-git blame --porcelain file-only-changed-in-branch.txt > .git/file-only-changed-in-branch.baseline
+echo -e "hello from Joe R. Developer" >> mailmap-test-file.txt
+git add mailmap-test-file.txt
+GIT_COMMITTER_NAME="Joe R. Developer" GIT_COMMITTER_EMAIL="joeRdev@example.com" git commit -q -m mailmap-JoeRDeveloper --author="Joe R. Developer <joeRdev@example.com>"
 
-git blame --porcelain empty-lines-histogram.txt > .git/empty-lines-histogram.baseline
+cat <<EOF >>.mailmap
+Ronald McDonald <ronald@mcdonald.lol> <joeRdev@example.com>
+Ronald McDonald <ronald@mcdonald.lol> <joe@example.com>
+EOF
 
-git config --local diff.algorithm myers
+git checkout main
 
-git blame --porcelain empty-lines-myers.txt > .git/empty-lines-myers.baseline
+#git checkout -b no-committer-no-author-test
+#echo -e "Lorem Ipsum" > test-file.txt
+#git add test-file.txt
+#git commit -q -m test-file.txt --reset-author
+#
+#git checkout main
+
+#git blame --porcelain simple.txt > .git/simple.baseline
+#git blame --porcelain multiline-hunks.txt > .git/multiline-hunks.baseline
+#git blame --porcelain deleted-lines.txt > .git/deleted-lines.baseline
+#git blame --porcelain deleted-lines-multiple-hunks.txt > .git/deleted-lines-multiple-hunks.baseline
+#git blame --porcelain changed-lines.txt > .git/changed-lines.baseline
+#git blame --porcelain changed-line-between-unchanged-lines.txt > .git/changed-line-between-unchanged-lines.baseline
+#git blame --porcelain added-lines.txt > .git/added-lines.baseline
+#git blame --porcelain added-lines-around.txt > .git/added-lines-around.baseline
+#git blame --porcelain switched-lines.txt > .git/switched-lines.baseline
+#git blame --porcelain added-line-before-changed-line.txt > .git/added-line-before-changed-line.baseline
+#git blame --porcelain same-line-changed-twice.txt > .git/same-line-changed-twice.baseline
+#git blame --porcelain coalesce-adjacent-hunks.txt > .git/coalesce-adjacent-hunks.baseline
+#
+#git blame --porcelain resolved-conflict.txt > .git/resolved-conflict.baseline
+#git blame --porcelain file-in-one-chain-of-ancestors.txt > .git/file-in-one-chain-of-ancestors.baseline
+#git blame --porcelain different-file-in-another-chain-of-ancestors.txt > .git/different-file-in-another-chain-of-ancestors.baseline
+#git blame --porcelain file-only-changed-in-branch.txt > .git/file-only-changed-in-branch.baseline
+#
+#git blame --porcelain empty-lines-histogram.txt > .git/empty-lines-histogram.baseline
+#
+#git config --local diff.algorithm myers
+#
+#git blame --porcelain empty-lines-myers.txt > .git/empty-lines-myers.baseline

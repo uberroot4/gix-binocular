@@ -19,8 +19,9 @@ pub fn traverse_commit_graph(
     let references = repo.references()?;
     let local_branches = references.local_branches()?;
     let remote_branches = references.remote_branches()?;
+    debug!("local_branches: {:?}", references.local_branches()?.collect::<Vec<_>>());
     let local_and_remote_branches = local_branches.chain(remote_branches).flatten().collect::<Vec<Reference>>();
-    // debug!("local_and_remote_branches: {:?}", local_and_remote_branches);
+    debug!("local_and_remote_branches: {:?}", local_and_remote_branches);
 
     let available_branches: Vec<&Reference> = local_and_remote_branches.iter()
         .filter(|r| prefixed_branches.contains(&r.name().as_bstr().to_string()))

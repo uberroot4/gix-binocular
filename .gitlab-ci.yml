@@ -69,8 +69,8 @@ build:commits:webassembly:
   stage: build
   script:
     - cd crates/commits/webassembly
-    - cargo build --verbose
-    - wasm-pack build --target web
+#    - cargo build --verbose
+    - wasm-pack build --dev --target web
   artifacts:
     # untracked: false
     # when: on_success

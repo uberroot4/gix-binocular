@@ -3,6 +3,7 @@ name = "commits-test"
 version = "0.0.0"
 edition = "2021"
 publish = false
+authors = ["Manuel Stöger <manuel.stoeger@inso-world.com>"]
 
 [[test]]
 doctest = false

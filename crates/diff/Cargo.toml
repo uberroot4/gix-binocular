@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 autotests = false
 include = ["src/**/*"]
+authors = ["Manuel Stöger <manuel.stoeger@inso-world.com>"]
 
 [lib]
 doctest = false

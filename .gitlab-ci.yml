@@ -60,7 +60,7 @@ build:gitinfo:
 .webassembly-base:
   extends: .rust-base
   before_script:
-#    - cargo install wasm-pack
+    - cargo install wasm-bindgen-cli #wasm-pack
     - apk add wasm-pack
     - wasm-pack --version
 

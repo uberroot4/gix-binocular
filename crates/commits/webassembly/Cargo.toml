@@ -6,8 +6,44 @@ autotests = false
 include = ["src/**/*"]
 authors = ["Manuel Stöger <manuel.stoeger@inso-world.com>"]
 
+#[workspace.dependencies]
+#gix = { workspace = true, default-features = false, features = [] }
+
 [dependencies]
 wasm-bindgen = "0.2.95"
+futures = "0.3.31"
+wasm-bindgen-futures = { version = "0.4.45", features = ["futures-core-03-stream"] }
+wasm-streams = "0.4.2"
+console_error_panic_hook = "0.1.7"
+serde-wasm-bindgen = { version = "0.6.5" }
+serde = { version = "1.0.214", features = ["derive"] }
+web-sys = { version = "0.3.72", features = [
+    "WriteParams",
+    "FileSystemWritableFileStream",
+    "FileSystemRemoveOptions",
+    "FileSystemGetDirectoryOptions",
+    "FileSystemGetFileOptions",
+    "ReadableStream",
+    "Navigator",
+    "StorageManager",
+    "FileSystemDirectoryEntry",
+    "FileSystemFileEntry",
+    "FileSystemHandleKind",
+    "File",
+    "FileSystemFileHandle",
+    "Window",
+    "Location",
+    "FileSystemDirectoryHandle"
+] }
+instant = { version = "0.1.13", features = [ "wasm-bindgen" ] }
+# gix-fs = { path = "../../../../../gitoxide/gix-fs/" }
+log = "0.4.22"
+anyhow = { workspace = true }
+# commits = { path = ".." }
+#gix = { version = "0.66.0", default-features = false, features = [] }
+
+#[patch.crates-io]
+#features = ["static-ssl"]
 
 [lib]
 crate-type = ["cdylib"]

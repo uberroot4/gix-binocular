@@ -2,15 +2,32 @@ import {useState} from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import init, {fib} from 'commits-wasm'
+import {fib, get_location, show_open_file_picker_wasm, WebDir, exec, clear_dir} from 'commits-wasm'
 
 function App() {
     const [count, setCount] = useState(0)
-    init().then(() => {
-        console.log("Wasm init successful");
-    }).catch((reason) => {
-        console.error(reason)
-    })
+    const [fileContent, setFileContent] = useState<string>("");
+    const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | null>(null);
+    const [dirHandle, setDirHandle] = useState<WebDir | null>(null);
+
+    console.log(get_location())
+
+    // Open File
+    const clearDir = async () => {
+        try {
+            await clear_dir()
+        } catch (err) {
+            console.error("Error clearing directory:", err);
+        }
+    };
+
+    const openDir = async () => {
+        try {
+            await exec();
+        } catch (err) {
+            console.error("Error opening directory:", err);
+        }
+    };
 
     return (
         <>
@@ -24,12 +41,10 @@ function App() {
             </div>
             <h1>Vite + React</h1>
             <div className="card">
-                <button onClick={() => {
-                    setCount((count) => count + 1);
-                    console.log(fib(count));
-                }}>
-                    count is {count}
+                <button onClick={clearDir}>
+                    Delete OPFS
                 </button>
+                <button onClick={openDir}>Open Dir</button>
                 <p>
                     Edit <code>src/App.tsx</code> and save to test HMR
                 </p>

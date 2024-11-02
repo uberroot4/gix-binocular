@@ -13,8 +13,10 @@ doctest = false
 
 [dependencies]
 gix = { workspace = true, features = ["max-performance-safe", "mailmap"] }
+base64 = "0.22.1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 log = { workspace = true }
 anyhow = { workspace = true }
 render = { path = "../render" }
 shared = { path = "../shared" }
-base64 = "0.22.1"

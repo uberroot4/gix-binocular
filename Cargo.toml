@@ -41,10 +41,11 @@ commits = { path = "./crates/commits", version = "0.1.0" }
 cli = { path = "./crates/cli", version = "0.1.0" }
 render = { path = "./crates/render", version = "0.1.0" }
 shared = { path = "./crates/shared", version = "0.1.0" }
+
+#[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 clap = { workspace = true }
 gix = { workspace = true }
 log = { workspace = true }
-#env_logger = { workspace = true }
 anyhow = { workspace = true }
 
 comfy-table = "7.1.0"

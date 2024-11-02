@@ -1,4 +1,8 @@
-use std::path::{Path, PathBuf};
+use alloc::boxed::Box;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use core::fmt;
+//use std::path::{Path, PathBuf};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use wasm_bindgen_futures::stream::JsStream;
@@ -23,19 +27,19 @@ impl From<web_sys::FileSystemFileHandle> for WebFile {
     }
 }
 
-impl Into<PathBuf> for WebDir {
-    fn into(self) -> PathBuf {
-        let binding = self.directory_name();
-        return Path::new(&binding).to_path_buf();
-    }
-}
+// impl Into<PathBuf> for WebDir {
+//     fn into(self) -> PathBuf {
+//         let binding = self.directory_name();
+//         return Path::new(&binding).to_path_buf();
+//     }
+// }
 
-impl Into<PathBuf> for WebFile {
-    fn into(self) -> PathBuf {
-        let binding = self.name();
-        return Path::new(&binding).to_path_buf();
-    }
-}
+// impl Into<PathBuf> for WebFile {
+//     fn into(self) -> PathBuf {
+//         let binding = self.name();
+//         return Path::new(&binding).to_path_buf();
+//     }
+// }
 
 impl WebDir {
     pub fn as_file_system_handle(self) -> FileSystemDirectoryHandle {
@@ -83,9 +87,9 @@ impl WebDir {
         self.0.name()
     }
 
-    pub fn as_path_buf(self) -> PathBuf {
-        self.into()
-    }
+    // pub fn as_path_buf(self) -> PathBuf {
+    //     self.into()
+    // }
 
     pub async fn create_sub_dir(self, dir_name: Box<str>, options: Option<FileSystemGetDirectoryOptions>) -> Result<WebDir, JsValue> {
         let options = options.unwrap_or({
@@ -178,9 +182,9 @@ impl WebFile {
         self.0.name()
     }
 
-    pub fn as_path_buf(self) -> PathBuf {
-        self.into()
-    }
+    // pub fn as_path_buf(self) -> PathBuf {
+    //     self.into()
+    // }
 
     pub async fn read_bytes(&self) -> Result<Vec<u8>, JsValue> {
         let file = self.get_file().await?;
@@ -199,8 +203,8 @@ impl WebFile {
     }
 }
 
-impl std::fmt::Display for WebDir {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for WebDir {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "WebDir.name: {}", self.0.name())
     }
 }

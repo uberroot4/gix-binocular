@@ -1,10 +1,16 @@
+#![no_std]
 mod log;
 mod web;
 mod external;
 //mod source;
 //mod asset;
 
-use futures::FutureExt;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+//use std::env;
+//use std::path::PathBuf;
+//use futures::FutureExt;
+use alloc::string::ToString;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{js_sys, FileSystemDirectoryHandle, FileSystemGetDirectoryOptions, FileSystemGetFileOptions, FileSystemRemoveOptions};
@@ -14,6 +20,7 @@ use crate::web::{WebDir};
 
 extern crate console_error_panic_hook;
 extern crate core;
+extern crate alloc;
 
 #[wasm_bindgen(start)]
 fn run() {
@@ -86,8 +93,11 @@ pub async fn exec() {
                                 //JsFuture::from(git_web_dir.clone().as_file_system_handle().get_file_handle_with_options("test2.txt", &f_options)).await.unwrap();
                                 let start = instant::Instant::now();
                                 console_log!(">>> init git_path {:?}", start);
-                                init_git(git_native_path, git_web_dir).await;
+                                init_git(git_native_path, git_web_dir.clone()).await;
                                 console_log!("<<< git_path initialized {:?}", instant::Instant::now() - start);
+                                //let path_buf: PathBuf = git_web_dir.into();
+                                //console_log!("path_buf: {:?}", PathBuf::from("/web_repo").join(path_buf.clone()).exists());
+                                //console_log!("env: {:?}", env::join_paths([path_buf.clone()].iter()));
                             }
                             Err(err) => {
                                 console_err!("Failed to create .git: {:?}", serde_wasm_bindgen::Error::from(err));
@@ -117,15 +127,16 @@ async fn get_root_storage() -> FileSystemDirectoryHandle {
 }
 
 pub async fn init_git(native_dir: WebDir, opfs_dir: WebDir) {
-    console_log!(">>>> init_git: {:?}", native_dir.directory_name());
-    console_log!("+++++++++++++++++++++++ FILES +++++++++++++++++++++++");
+    let directory_name = native_dir.directory_name();
+    console_log!(">>>> init_git: {:?}", directory_name);
+    console_log!("+++++++++++++++++++++++ FILES {:?} +++++++++++++++++++++++", directory_name);
     let files = native_dir.clone().files().await;
     console_log!("count_files: {:?}", files.len());
     for f in native_dir.clone().files().await {
-        console_log!("handle {:?}", f.name());
+        // console_log!("handle {:?}", f.name());
         match opfs_dir.clone().create_file(f, None).await {
             Ok(web_file) => {
-                opfs_dir.clone().resolve(web_file).await;
+                //opfs_dir.clone().resolve(web_file).await;
                 //console_log!("path_buf {:?}", opfs_dir.clone().resolve(web_file).await.as_path_buf());
             }
             Err(err) => {
@@ -133,11 +144,11 @@ pub async fn init_git(native_dir: WebDir, opfs_dir: WebDir) {
             }
         }
     }
-    console_log!("++++++++++++++++++++ DIRECTORIES ++++++++++++++++++++");
+    console_log!("++++++++++++++++++++ DIRECTORIES {:?} ++++++++++++++++++++", directory_name);
     let sub_dirs: Vec<WebDir> = native_dir.clone().directories().await;
     console_log!("count_dirs: {:?}", sub_dirs.len());
     for sub_native_dir in native_dir.clone().directories().await {
-        console_log!("handle {:?}", sub_native_dir.directory_name());
+        //console_log!("handle {:?}", sub_native_dir.directory_name());
         let sub_web_dir = opfs_dir.clone().create_sub_dir(Box::from(sub_native_dir.directory_name()), None).await.unwrap();
         Box::pin(init_git(sub_native_dir, sub_web_dir)).await
     }

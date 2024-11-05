@@ -13,6 +13,13 @@ doc = false
 test = false
 doctest = false
 
+[features]
+wasm = []
+std = ["default"]
+# optionally use `std` by default, so that downstream could
+# enable `no_std` using "default-features=false":
+default = ["std"]
+
 [workspace]
 members = [
     "crates/cli",

@@ -1,5 +1,13 @@
-use std::io::Write;
+#[cfg(feature = "std")]
+use std::{
+    string::String,
+    writeln,
+    println,
+    boxed::Box,
+    io::Write,
+};
 
+#[cfg(feature = "std")]
 pub fn init_logging(file_name: Option<String>) {
     let env = env_logger::Env::default();
 
@@ -29,3 +37,6 @@ pub fn init_logging(file_name: Option<String>) {
 
     env_logger_build.init();
 }
+
+#[cfg(not(feature = "std"))]
+pub fn init_logging() {}

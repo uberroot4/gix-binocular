@@ -1,3 +1,10 @@
+#![no_std]
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(feature = "std")]
+extern crate std;
+
 use gix::bstr::BString;
 
 mod utils {

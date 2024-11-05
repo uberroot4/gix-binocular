@@ -1,30 +1,30 @@
 #![no_std]
+
+extern crate alloc;
+extern crate core;
+
+extern crate console_error_panic_hook;
+
 mod log;
-mod web;
+// mod web;
 mod external;
-//mod source;
-//mod asset;
+
+mod fs;
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-//use std::env;
-//use std::path::PathBuf;
-//use futures::FutureExt;
 use alloc::string::ToString;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{js_sys, FileSystemDirectoryHandle, FileSystemGetDirectoryOptions, FileSystemGetFileOptions, FileSystemRemoveOptions};
 use web_sys::js_sys::{JsString};
 use crate::log::{console_err, console_log};
-use crate::web::{WebDir};
-
-extern crate console_error_panic_hook;
-extern crate core;
-extern crate alloc;
+use crate::fs::WebDir;
 
 #[wasm_bindgen(start)]
 fn run() {
     console_log!("run");
+    //gix_pack::data::
     console_error_panic_hook::set_once();
 }
 
@@ -55,9 +55,9 @@ pub fn show_open_file_picker_wasm() -> Result<js_sys::Promise, JsValue> {
     web_sys::window().unwrap().show_open_file_picker()
 }
 #[wasm_bindgen]
-pub async fn show_directory_picker_wasm() -> Result<web::WebDir, JsValue> {
+pub async fn show_directory_picker_wasm() -> Result<WebDir, JsValue> {
     //web_sys::window().unwrap().show_directory_picker()
-    let dir = web::WebDir::choose().await;
+    let dir = WebDir::choose().await;
     dir
 }
 
@@ -135,7 +135,7 @@ pub async fn init_git(native_dir: WebDir, opfs_dir: WebDir) {
     for f in native_dir.clone().files().await {
         // console_log!("handle {:?}", f.name());
         match opfs_dir.clone().create_file(f, None).await {
-            Ok(web_file) => {
+            Ok(_web_file) => {
                 //opfs_dir.clone().resolve(web_file).await;
                 //console_log!("path_buf {:?}", opfs_dir.clone().resolve(web_file).await.as_path_buf());
             }

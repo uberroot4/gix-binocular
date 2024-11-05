@@ -2,30 +2,19 @@ use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::fmt;
-//use std::path::{Path, PathBuf};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use wasm_bindgen_futures::stream::JsStream;
 use futures::stream::StreamExt;
-use web_sys::{js_sys, FileSystemDirectoryHandle, FileSystemFileHandle, FileSystemGetDirectoryOptions, FileSystemGetFileOptions};
+use web_sys::{js_sys, FileSystemWritableFileStream, FileSystemDirectoryHandle, FileSystemFileHandle, FileSystemGetDirectoryOptions, FileSystemGetFileOptions};
 use crate::external::{showDirectoryPicker};
+use crate::fs::WebFile;
 use crate::log::{console_err, console_log};
 
 #[derive(Debug, Clone)]
 #[wasm_bindgen]
-pub struct WebDir(web_sys::FileSystemDirectoryHandle);
+pub struct WebDir(FileSystemDirectoryHandle);
 
-impl From<web_sys::FileSystemDirectoryHandle> for WebDir {
-    fn from(value: FileSystemDirectoryHandle) -> Self {
-        Self(value)
-    }
-}
-
-impl From<web_sys::FileSystemFileHandle> for WebFile {
-    fn from(value: FileSystemFileHandle) -> Self {
-        Self(value)
-    }
-}
 
 // impl Into<PathBuf> for WebDir {
 //     fn into(self) -> PathBuf {
@@ -53,7 +42,7 @@ impl WebDir {
         console_log!("choose#dir_handle {:?}", dir_handle);
 
         // Convert the result into a `FileSystemDirectoryHandle`
-        let dir_handle = web_sys::FileSystemDirectoryHandle::from(dir_handle);
+        let dir_handle = FileSystemDirectoryHandle::from(dir_handle);
 
         // Wrap the `FileSystemDirectoryHandle` in `WebDir`
         Ok(WebDir(dir_handle))
@@ -62,14 +51,14 @@ impl WebDir {
     pub async fn get_dir_handle(&self, dir_name: &str) -> Result<WebDir, JsValue> {
         let dir = JsFuture::from(self.0.get_directory_handle(dir_name))
             .await?
-            .dyn_into::<web_sys::FileSystemDirectoryHandle>()?;
+            .dyn_into::<FileSystemDirectoryHandle>()?;
         console_log!("get_dir_handle#dir {:?}", dir);
 
         Ok(Self(dir))
     }
 
     pub async fn resolve(self, file: WebFile) {
-        match wasm_bindgen_futures::JsFuture::from(self.0.resolve(&*file.0)).await
+        match wasm_bindgen_futures::JsFuture::from(self.0.resolve(&*file.file_system_file_handle())).await
             .unwrap()
             .dyn_into::<js_sys::Array>() {
             Ok(resolved) => {
@@ -99,7 +88,7 @@ impl WebDir {
         });
 
         let handle = wasm_bindgen_futures::JsFuture::from(self.0.get_directory_handle_with_options(&*dir_name, &options)).await?
-            .dyn_into::<web_sys::FileSystemDirectoryHandle>()?;
+            .dyn_into::<FileSystemDirectoryHandle>()?;
         Ok(Self(handle))
     }
 
@@ -111,10 +100,10 @@ impl WebDir {
         });
 
         let handle = wasm_bindgen_futures::JsFuture::from(self.0.get_file_handle_with_options(file.name().as_str(), &options)).await?
-            .dyn_into::<web_sys::FileSystemFileHandle>()?;
+            .dyn_into::<FileSystemFileHandle>()?;
 
         let writable = wasm_bindgen_futures::JsFuture::from(handle.create_writable()).await?
-            .dyn_into::<web_sys::FileSystemWritableFileStream>()?;
+            .dyn_into::<FileSystemWritableFileStream>()?;
         let content = file.read_bytes().await?;
 
         //console_log!("content: {:?}", content.clone());
@@ -167,44 +156,20 @@ impl WebDir {
 
     async fn values(self) -> Vec<JsValue> {
         let stream = JsStream::from(self.0.values());
-        let mut res = stream.collect::<Vec<Result<JsValue, JsValue>>>().await;
+        let res = stream.collect::<Vec<Result<JsValue, JsValue>>>().await;
         let iter: Vec<_> = res.iter().filter_map(|s| s.clone().ok()).collect();
         iter
-    }
-}
-
-#[derive(Debug, Clone)]
-#[wasm_bindgen]
-pub struct WebFile(web_sys::FileSystemFileHandle);
-
-impl WebFile {
-    pub fn name(&self) -> String {
-        self.0.name()
-    }
-
-    // pub fn as_path_buf(self) -> PathBuf {
-    //     self.into()
-    // }
-
-    pub async fn read_bytes(&self) -> Result<Vec<u8>, JsValue> {
-        let file = self.get_file().await?;
-
-        let array_buffer = JsFuture::from(file.array_buffer())
-            .await?
-            .dyn_into::<js_sys::ArrayBuffer>()?;
-
-        Ok(js_sys::Uint8Array::new(&array_buffer).to_vec())
-    }
-
-    async fn get_file(&self) -> Result<web_sys::File, JsValue> {
-        JsFuture::from(self.0.get_file())
-            .await?
-            .dyn_into::<web_sys::File>()
     }
 }
 
 impl fmt::Display for WebDir {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "WebDir.name: {}", self.0.name())
+    }
+}
+
+impl From<FileSystemDirectoryHandle> for WebDir {
+    fn from(value: FileSystemDirectoryHandle) -> Self {
+        Self(value)
     }
 }

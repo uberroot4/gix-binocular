@@ -1,14 +1,14 @@
 use crate::git::metrics::{GitDiffMetrics};
 use crate::utils;
 use anyhow::Result;
-// use gix::bstr::BString;
-use gix::traverse::commit::simple::Sorting;
-use gix::{Commit, ObjectId};
+use gix::{
+    Commit, ObjectId,
+    traverse::commit::simple::CommitTimeOrder,
+    revision::walk::Sorting,
+    diff::blob::Platform
+};
 use std::cmp::min_by;
-// use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-// use std::sync::Arc;
 use std::thread::JoinHandle;
-use gix::diff::blob::Platform;
 use log::{debug, error, info, trace};
 
 pub fn traverse_commit_graph(
@@ -38,7 +38,7 @@ pub fn traverse_commit_graph(
     let sorting = if breadth_first {
         Sorting::BreadthFirst
     } else {
-        Sorting::ByCommitTimeNewestFirst
+        Sorting::ByCommitTime(CommitTimeOrder::NewestFirst)
     };
 
     let commit = repo
@@ -220,6 +220,9 @@ fn compute_diff_with_parent(
 
     let diffs: Vec<GitDiffMetrics> = parent_trees.iter().map(|(parent_commit, parent_tree)| {
         // let mut change_map = Default::default();
+
+        // should be usable in any next version > 0.66.0
+        // let changes = repo.diff_tree_to_tree(&parent_tree, &commit.tree().unwrap(), None)?;
         let change_map = utils::git_helper::calculate_changes(
             &parent_tree,
             &commit.tree().unwrap(),

@@ -79,12 +79,24 @@ fn gitoxide_diff_calculation(
         ..Default::default()
     };
     // println!("rename_cfg: {:?}", rename_cfg);
+    let mut options : gix::diff::Options = gix::diff::Options::default();
+    options.track_path();
+    options.track_filename();
+
+    let opts_fn = |opts: &mut gix::diff::Options| {
+        opts.track_path();
+        opts.track_filename();
+    };
+
+    // options.track_rewrites(_rename_cfg.into());
     let mut change_map = std::collections::HashMap::new();
 
+    let _stats = platform
+        .options(opts_fn)
+        .stats(&current).unwrap();
+
     let _outcome = platform
-        .track_filename()
-        .track_path()
-        // .track_rewrites(rename_cfg.into())
+        .options(opts_fn)
         .for_each_to_obtain_tree(
             &current,
             // rewrite_cache,
@@ -103,7 +115,7 @@ fn gitoxide_diff_calculation(
                                 );
                                 // println!("change {:?}\t|\t{:?}|{:?}:\t{:?}", change.location, counts.insertions, counts.removals, counts.removals + counts.insertions);
                                 // println!(" {:?}", change.location);
-                                *change_map.entry(change.location.to_owned()).or_insert((
+                                *change_map.entry(change.location().into()).or_insert((
                                     u32::MIN,
                                     u32::MIN,
                                 )) = (

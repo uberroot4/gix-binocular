@@ -50,7 +50,7 @@ anyhow = "1.0.42"
 
 [dependencies]
 diff = { path = "./crates/diff", default-features = false }
-commits = { path = "./crates/commits", version = "0.1.0", default-features = false }
+commits = { path = "./crates/commits", default-features = false }
 cli = { path = "./crates/cli", version = "0.1.0", default-features = false }
 render = { path = "./crates/render", version = "0.1.0", default-features = false }
 shared = { path = "./crates/shared", default-features = false }

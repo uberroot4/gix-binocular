@@ -49,7 +49,7 @@ env_logger = "0.11.3"
 anyhow = "1.0.42"
 
 [dependencies]
-diff = { path = "./crates/diff", version = "0.1.0", default-features = false }
+diff = { path = "./crates/diff", default-features = false }
 commits = { path = "./crates/commits", version = "0.1.0", default-features = false }
 cli = { path = "./crates/cli", version = "0.1.0", default-features = false }
 render = { path = "./crates/render", version = "0.1.0", default-features = false }

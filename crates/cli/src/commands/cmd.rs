@@ -14,11 +14,14 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    /// Compare two commits
+    /// Compare two commits, summary of diffs
     Diff(crate::commands::diff::Args),
     /// Get the commit ids of a repository.
     Commits(crate::commands::commits::Args),
+    //// Compare two commits, extended information about changed files
+    // DiffList(crate::commands::diff::Args)
 }
+
 
 #[derive(Debug, clap::Args)]
 pub struct GlobalOpts {

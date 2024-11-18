@@ -2,6 +2,10 @@
   "name": "react-app",
   "private": true,
   "version": "0.0.0",
+  "files": [
+    "./public/worker.js",
+    "./public/webfs"
+  ],
   "type": "module",
   "scripts": {
     "wasm-build": "cargo +nightly build --target=wasm32-unknown-unknown --verbose",
@@ -13,9 +17,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@bytecodealliance/preview2-shim": "^0.17.1",
+    "@wasmer/sdk": "^0.9.0",
+    "commits-wasm-web": "file:./src/pkg/web",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "commits-wasm": "file:./src/pkg/"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

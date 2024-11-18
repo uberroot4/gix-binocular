@@ -1,0 +1,77 @@
+[package]
+name = "commits-wasm"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+documentation.workspace = true
+
+autotests = false
+include = ["src/**/*"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+#[workspace.dependencies]
+#gix = { workspace = true, default-features = false, features = [] }
+
+[features]
+console_error_panic_hook = []
+default = ["console_error_panic_hook"]
+
+[dependencies]
+wasm-bindgen = "0.2.95"
+futures = "0.3.31"
+wasm-bindgen-futures = { version = "0.4.45", features = ["futures-core-03-stream"] }
+wasm-streams = "0.4.2"
+console_error_panic_hook = "0.1.7"
+serde-wasm-bindgen = { version = "0.6.5" }
+serde = { version = "1.0.214", features = ["derive"] }
+web-sys = { version = "0.3.72", features = [
+    "File",
+    "FileSystem",
+    "FileSystemDirectoryEntry",
+    "FileSystemDirectoryHandle",
+    "FileSystemFileEntry",
+    "FileSystemFileHandle",
+    "FileSystemGetDirectoryOptions",
+    "FileSystemGetFileOptions",
+    "FileSystemHandleKind",
+    "FileSystemRemoveOptions",
+    "FileSystemWritableFileStream",
+    "Location",
+    "Navigator",
+    "ReadableStream",
+    "StorageManager",
+    "Window",
+    "WriteParams",
+    "console",
+    "Worker",
+    "Document",
+    "HtmlElement",
+    "Element"
+] }
+web-fs = { path = "../../web-fs" }
+instant = { version = "0.1.13", features = ["wasm-bindgen"] }
+#gix-discover = { path = "../../../../gitoxide/gix-discover", default-features = false, features = ["wasm"] }
+#gix = { path = "../../../../../gitoxide/gix" }
+#gix-fs = { path = "../../../../gitoxide/gix-fs/", default-features = false, features = ["wasm"] }
+#gix-path = { path = "../../../../gitoxide/gix-path/", default-features = false }
+#gix-worktree = { path = "../../../../gitoxide/gix-worktree/", default-features = false }
+#gix-dir = { path = "../../../../../gitoxide/gix-dir/", default-features = false, features = [] }
+#gix-index = { path = "../../../../../gitoxide/gix-index/", default-features = false, features = [] }
+# gix-discover = "0.36.0"
+log = "0.4.22"
+console_log = { version = "1.0.0", features = ["color"] }
+anyhow = { workspace = true }
+# commits = { path = ".." }
+#gix = { version = "0.66.0", default-features = false, features = [] }
+wasm_thread = { git = "https://github.com/adamgerhant/wasm_thread.git", branch = "main" }
+#wasm_thread = { version = "0.3.3" }
+async-std = "1.13.0"
+futures-channel-preview = "0.3.0-alpha.19"
+
+#[[example]]
+#name = "commits-wasm"
+#crate-type = ["cdylib"]
+#path = "src/lib.rs"

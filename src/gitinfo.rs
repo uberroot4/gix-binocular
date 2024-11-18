@@ -1,3 +1,5 @@
+mod demo;
+
 use std::time::Instant;
 
 use clap::Parser;

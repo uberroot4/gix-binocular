@@ -8,15 +8,16 @@ version = "0.0.1"
 authors = ["Manuel Stöger <manuel.stoeger@inso-world.com>"]
 description = "gix testing"
 documentation = "gix testing"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[[bin]]
-name = "gitinfo"
-path = "src/gitinfo.rs"
-doc = false
-test = false
-doctest = false
+#[[bin]]
+#name = "gitinfo"
+#path = "src/gitinfo.rs"
+#doc = false
+#test = false
+#doctest = false
 
 [[bin]]
 name = "demo"
@@ -25,6 +26,14 @@ doc = false
 test = false
 doctest = false
 
+#[[bin]]
+#name = "clone"
+#path = "src/clone.rs"
+#required-features = []
+#doc = false
+#test = false
+#doctest = false
+
 [workspace]
 members = [
     "crates/cli",
@@ -32,16 +41,17 @@ members = [
     "crates/diff/tests",
     "crates/commits",
     "crates/commits/tests",
-    "crates/commits/webassembly",
     "crates/render",
     "crates/shared",
     "crates/python",
+    "crates/webassembly",
+    "crates/webassembly/crates/worker",
     # "crates/neon-npm"
 ]
 
 [workspace.dependencies]
-#gix = { version = "0.66.0", default-features = false }
-gix = { path = "../../se-analytics/gitoxide/gix", default-features = false }
+gix = { version = "0.66.0", default-features = false }
+#gix = { path = "../../se-analytics/gitoxide/gix", default-features = false }
 clap = { version = "4.1.1", features = ["derive", "cargo"] }
 clap_complete = "4.4.3"
 log = "0.4.21"
@@ -49,11 +59,11 @@ env_logger = "0.11.3"
 anyhow = "1.0.42"
 
 [dependencies]
-diff = { path = "./crates/diff", default-features = false }
-commits = { path = "./crates/commits", default-features = false }
-cli = { path = "./crates/cli", default-features = false }
-render = { path = "./crates/render", default-features = false }
-shared = { path = "./crates/shared", default-features = false }
+#diff = { path = "./crates/diff", default-features = false }
+#commits = { path = "./crates/commits", default-features = false }
+#cli = { path = "./crates/cli", default-features = false }
+#render = { path = "./crates/render", default-features = false }
+#shared = { path = "./crates/shared", default-features = false }
 
 #[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 clap = { workspace = true }

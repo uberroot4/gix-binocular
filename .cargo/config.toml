@@ -1,0 +1,14 @@
+#[build.'cfg(target_arch = "wasm32")']
+#target = "wasm32-unknown-unknown"
+
+[build]
+target = "wasm32-unknown-unknown"
+#rustflags = ["--cfg=web_sys_unstable_apis"]
+#target = "wasm32-unknown-unknown"
+#channel = "nightly"
+
+[target.'cfg(target_arch = "wasm32")']
+rustflags = ["-C", "target-feature=+atomics,+bulk-memory,+mutable-globals"]
+
+[unstable]
+build-std = ["panic_abort", "std"]

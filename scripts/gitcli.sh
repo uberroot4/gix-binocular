@@ -1,4 +1,3 @@
 #!/usr/bin/env /bin/bash
 
-echo $1
-git diff $1
+echo $1, $(git -C . diff --shortstat $1^ $1)

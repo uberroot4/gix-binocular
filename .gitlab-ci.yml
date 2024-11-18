@@ -70,7 +70,7 @@ build:commits:webassembly:
   stage: build
   script:
     - cd crates/commits/webassembly
-#    - cargo build --verbose
+    - cargo build --no-default-features --target=wasm32-unknown-unknown --verbose
     - wasm-pack build --dev --target web
   artifacts:
     # untracked: false

@@ -38,5 +38,34 @@ pub fn init_logging(file_name: Option<String>) {
     env_logger_build.init();
 }
 
+#[macro_export] macro_rules! info {
+    // Note that this is using the `log` function imported above during
+    // `bare_bones`
+    ($($t:tt)*) => (log::info!("[{:?}]\t{}", thread::current().id(), &format_args!($($t)*).to_string()))
+}
+#[macro_export] macro_rules! trace {
+    // Note that this is using the `log` function imported above during
+    // `bare_bones`
+    ($($t:tt)*) => (log::trace!("[{:?}]\t{}", thread::current().id(), &format_args!($($t)*).to_string()))
+}
+#[macro_export] macro_rules! error {
+    // Note that this is using the `log` function imported above during
+    // `bare_bones`
+    ($($t:tt)*) => (log::error!("[{:?}]\t{}", thread::current().id(), &format_args!($($t)*).to_string()))
+}
+#[macro_export] macro_rules! debug {
+    // Note that this is using the `log` function imported above during
+    // `bare_bones`
+    ($($t:tt)*) => (log::debug!("[{:?}]\t{}", thread::current().id(), &format_args!($($t)*).to_string()))
+}
+
+#[macro_export] macro_rules! warn {
+    // Note that this is using the `log` function imported above during
+    // `bare_bones`
+    ($($t:tt)*) => (log::warn!("[{:?}]\t{}", thread::current().id(), &format_args!($($t)*).to_string()))
+}
+
+
+
 #[cfg(not(feature = "std"))]
 pub fn init_logging() {}

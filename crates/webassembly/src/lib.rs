@@ -129,10 +129,6 @@ thread_local! {
     static CONSUMER_RUNNING : Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
 }
 
-// lazy_static! {
-//     static ref CHANNEL: RefCell<Channel<Action>>  = RefCell::new(Channel::new(8*100))
-// }
-
 // #[wasm_bindgen]
 pub fn consumer() {
     wasm_thread::spawn({
@@ -146,16 +142,6 @@ pub fn consumer() {
                     crate::channel::perform_action(action).await
                 }
                 drop(rx);
-                // while let Ok(msg) = rx.recv() {
-                //     info!("Recv of {:?}", msg);
-                //
-
-                //
-                //     // let f = web_fs::File::read::<&Path>(msg.as_ref()).await.unwrap();
-                //     // let content = web_fs::read::<&Path>(msg.as_ref()).await.unwrap();
-                //     // info!("content: {:?}", content);
-                //     // info!("output: {:?}", String::from_utf8(content));
-                // }
                 trace!("No further messages can be processed; the channel is closed.");
                 utils::terminate_worker();
             });

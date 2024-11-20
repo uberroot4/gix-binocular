@@ -479,20 +479,15 @@ name = "commits-wasm"
 version = "0.0.1"
 dependencies = [
  "anyhow",
- "async-std",
  "console_error_panic_hook",
  "console_log",
- "crossbeam",
  "futures",
  "futures-channel-preview",
  "instant",
- "lazy_static",
  "log",
  "opfs",
- "serde",
  "serde-wasm-bindgen",
  "shared",
- "tsify-next",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-streams",
@@ -2478,11 +2473,15 @@ checksum = "b410bbe7e14ab526a0e86877eb47c6996a2bd7746f027ba551028c925390e4e9"
 name = "opfs"
 version = "0.0.1"
 dependencies = [
- "console_error_panic_hook",
+ "async-std",
+ "crossbeam",
  "futures",
  "futures-channel-preview",
  "log",
+ "serde",
  "shared",
+ "tsify-next",
+ "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-streams",
  "wasm_thread",

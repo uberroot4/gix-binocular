@@ -20,14 +20,19 @@ console_error_panic_hook = []
 default = ["console_error_panic_hook"]
 
 [dependencies]
-wasm-bindgen = "0.2.95"
+wasm-bindgen = { workspace = true }
+web-fs = { workspace = true }
+log = { workspace = true }
+anyhow = { workspace = true }
+wasm_thread = { workspace = true }
+
 futures = "0.3.31"
 wasm-bindgen-futures = { version = "0.4.45", features = ["futures-core-03-stream"] }
 wasm-streams = "0.4.2"
 console_error_panic_hook = "0.1.7"
 serde-wasm-bindgen = { version = "0.6.5" }
-serde = { version = "1.0.214", features = ["derive"] }
-web-sys = { version = "0.3.72", features = [
+
+web-sys = { workspace = true, features = [
     "File",
     "FileSystem",
     "FileSystemDirectoryEntry",
@@ -51,7 +56,7 @@ web-sys = { version = "0.3.72", features = [
     "HtmlElement",
     "Element"
 ] }
-web-fs = { path = "../../web-fs" }
+
 opfs = { path = "../opfs" }
 instant = { version = "0.1.13", features = ["wasm-bindgen"] }
 #gix-discover = { path = "../../../../gitoxide/gix-discover", default-features = false, features = ["wasm"] }
@@ -62,20 +67,8 @@ instant = { version = "0.1.13", features = ["wasm-bindgen"] }
 #gix-dir = { path = "../../../../../gitoxide/gix-dir/", default-features = false, features = [] }
 #gix-index = { path = "../../../../../gitoxide/gix-index/", default-features = false, features = [] }
 # gix-discover = "0.36.0"
-log = "0.4.22"
 console_log = { version = "1.0.0", features = ["color"] }
-anyhow = { workspace = true }
 # commits = { path = ".." }
 #gix = { version = "0.66.0", default-features = false, features = [] }
-wasm_thread = { git = "https://github.com/adamgerhant/wasm_thread.git", branch = "main" }
-#wasm_thread = { version = "0.3.3" }
-async-std = "1.13.0"
 futures-channel-preview = "0.3.0-alpha.19"
-crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 shared = { path = "../shared", features = ["wasm"] }
-tsify-next = { version = "0.5.4", default-features = true }
-lazy_static = "1.5.0"
-#[[example]]
-#name = "commits-wasm"
-#crate-type = ["cdylib"]
-#path = "src/lib.rs"

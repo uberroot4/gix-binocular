@@ -1,6 +1,8 @@
+use std::io::Error;
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use async_std::io::ReadExt;
 use async_std::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
@@ -60,13 +62,16 @@ impl<T: Send + 'static> Channel<T> {
     }
 }
 
-#[derive(Debug, Tsify, Serialize, Deserialize)]
+#[derive(Debug, Tsify, Serialize, Deserialize, Clone)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
 #[tsify(namespace)]
 pub enum Action {
     Stop,
     Start,
     ReadDir(String),
+    OpenFile(String),
+    ReadFile(String),
+    Metadata(String),
 }
 
 pub trait Answer {}
@@ -74,9 +79,9 @@ pub trait Answer {}
 impl Answer for crate::Action {}
 
 pub(crate) async fn perform_action(action: Action) {
-    match action {
+    let result = match action.clone() {
         Action::ReadDir(dir) => {
-            trace!("calling read_dir with {:?}", dir);
+            trace!("Action::ReadDir({:?})", dir);
             // let read_dir = opfs::read_dir::<&Path>(dir.as_ref()).unwrap();
             // for d in read_dir {
 
@@ -84,12 +89,66 @@ pub(crate) async fn perform_action(action: Action) {
                 while let Some(d) = read_dir.next().await {
                     info!("d = {:?}", d)
                 }
+                Ok(())
             } else {
-                error!("Error calling web_fs::read_dir({:?})", dir);
+                Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Action::ReadDir({})", dir)))
+            }
+        }
+        Action::OpenFile(file) => {
+            trace!("Action::OpenFile({:?})", file);
+            match web_fs::File::open::<&Path>(file.as_ref()).await {
+                Ok(file) => {
+                    info!("file = {:?}", file);
+                    Ok(())
+                }
+                Err(e) => {
+                    Err(std::io::Error::new(e.kind(), format!("Action::OpenFile({})", file)))
+                    // error!("Error {:?}({:?}):\t{:?}", action.clone(), file, e);
+                }
+            }
+        }
+        Action::ReadFile(file) => {
+            trace!("Action::ReadFile({:?})", file);
+            // let content = web_fs::File::open("/web_repo/.git/HEAD").await.unwrap().read_to_end(&mut output).await.unwrap();
+            match web_fs::File::open(file).await {
+                Ok(mut opened) => {
+                    let mut output = Vec::new();
+                    match opened.read_to_end(&mut output).await {
+                        Ok(size) => {
+                            debug!("size: {:?}", size);
+                            info!("content: {:?}", String::from_utf8(output));
+                            Ok(())
+                        }
+                        Err(e) => {
+                            Err(std::io::Error::new(e.kind(), "file.read_to_end"))
+                        }
+                    }
+                }
+                Err(e) => {
+                    Err(std::io::Error::new(e.kind(), format!("Action::ReadFile({})", e)))
+                }
+            }
+        }
+        Action::Metadata(file) => {
+            trace!("Action::Metadata({})", file);
+            match web_fs::metadata::<&Path>(file.as_ref()).await {
+                Ok(metadata) => {
+                    debug!("metadata: {:?}", metadata);
+                    Ok(())
+                }
+                Err(e) => {
+                    Err(std::io::Error::new(e.kind(), format!("Action::Metadata({})", e)))
+                }
             }
         }
         _ => {
-            warn!("Action not implemented for performing in WebWorker: {:?}", action)
+            unimplemented!("Action not implemented for performing in WebWorker: '{:?}'", action);
+        }
+    };
+    match result {
+        Ok(_) => {}
+        Err(e) => {
+            error!("Error {:?}:\t{:?}", action, e);
         }
     }
 }

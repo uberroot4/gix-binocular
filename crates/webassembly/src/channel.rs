@@ -5,20 +5,13 @@ use async_std::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::wasm_bindgen;
-use shared::{debug, info, trace};
+use shared::{debug, info, trace, warn};
 use crate::thread;
 
 pub struct Channel<T: Send + 'static> {
     pub(crate) rx: crossbeam::channel::Receiver<T>,
     pub(crate) tx: Option<crossbeam::channel::Sender<T>>,
     pub(crate) closed: Arc<AtomicBool>, // To track if the channel is closed
-}
-
-impl<T: Send + 'static> Drop for Channel<T> {
-    fn drop(&mut self) {
-        trace!("Dropping self")
-        // drop(self.closed);
-    }
 }
 
 impl<T: Send + 'static> Channel<T> {
@@ -31,6 +24,13 @@ impl<T: Send + 'static> Channel<T> {
         }
     }
 
+    pub fn reset(&mut self) {
+        let (tx, rx) = crossbeam::channel::bounded(self.rx.capacity().unwrap());
+        self.rx = rx;
+        self.tx = Some(tx);
+        self.closed = Arc::new(AtomicBool::new(false))
+    }
+
     pub fn close(&mut self) -> bool {
         self.closed.store(true, Ordering::SeqCst);
         if let Some(s) = self.tx.take() {
@@ -38,6 +38,7 @@ impl<T: Send + 'static> Channel<T> {
             debug!("Channel is now closed, and sender has been dropped.");
             drop(s);
         }
+        self.reset();
 
         self.is_closed()
     }
@@ -64,6 +65,7 @@ impl<T: Send + 'static> Channel<T> {
 #[tsify(namespace)]
 pub enum Action {
     Stop,
+    Start,
     ReadDir(String),
 }
 
@@ -73,12 +75,6 @@ impl Answer for crate::Action {}
 
 pub(crate) async fn perform_action(action: Action) {
     match action {
-        Action::Stop => {
-            trace!("Closing channel! (doing nothing actually)");
-            crate::utils::terminate_worker();
-            //     let is_closed = channel.close();
-            //     debug!("Channel closed? {:?}", is_closed);
-        }
         Action::ReadDir(dir) => {
             trace!("calling read_dir with {:?}", dir);
             // let read_dir = opfs::read_dir::<&Path>(dir.as_ref()).unwrap();
@@ -88,6 +84,9 @@ pub(crate) async fn perform_action(action: Action) {
             while let Some(d) = read_dir.next().await {
                 info!("d = {:?}", d)
             }
+        },
+        _ => {
+            warn!("Action not implemented for performing in WebWorker: {:?}", action)
         }
     }
 }

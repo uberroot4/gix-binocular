@@ -1,4 +1,4 @@
-import {Action, consumer, producer} from "commits-wasm-web";
+import {sendAction} from "commits-wasm-web";
 import {useState} from "react";
 
 function ProducerConsumer() {
@@ -7,7 +7,8 @@ function ProducerConsumer() {
 
     const startConsumer = async () => {
         try {
-            consumer();
+            // consumer();
+            sendAction("Start")
             setConsumerStarted(true);
         } catch (err) {
             console.error("Error starting consumer: ", err);
@@ -17,7 +18,7 @@ function ProducerConsumer() {
     const produceMsg = async () => {
         try {
             // Action.ReadDir("web_dir/.git")
-            producer({ReadDir: msg});
+            sendAction({ReadDir: msg});
         } catch (err) {
             console.error("Error calling consumer: ", err);
         }
@@ -25,7 +26,7 @@ function ProducerConsumer() {
 
     const stopConsumer= async () => {
         try {
-            producer("Stop");
+            sendAction("Stop");
             setConsumerStarted(false);
         } catch (err) {
             console.error("Error stopping consumer: ", err);

@@ -3,6 +3,9 @@
 extern crate console_error_panic_hook;
 
 use std::cell::RefCell;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use lazy_static::lazy_static;
 use wasm_bindgen::prelude::*;
 use opfs::ThreadSafeFile;
 use shared::{info, trace, warn, debug};
@@ -123,15 +126,21 @@ pub async fn exec() -> Result<JsValue, JsError> {
 
 thread_local! {
     static CHANNEL: RefCell<Channel<Action>> = RefCell::new(Channel::new(8*100));
+    static CONSUMER_RUNNING : Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
 }
 
-#[wasm_bindgen]
+// lazy_static! {
+//     static ref CHANNEL: RefCell<Channel<Action>>  = RefCell::new(Channel::new(8*100))
+// }
+
+// #[wasm_bindgen]
 pub fn consumer() {
     wasm_thread::spawn({
         let rx = CHANNEL.with_borrow(|cnl| cnl.rx.clone());
         move || {
             wasm_bindgen_futures::spawn_local(async move {
                 trace!("Waiting for messages");
+                CONSUMER_RUNNING.with(|cr| cr.store(true, Ordering::SeqCst));
                 while let Ok(action) = rx.recv() {
                     trace!("recv: {:?}", action);
                     crate::channel::perform_action(action).await;
@@ -154,13 +163,25 @@ pub fn consumer() {
     });
 }
 
-#[wasm_bindgen]
-pub fn producer(action: Action) {
+#[wasm_bindgen(js_name = "sendAction")]
+pub fn send_action(action: Action) {
     trace!("Sending message {:?}", action);
+
+    if matches!(action, Action::Start) {
+        debug!("Action::Start");
+        if !CONSUMER_RUNNING.with(|cr| cr.load(Ordering::SeqCst)) {
+            consumer();
+        } else {
+            warn!("Cannot start worker, already running! Send Action::Stop required.")
+        }
+        return;
+    }
+
     CHANNEL.with_borrow_mut(|cnl| {
         if matches!(action, Action::Stop) {
             debug!("Stopping channel due to Action::Stop");
             cnl.close(); // Gracefully stop the channel
+            CONSUMER_RUNNING.with(|cr| cr.store(false, Ordering::SeqCst));
             return;
         }
 

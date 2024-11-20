@@ -3,10 +3,12 @@ import {useState} from "react";
 
 function ProducerConsumer() {
     const [msg, setMsg] = useState("web_repo");
+    const [consumerStarted, setConsumerStarted] = useState(false);
 
     const startConsumer = async () => {
         try {
             consumer();
+            setConsumerStarted(true);
         } catch (err) {
             console.error("Error starting consumer: ", err);
         }
@@ -24,6 +26,7 @@ function ProducerConsumer() {
     const stopConsumer= async () => {
         try {
             producer("Stop");
+            setConsumerStarted(false);
         } catch (err) {
             console.error("Error stopping consumer: ", err);
         }
@@ -44,11 +47,11 @@ function ProducerConsumer() {
                 {/*<input type="submit" value="Submit"/>*/}
             </p>
             <div className="card">
-                <button onClick={startConsumer}>Start Consumer</button>
-                <button onClick={produceMsg}>Produce</button>
+                <button onClick={startConsumer} disabled={consumerStarted}>Start Consumer</button>
+                <button onClick={produceMsg} disabled={!consumerStarted}>Produce</button>
             </div>
             <p>
-                <button onClick={stopConsumer}>Stop Consumer</button>
+                <button onClick={stopConsumer} disabled={!consumerStarted}>Stop Consumer</button>
             </p>
         </>
     )

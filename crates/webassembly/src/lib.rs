@@ -2,6 +2,7 @@
 
 extern crate console_error_panic_hook;
 
+use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use opfs::ThreadSafeFile;
 use shared::{info, trace, warn, debug};
@@ -125,16 +126,18 @@ pub async fn exec() -> Result<JsValue, JsError> {
 // }
 
 thread_local! {
-    static CHANNEL: Channel<Action> = {
-        let (tx, rx) = crossbeam::channel::bounded::<Action>(8 * 100);
-        Channel { tx, rx }
-    };
+    // static CHANNEL: Channel<Action> = {
+    //     let (tx, rx) = crossbeam::channel::bounded::<Action>(8 * 100);
+    //     Channel { tx, rx, closed: Arc::new(Default::default())}
+    // };
+    // static CHANNEL: Channel<Action> = Channel::new(8*100);
+    static CHANNEL: RefCell<Channel<Action>> = RefCell::new(Channel::new(8*100));
 }
 
 #[wasm_bindgen]
 pub fn consumer() {
     wasm_thread::spawn({
-        let rx = CHANNEL.with(|cnl| cnl.rx.clone());
+        let rx = CHANNEL.with_borrow(|cnl| cnl.rx.clone());
         // let rx = channel.rx.clone();
         // let closed = CHANNEL.with(|cnl| cnl.closed.clone());
         move || {
@@ -142,17 +145,9 @@ pub fn consumer() {
                 trace!("Waiting for messages");
                 while let Ok(action) = rx.recv() {
                     trace!("recv: {:?}", action);
-                    // match action {
-                    //     Action::Stop => {
-                    //         trace!("Received STOP from USER");
-                    //         drop(CHANNEL);
-                    //         crate::utils::terminate_worker();
-                    //     }
-                    //     _ => {
                     crate::channel::perform_action(action).await;
-                    // }
-                    // }
                 }
+                drop(rx);
                 // while let Ok(msg) = rx.recv() {
                 //     info!("Recv of {:?}", msg);
                 //
@@ -163,7 +158,8 @@ pub fn consumer() {
                 //     // info!("content: {:?}", content);
                 //     // info!("output: {:?}", String::from_utf8(content));
                 // }
-                trace!("No further messages can be processed; the channel is closed.")
+                trace!("No further messages can be processed; the channel is closed.");
+                utils::terminate_worker();
             });
         }
     });
@@ -172,22 +168,22 @@ pub fn consumer() {
 #[wasm_bindgen]
 pub fn producer(action: Action) {
     trace!("Sending message {:?}", action);
-    match action {
-        // Action::Stop => {
-        //     trace!("Received STOP from USER");
-        //     drop(CHANNEL.with(|cnl| cnl.tx));
-        // }
-        _ => {
-            match CHANNEL.with(|cnl| cnl.tx.send(action)) {
-                Ok(_) => {
-                    debug!("Sending was OK");
-                }
-                Err(e) => {
-                    warn!("Error sending {:?}", e);
-                }
+    CHANNEL.with_borrow_mut(|cnl| {
+        if matches!(action, Action::Stop) {
+            debug!("Stopping channel due to Action::Stop");
+            cnl.close(); // Gracefully stop the channel
+            return;
+        }
+
+        match cnl.send(action) {
+            Ok(_) => {
+                debug!("Sending was OK");
+            }
+            Err(e) => {
+                warn!("Error sending {:?}", e.to_string());
             }
         }
-    }
+    });
 }
 
 #[wasm_bindgen]

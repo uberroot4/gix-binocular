@@ -52,6 +52,7 @@ web-sys = { version = "0.3.72", features = [
     "Element"
 ] }
 web-fs = { path = "../../web-fs" }
+opfs = { path = "../opfs" }
 instant = { version = "0.1.13", features = ["wasm-bindgen"] }
 #gix-discover = { path = "../../../../gitoxide/gix-discover", default-features = false, features = ["wasm"] }
 #gix = { path = "../../../../../gitoxide/gix" }
@@ -70,7 +71,10 @@ wasm_thread = { git = "https://github.com/adamgerhant/wasm_thread.git", branch =
 #wasm_thread = { version = "0.3.3" }
 async-std = "1.13.0"
 futures-channel-preview = "0.3.0-alpha.19"
-
+crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
+shared = { path = "../shared", features = ["wasm"] }
+tsify-next = { version = "0.5.4", default-features = true }
+lazy_static = "1.5.0"
 #[[example]]
 #name = "commits-wasm"
 #crate-type = ["cdylib"]

@@ -15,3 +15,11 @@ pub use crate::utils::logging;
 mod signature;
 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
 pub use signature::{Sig};
+
+#[allow(unused_imports)]
+#[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
+use std::thread as thread;
+
+#[allow(unused_imports)]
+#[cfg(all(target_family = "wasm", target_os = "unknown"))]
+use wasm_thread as thread;

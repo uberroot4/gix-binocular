@@ -121,16 +121,7 @@ pub async fn exec() -> Result<JsValue, JsError> {
     Ok(JsValue::null())
 }
 
-// lazy_static::lazy_static! {
-//     static ref GLOBAL_CHANNEL: (Sender<Action>, Receiver<Action>) = bounded(8 * 100);
-// }
-
 thread_local! {
-    // static CHANNEL: Channel<Action> = {
-    //     let (tx, rx) = crossbeam::channel::bounded::<Action>(8 * 100);
-    //     Channel { tx, rx, closed: Arc::new(Default::default())}
-    // };
-    // static CHANNEL: Channel<Action> = Channel::new(8*100);
     static CHANNEL: RefCell<Channel<Action>> = RefCell::new(Channel::new(8*100));
 }
 
@@ -138,8 +129,6 @@ thread_local! {
 pub fn consumer() {
     wasm_thread::spawn({
         let rx = CHANNEL.with_borrow(|cnl| cnl.rx.clone());
-        // let rx = channel.rx.clone();
-        // let closed = CHANNEL.with(|cnl| cnl.closed.clone());
         move || {
             wasm_bindgen_futures::spawn_local(async move {
                 trace!("Waiting for messages");

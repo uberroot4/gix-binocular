@@ -43,9 +43,9 @@ members = [
     "crates/commits/tests",
     "crates/render",
     "crates/shared",
-    "crates/python",
+#    "crates/python",
     "crates/webassembly",
-    "crates/webassembly/crates/worker",
+    "crates/webassembly/crates/worker", "crates/opfs",
     # "crates/neon-npm"
 ]
 

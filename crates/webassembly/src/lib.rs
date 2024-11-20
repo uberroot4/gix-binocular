@@ -5,17 +5,14 @@ extern crate console_error_panic_hook;
 use std::cell::RefCell;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use lazy_static::lazy_static;
 use wasm_bindgen::prelude::*;
-use opfs::ThreadSafeFile;
+use opfs::{ThreadSafeFile, Action, start_webfs_consumer};
 use shared::{info, trace, warn, debug, error};
 use wasm_thread as thread;
 
 mod utils;
 mod external;
-mod channel;
-use channel::{Channel};
-pub use channel::Action;
+
 
 const WEB_REPO_ROOT: &'static str = "web_repo/.git";
 
@@ -124,63 +121,9 @@ pub async fn exec() -> Result<JsValue, JsError> {
     Ok(JsValue::null())
 }
 
-thread_local! {
-    static CHANNEL: RefCell<Channel<Action>> = RefCell::new(Channel::new(8*100));
-    static CONSUMER_RUNNING : Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
-}
-
-// #[wasm_bindgen]
-pub fn consumer() {
-    wasm_thread::spawn({
-        let rx = CHANNEL.with_borrow(|cnl| cnl.rx.clone());
-        move || {
-            wasm_bindgen_futures::spawn_local(async move {
-                trace!("Waiting for messages");
-                CONSUMER_RUNNING.with(|cr| cr.store(true, Ordering::SeqCst));
-                while let Ok(action) = rx.recv() {
-                    trace!("recv: {:?}", action);
-                    crate::channel::perform_action(action).await
-                }
-                drop(rx);
-                trace!("No further messages can be processed; the channel is closed.");
-                utils::terminate_worker();
-            });
-        }
-    });
-}
-
 #[wasm_bindgen(js_name = "sendAction")]
 pub fn send_action(action: Action) {
-    assert!(!thread::is_web_worker_thread(), "send_action must run in the main thread!");
-    trace!("Sending message {:?}", action);
-
-    if matches!(action, Action::Start) {
-        debug!("Action::Start");
-        if !CONSUMER_RUNNING.with(|cr| cr.load(Ordering::SeqCst)) {
-            consumer();
-        } else {
-            warn!("Cannot start worker, already running! Send Action::Stop required.")
-        }
-        return;
-    }
-
-    CHANNEL.with_borrow_mut(|cnl| {
-        if matches!(action, Action::Stop) {
-            debug!("Stopping channel due to Action::Stop");
-            cnl.close(); // Gracefully stop the channel
-            CONSUMER_RUNNING.with(|cr| cr.store(false, Ordering::SeqCst));
-            return;
-        }
-
-        match cnl.send(action) {
-            Ok(_) => {
-                debug!("Sending was OK");
-            }
-            Err(e) => {
-                warn!("Error sending {:?}", e.to_string());
-            }
-        }
-    });
+    opfs::send_action(action);
 }
 
 #[wasm_bindgen]

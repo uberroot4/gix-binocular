@@ -14,13 +14,18 @@ include = ["src/**/*"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+wasm-bindgen = { workspace = true }
 log = { workspace = true }
-web-sys = { version = "0.3.72" }
-web-fs = { path = "../../web-fs" }
-console_error_panic_hook = "0.1.7"
-wasm_thread = { git = "https://github.com/adamgerhant/wasm_thread.git", branch = "main", features = ["keep_worker_alive"] }
+async-std = { workspace = true }
+wasm_thread = { workspace = true }
+serde = { workspace = true }
+web-sys = { workspace = true }
+web-fs = { workspace = true }
+
 futures-channel-preview = "0.3.0-alpha.19"
 futures = "0.3.31"
 shared = { path = "../../crates/shared", default-features = false, features = ["wasm"] }
 wasm-bindgen-futures = { version = "0.4.45", features = ["futures-core-03-stream"] }
 wasm-streams = "0.4.2"
+tsify-next = { version = "0.5.4", default-features = true }
+crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }

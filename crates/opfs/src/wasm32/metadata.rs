@@ -1,5 +1,4 @@
 use std::path::Path;
-use crate::terminate_self;
 use crate::thread;
 
 pub fn metadata<P: AsRef<Path>>(path: P) -> std::io::Result<crate::Metadata> {
@@ -20,11 +19,11 @@ pub fn metadata<P: AsRef<Path>>(path: P) -> std::io::Result<crate::Metadata> {
     match futures::executor::block_on(rx) {
         Ok(_data) => {
             shared::debug!("received _data: {:?}", _data);
-            terminate_self();
+            crate::terminate_worker();
             Ok(_data?)
         }
         Err(e) => {
-            crate::terminate_self();
+            crate::terminate_worker();
             use std::io::{Error, ErrorKind};
             shared::error!("Error within threads: {:?}", e);
             Err(Error::new(ErrorKind::Interrupted, e.to_string()))

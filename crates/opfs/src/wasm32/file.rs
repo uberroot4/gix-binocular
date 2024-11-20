@@ -34,12 +34,12 @@ impl ThreadSafeFile {
         match futures::executor::block_on(rx) {
             Ok(_data) => {
                 shared::debug!("received _data: {:?}", _data);
-                crate::terminate_self();
+                crate::terminate_worker();
                 Ok(_data)
             }
             Err(e) => {
                 use std::io::{Error, ErrorKind};
-                crate::terminate_self();
+                crate::terminate_worker();
                 shared::error!("Error within threads: {:?}", e);
                 Err(Error::new(ErrorKind::Interrupted, e.to_string()))
             }

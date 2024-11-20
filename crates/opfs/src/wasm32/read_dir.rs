@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use futures::StreamExt;
 
-use crate::terminate_self;
 use crate::thread;
 
 #[derive(Debug, Clone)]
@@ -66,7 +65,7 @@ pub fn readdir<P: AsRef<Path>>(path: P) -> std::io::Result<crate::ReadDir> {
                 }
             }
             drop(tx.send(results));
-            terminate_self(); // not working rn, as web-fs/open_options has spawn_local
+            crate::terminate_worker(); // not working rn, as web-fs/open_options has spawn_local
         });
     }).join_async();
 
@@ -79,13 +78,13 @@ pub fn readdir<P: AsRef<Path>>(path: P) -> std::io::Result<crate::ReadDir> {
                 dirp,
                 root,
             };
-            crate::terminate_self();
+            crate::terminate_worker();
             Ok(
                 crate::ReadDir::new(inner)
             )
         }
         Err(e) => {
-            crate::terminate_self();
+            crate::terminate_worker();
             use std::io::{Error, ErrorKind};
             shared::error!("Error within threads: {:?}", e);
             Err(Error::new(ErrorKind::Interrupted, e.to_string()))

@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use lazy_static::lazy_static;
 use wasm_bindgen::prelude::*;
 use opfs::ThreadSafeFile;
-use shared::{info, trace, warn, debug};
+use shared::{info, trace, warn, debug, error};
 use wasm_thread as thread;
 
 mod utils;
@@ -143,7 +143,7 @@ pub fn consumer() {
                 CONSUMER_RUNNING.with(|cr| cr.store(true, Ordering::SeqCst));
                 while let Ok(action) = rx.recv() {
                     trace!("recv: {:?}", action);
-                    crate::channel::perform_action(action).await;
+                    crate::channel::perform_action(action).await
                 }
                 drop(rx);
                 // while let Ok(msg) = rx.recv() {
@@ -165,6 +165,7 @@ pub fn consumer() {
 
 #[wasm_bindgen(js_name = "sendAction")]
 pub fn send_action(action: Action) {
+    assert!(!thread::is_web_worker_thread(), "send_action must run in the main thread!");
     trace!("Sending message {:?}", action);
 
     if matches!(action, Action::Start) {

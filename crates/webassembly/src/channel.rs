@@ -5,7 +5,7 @@ use async_std::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 use tsify_next::Tsify;
 use wasm_bindgen::prelude::wasm_bindgen;
-use shared::{debug, info, trace, warn};
+use shared::{debug, error, info, trace, warn};
 use crate::thread;
 
 pub struct Channel<T: Send + 'static> {
@@ -80,11 +80,14 @@ pub(crate) async fn perform_action(action: Action) {
             // let read_dir = opfs::read_dir::<&Path>(dir.as_ref()).unwrap();
             // for d in read_dir {
 
-            let mut read_dir = web_fs::read_dir::<&Path>(dir.as_ref()).await.unwrap();
-            while let Some(d) = read_dir.next().await {
-                info!("d = {:?}", d)
+            if let Ok(mut read_dir) = web_fs::read_dir::<&Path>(dir.as_ref()).await {
+                while let Some(d) = read_dir.next().await {
+                    info!("d = {:?}", d)
+                }
+            } else {
+                error!("Error calling web_fs::read_dir({:?})", dir);
             }
-        },
+        }
         _ => {
             warn!("Action not implemented for performing in WebWorker: {:?}", action)
         }

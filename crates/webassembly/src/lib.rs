@@ -2,40 +2,18 @@
 
 extern crate console_error_panic_hook;
 
-// mod log;
-mod external;
-// mod browser;
-// mod utils;
-
-use std::path::Path;
-// use crate::{
-//     // browser::{
-//     //     navigator,
-//     //     opfs::{self},
-//     //     window,
-//     // },
-//     // log::{
-//     //     console_err,
-//     //     // console_log,
-//     // },
-// };
-// use futures::StreamExt;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::js_sys;
+use opfs::ThreadSafeFile;
+use shared::{info, trace, warn, debug};
+use wasm_thread as thread;
+
+mod utils;
+mod external;
+mod channel;
+use channel::{Channel};
+pub use channel::Action;
 
 const WEB_REPO_ROOT: &'static str = "web_repo/.git";
-
-macro_rules! info {
-    // Note that this is using the `log` function imported above during
-    // `bare_bones`
-    ($($t:tt)*) => (log::info!("[{:?}]\t{}", wasm_thread::current().id(), &format_args!($($t)*).to_string()))
-}
-
-macro_rules! trace {
-    // Note that this is using the `log` function imported above during
-    // `bare_bones`
-    ($($t:tt)*) => (log::trace!("[{:?}]\t{}", wasm_thread::current().id(), &format_args!($($t)*).to_string()))
-}
 
 #[wasm_bindgen(start)]
 async fn run() {
@@ -51,20 +29,6 @@ pub fn startup_file_worker() {
     trace!(">> startup_file_worker()");
     trace!("<< startup_file_worker()");
 }
-
-// #[wasm_bindgen]
-// pub async fn clear_dir() -> Result<JsValue, JsValue> {
-//     console_log!("clear_dir");
-//
-//     let options: FileSystemRemoveOptions = FileSystemRemoveOptions::new();
-//     options.set_recursive(true);
-//
-//     let opfs_root = get_root_storage().await;
-//     // let promise = opfs_root.remove_entry_with_options(WEB_REPO_ROOT, &options);
-//     //let promise = opfs_root.remove_entry(WEB_REPO_ROOT);
-//     // return JsFuture::from(promise).await;
-//     Ok(JsValue::null())
-// }
 
 #[wasm_bindgen]
 pub async fn exec() -> Result<JsValue, JsError> {
@@ -156,31 +120,108 @@ pub async fn exec() -> Result<JsValue, JsError> {
     Ok(JsValue::null())
 }
 
-
-// #[wasm_bindgen(js_name = threadId)]
-// pub fn thread_id() -> web_sys::js_sys::JsString {
-//     format!("{:?}", wasm_thread::current().id()).into()
+// lazy_static::lazy_static! {
+//     static ref GLOBAL_CHANNEL: (Sender<Action>, Receiver<Action>) = bounded(8 * 100);
 // }
+
+thread_local! {
+    static CHANNEL: Channel<Action> = {
+        let (tx, rx) = crossbeam::channel::bounded::<Action>(8 * 100);
+        Channel { tx, rx }
+    };
+}
+
+#[wasm_bindgen]
+pub fn consumer() {
+    wasm_thread::spawn({
+        let rx = CHANNEL.with(|cnl| cnl.rx.clone());
+        // let rx = channel.rx.clone();
+        // let closed = CHANNEL.with(|cnl| cnl.closed.clone());
+        move || {
+            wasm_bindgen_futures::spawn_local(async move {
+                trace!("Waiting for messages");
+                while let Ok(action) = rx.recv() {
+                    trace!("recv: {:?}", action);
+                    // match action {
+                    //     Action::Stop => {
+                    //         trace!("Received STOP from USER");
+                    //         drop(CHANNEL);
+                    //         crate::utils::terminate_worker();
+                    //     }
+                    //     _ => {
+                    crate::channel::perform_action(action).await;
+                    // }
+                    // }
+                }
+                // while let Ok(msg) = rx.recv() {
+                //     info!("Recv of {:?}", msg);
+                //
+
+                //
+                //     // let f = web_fs::File::read::<&Path>(msg.as_ref()).await.unwrap();
+                //     // let content = web_fs::read::<&Path>(msg.as_ref()).await.unwrap();
+                //     // info!("content: {:?}", content);
+                //     // info!("output: {:?}", String::from_utf8(content));
+                // }
+                trace!("No further messages can be processed; the channel is closed.")
+            });
+        }
+    });
+}
+
+#[wasm_bindgen]
+pub fn producer(action: Action) {
+    trace!("Sending message {:?}", action);
+    match action {
+        // Action::Stop => {
+        //     trace!("Received STOP from USER");
+        //     drop(CHANNEL.with(|cnl| cnl.tx));
+        // }
+        _ => {
+            match CHANNEL.with(|cnl| cnl.tx.send(action)) {
+                Ok(_) => {
+                    debug!("Sending was OK");
+                }
+                Err(e) => {
+                    warn!("Error sending {:?}", e);
+                }
+            }
+        }
+    }
+}
 
 #[wasm_bindgen]
 pub async fn something_async() {
     use futures_channel::oneshot;
     let (tx, rx) = oneshot::channel();
 
-    use gix_fs;
-    let _gix_fs_thread_handle = wasm_thread::spawn(|| {
-        // let read_dir = gix_fs::read_dir(WEB_REPO_ROOT.as_ref()).await.unwrap();
-        let read_dir = web_fs::read_dir_sync("web_repo/.git").unwrap();
-        for d in read_dir {
-            info!("d = {:?}", d)
-        }
-        drop(tx.send(std::io::Result::Ok("is_git")));
-        web_sys::js_sys::eval("self")
-            .unwrap()
-            .dyn_into::<web_sys::DedicatedWorkerGlobalScope>()
-            .unwrap()
-            .close();
-    }).join_async();
+    // use gix_fs;
+    let _ = wasm_thread::spawn(|| {
+        // wasm_bindgen_futures::spawn_local(async {
+        //     let read_dir = gix_fs::read_dir(WEB_REPO_ROOT.as_ref(), false).unwrap();
+
+        /// opfs::read_dir EXAMPLE
+        // let read_dir = opfs::read_dir::<&Path>(WEB_REPO_ROOT.as_ref()).unwrap();
+        // for d in read_dir {
+        //     info!("d = {:?}", d)
+        // }
+
+        /// File Example
+        let file = crate::ThreadSafeFile::open("web_repo/.git/HEAD").unwrap();
+        info!("web_fs::File::open_sync: {:?}", file);
+
+        /// METADATA Example
+        // let metadata = opfs::metadata::<&Path>("web_repo/.git/HEAD".as_ref()).unwrap();
+        // info!("metadata {:?}", metadata);
+
+        drop(tx.send(std::io::Result::Ok("file")));
+        // web_sys::js_sys::eval("self")
+        //     .unwrap()
+        //     .dyn_into::<web_sys::DedicatedWorkerGlobalScope>()
+        //     .unwrap()
+        //     .close();
+        // });
+    }).join_async().await;
 
 
     // use gix_discover;
@@ -196,11 +237,16 @@ pub async fn something_async() {
     //         .close();
     // }).join_async();
 
-    trace!("Within done_handle");
+    // trace!("Within done_handle");
     let is_git = match rx.await.unwrap() {
         Ok(_data) => {
             info!("_data: {:?}", _data);
-            Ok(JsValue::from_str("_data"))
+            // let mut output = Vec::with_capacity(4000);
+            // let content = web_fs::File::open("/web_repo/.git/HEAD").await.unwrap().read_to_end(&mut output).await.unwrap();
+
+            // info!("web_fs::File::content: {:?}", content );
+            // info!("web_fs::File::output: {:?}", String::from_utf8(output) );
+            Ok(JsValue::from_str("If you see this, everything is OK"))
         }
         Err(e) => {
             log::error!("{}", e);

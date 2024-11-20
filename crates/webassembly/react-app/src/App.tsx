@@ -10,6 +10,7 @@ import './App.css'
 // } from 'commits-wasm'
 import {something_async, startup_file_worker} from "commits-wasm-web";
 import {useState} from "react";
+import ProducerConsumer from "./ProducerConsumer.tsx";
 //import ViteWorker from "./worker?worker";
 //import FileWorker from "./file-worker?worker"
 // import ViteWorker from "./pkg/worker/commits_wasm_worker.js?worker"
@@ -125,9 +126,9 @@ function App() {
                     Edit <code>src/App.tsx</code> and save to test HMR
                 </p>
             </div>
-            <p className="read-the-docs">
-                Click on the Vite and React logos to learn more
-            </p>
+            <div className="card">
+                <ProducerConsumer/>
+            </div>
         </>
     )
 }

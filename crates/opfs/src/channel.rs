@@ -1,5 +1,3 @@
-use std::io::{Error, ErrorKind};
-use std::path::Path;
 use std::sync::{
     Arc,
     atomic::{
@@ -7,13 +5,11 @@ use std::sync::{
         Ordering,
     },
 };
-use async_std::{
-    stream::StreamExt,
-    io::ReadExt,
-};
-use shared::{debug, error, info, trace};
-use crate::{thread, action::Action, answer::Answer};
-use crate::answer::AnswerResult;
+// use async_std::{
+//     io::ReadExt,
+// };
+use shared::{debug};
+use crate::{thread};
 
 pub struct Channel<T: Send + 'static> {
     pub(crate) rx: crossbeam::channel::Receiver<T>,
@@ -67,94 +63,77 @@ impl<T: Send + 'static> Channel<T> {
     }
 }
 
-pub(crate) async fn perform_action(action: Action) -> Box<AnswerResult> {
-    let result = match action.clone() {
-        Action::ReadDir(dir) => {
-            trace!("Action::ReadDir({:?})", dir);
-            // let read_dir = opfs::read_dir::<&Path>(dir.as_ref()).unwrap();
-            // for d in read_dir {
-
-            let mut entries = vec![];
-            if let Ok(mut read_dir) = web_fs::read_dir::<&Path>(dir.as_ref()).await {
-                while let Some(d) = read_dir.next().await {
-                    info!("d = {:?}", d);
-                    entries.push(d.unwrap().path().as_os_str().to_os_string().into_string().unwrap());
-                }
-                Box::new(AnswerResult::DirectoryContents(entries))
-            } else {
-                Box::new(AnswerResult::Error(
-                    Error::new(ErrorKind::Other, format!("Action::ReadDir({})", dir))
-                ))
-            }
-        }
-        Action::OpenFile(file) => {
-            trace!("Action::OpenFile({:?})", file);
-            match web_fs::File::open::<&Path>(file.as_ref()).await {
-                Ok(file) => {
-                    info!("file = {:?}", file);
-                    Box::new(AnswerResult::Success(true))
-                }
-                Err(e) => {
-                    Box::new(AnswerResult::Error(
-                        Error::new(e.kind(), format!("Action::OpenFile({})", file))
-                    ))
-                }
-            }
-        }
-        Action::ReadFile(file) => {
-            trace!("Action::ReadFile({:?})", file);
-            // let content = web_fs::File::open("/web_repo/.git/HEAD").await.unwrap().read_to_end(&mut output).await.unwrap();
-            match web_fs::File::open(file).await {
-                Ok(mut opened) => {
-                    let mut output = Vec::new();
-                    match opened.read_to_end(&mut output).await {
-                        Ok(size) => {
-                            debug!("size: {:?}", size);
-                            info!("content: {:?}", String::from_utf8(output.clone()));
-                            // Ok(output)
-                            Box::new(AnswerResult::FileContents(output))
-                        }
-                        Err(e) => {
-                            Box::new(AnswerResult::Error(
-                                Error::new(e.kind(), "file.read_to_end")
-                            ))
-                        }
-                    }
-                }
-                Err(e) => {
-                    Box::new(AnswerResult::Error(
-                        Error::new(e.kind(), format!("Action::ReadFile({})", e))
-                    ))
-                }
-            }
-        }
-        // Action::Metadata(file) => {
-        //     trace!("Action::Metadata({})", file);
-        //     match web_fs::metadata::<&Path>(file.as_ref()).await {
-        //         Ok(metadata) => {
-        //             debug!("metadata: {:?}", metadata);
-        //             // Ok(metadata)
-        //             Box::new(AnswerResult::Metadata(metadata))
-        //         }
-        //         Err(e) => {
-        //             Box::new(AnswerResult::Error(
-        //                 Error::new(e.kind(), format!("Action::Metadata({})", e))
-        //             ))
-        //         }
-        //     }
-        // }
-        _ => {
-            unimplemented!("Action not implemented for performing in WebWorker: '{:?}'", action);
-        }
-    };
-    // let x = match result {
-    //     Ok(e) => {
-    //         Ok(e)
-    //     }
-    //     Err(e) => {
-    //         error!("Error {:?}:\t{:?}", action, e);
-    //         Err(e)
-    //     }
-    // };
-    result
-}
+// pub(crate) async fn perform_action(action: Action) -> Box<AnswerResult> {
+//     let result = match action.clone() {
+//
+//         Action::OpenFile(file) => {
+//             trace!("Action::OpenFile({:?})", file);
+//             match web_fs::File::open::<&Path>(file.as_ref()).await {
+//                 Ok(file) => {
+//                     info!("file = {:?}", file);
+//                     Box::new(AnswerResult::Success(true))
+//                 }
+//                 Err(e) => {
+//                     Box::new(AnswerResult::Error(
+//                         Error::new(e.kind(), format!("Action::OpenFile({})", file))
+//                     ))
+//                 }
+//             }
+//         }
+//         Action::ReadFile(file) => {
+//             trace!("Action::ReadFile({:?})", file);
+//             // let content = web_fs::File::open("/web_repo/.git/HEAD").await.unwrap().read_to_end(&mut output).await.unwrap();
+//             match web_fs::File::open(file).await {
+//                 Ok(mut opened) => {
+//                     let mut output = Vec::new();
+//                     match opened.read_to_end(&mut output).await {
+//                         Ok(size) => {
+//                             debug!("size: {:?}", size);
+//                             info!("content: {:?}", String::from_utf8(output.clone()));
+//                             // Ok(output)
+//                             Box::new(AnswerResult::FileContents(output))
+//                         }
+//                         Err(e) => {
+//                             Box::new(AnswerResult::Error(
+//                                 Error::new(e.kind(), "file.read_to_end")
+//                             ))
+//                         }
+//                     }
+//                 }
+//                 Err(e) => {
+//                     Box::new(AnswerResult::Error(
+//                         Error::new(e.kind(), format!("Action::ReadFile({})", e))
+//                     ))
+//                 }
+//             }
+//         }
+//         // Action::Metadata(file) => {
+//         //     trace!("Action::Metadata({})", file);
+//         //     match web_fs::metadata::<&Path>(file.as_ref()).await {
+//         //         Ok(metadata) => {
+//         //             debug!("metadata: {:?}", metadata);
+//         //             // Ok(metadata)
+//         //             Box::new(AnswerResult::Metadata(metadata))
+//         //         }
+//         //         Err(e) => {
+//         //             Box::new(AnswerResult::Error(
+//         //                 Error::new(e.kind(), format!("Action::Metadata({})", e))
+//         //             ))
+//         //         }
+//         //     }
+//         // }
+//         _ => {
+//             unimplemented!("Action not implemented for performing in WebWorker: '{:?}'", action);
+//         }
+//     };
+//     // let x = match result {
+//     //     Ok(e) => {
+//     //         Ok(e)
+//     //     }
+//     //     Err(e) => {
+//     //         error!("Error {:?}:\t{:?}", action, e);
+//     //         Err(e)
+//     //     }
+//     // };
+//     result
+// }

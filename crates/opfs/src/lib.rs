@@ -1,31 +1,29 @@
 use std::cell::RefCell;
-use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use web_sys::wasm_bindgen::JsCast;
 use wasm_thread as thread;
 
 mod wasm32 {
-    pub(crate) mod read_dir;
     pub(crate) mod metadata;
     pub(crate) mod file;
 }
 
 use crate::wasm32 as fs_imp;
 
-pub use fs_imp::read_dir::{ReadDir};
+// pub use fs_imp::read_dir::{ReadDir};
 pub use fs_imp::file::{ThreadSafeFile};
-use shared::{debug, trace, warn};
+use shared::{debug, error, trace, warn};
 pub use web_fs::{Metadata, DirEntry, File};
 
 mod channel;
-mod answer;
+// mod answer;
 mod message;
 mod action;
 
 use channel::{Channel};
 pub use action::Action;
-use crate::action::ActionHandler;
+use crate::action::{ActionHandler, Answer};
 
 thread_local! {
     static CHANNEL: RefCell<Channel<Action>> = RefCell::new(Channel::new(8*100));
@@ -43,13 +41,13 @@ fn terminate_worker() {
     }
 }
 
-pub fn read_dir<P: AsRef<Path>>(path: P) -> std::io::Result<crate::ReadDir> {
-    fs_imp::read_dir::readdir(path)
-}
+// pub fn read_dir<P: AsRef<Path>>(path: P) -> std::io::Result<crate::ReadDir> {
+//     fs_imp::read_dir::readdir(path)
+// }
 
-pub fn metadata<P: AsRef<Path>>(path: P) -> std::io::Result<crate::Metadata> {
-    fs_imp::metadata::metadata(path)
-}
+// pub fn metadata<P: AsRef<Path>>(path: P) -> std::io::Result<crate::Metadata> {
+//     fs_imp::metadata::metadata(path)
+// }
 
 // pub fn open<P: AsRef<Path>>(path: P) -> std::io::Result<ThreadSafeFile> {
 //     fs_imp::file::open(path)
@@ -64,17 +62,32 @@ pub fn start_webfs_consumer() {
                 CONSUMER_RUNNING.with(|cr| cr.store(true, Ordering::SeqCst));
                 while let Ok(action) = rx.recv() {
                     trace!("recv: {:?}", action);
-                    let perform_action_result = match action {
+                    let perform_action_result: std::io::Result<Box<dyn Answer>> = match action {
                         Action::Metadata(e) => {
+                            trace!("Action::Metadata({})", e);
                             // let result = MetadataHandler::handle_message(MetadataCmd::new(e));
                             crate::action::MetadataAction::new(e).handle().await
+                        }
+                        Action::ReadDir(dir) => {
+                            trace!("Action::ReadDir({:?})", dir);
+                            // let read_dir = opfs::read_dir::<&Path>(dir.as_ref()).unwrap();
+                            //  in read_dir {
+                            // for d in crate::action::ReadDirAction::new(dir.clone()).handle().await {
+                            //     debug!("d = {:?}", d)
+                            // }
+                            crate::action::ReadDirAction::new(dir).handle().await
                         }
                         _ => {
                             unimplemented!("lol")
                         }
                     };
                     // crate::channel::perform_action(action).await;
-                    // trace!("perform_action_result: {}", perform_action_result.as_debug());
+                    if let Ok(val) = perform_action_result {
+                        trace!("perform_action_result: {:?}", val);
+                    } else {
+                        error!("perform_action_result did not return successfully");
+                    }
+                    // trace!("perform_action_result");
                 }
                 drop(rx);
                 trace!("No further messages can be processed; the channel is closed.");

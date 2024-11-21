@@ -8,26 +8,9 @@ import './App.css'
 //     exec,
 //     // clear_dir
 // } from 'commits-wasm'
-import {something_async, startup_file_worker} from "commits-wasm-web";
+import {something_async} from "commits-wasm-web";
 import {useState} from "react";
 import ProducerConsumer from "./ProducerConsumer.tsx";
-//import ViteWorker from "./worker?worker";
-//import FileWorker from "./file-worker?worker"
-// import ViteWorker from "./pkg/worker/commits_wasm_worker.js?worker"
-
-// let tsWorker: Worker | null = new ViteWorker();
-let tsWorker: Worker | null = null;
-
-function spawn_worker(worker: Worker): Worker {
-    worker.addEventListener('message', (e: MessageEvent) => {
-        try {
-            console.debug(`received a message (main) ${e.data}`, e)
-        } catch (err) {
-            console.error('error processing message (main)', e.data, err)
-        }
-    });
-    return worker
-}
 
 function App() {
     const [count, setCount] = useState(11)
@@ -37,46 +20,36 @@ function App() {
     // const [tsWorker, _] = useState(new ViteWorker());
 
 
-    // Open File
-    const clearDir = async () => {
-        try {
-            // await clear_dir()
-        } catch (err) {
-            console.error("Error clearing directory:", err);
-        }
-    };
-
-
     const startWorker = () => {
-        if (!tsWorker) {
-            var channel = new MessageChannel();
-            tsWorker = spawn_worker(startup_file_worker());
-            //tsWorker = new Worker("/webfs-worker.js");
-            console.log("New Web Worker spawned");
-        } else {
-            console.info("Worker already running");
-        }
+        // if (!tsWorker) {
+        //     var channel = new MessageChannel();
+        //     tsWorker = spawn_worker(startup_file_worker());
+        //     //tsWorker = new Worker("/webfs-worker.js");
+        //     console.log("New Web Worker spawned");
+        // } else {
+        //     console.info("Worker already running");
+        // }
     }
     const terminate = () => {
-        if (tsWorker) {
-            tsWorker.terminate();
-            tsWorker = null;
-            console.info("Worker terminated");
-        } else {
-            console.warn("Cannot terminate worker (not running)");
-        }
+        // if (tsWorker) {
+        //     tsWorker.terminate();
+        //     tsWorker = null;
+        //     console.info("Worker terminated");
+        // } else {
+        //     console.warn("Cannot terminate worker (not running)");
+        // }
     }
     const runWorker = async () => {
-        console.trace(`runWorker ${count}`);
-        try {
-            if (tsWorker)
-                tsWorker.postMessage(count);
-            setCount(count + 1);
-        } catch (err) {
-            console.error("Error clearing directory:", err);
-        } finally {
-            console.log(`counter value = ${count}`)
-        }
+        // console.trace(`runWorker ${count}`);
+        // try {
+        //     if (tsWorker)
+        //         tsWorker.postMessage(count);
+        //     setCount(count + 1);
+        // } catch (err) {
+        //     console.error("Error clearing directory:", err);
+        // } finally {
+        //     console.log(`counter value = ${count}`)
+        // }
     };
 
     const openDir = async () => {
@@ -90,9 +63,9 @@ function App() {
     const something = async () => {
         try {
             something_async()
-                // .then((e) => {
-                //     console.log(`something_async returned ${e}`);
-                // })
+                .then((e) => {
+                    console.log(`something_async returned ${e}`);
+                })
         } catch (err) {
             console.error("Error opening directory:", err);
         } finally {

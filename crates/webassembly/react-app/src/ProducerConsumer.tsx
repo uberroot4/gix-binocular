@@ -15,16 +15,38 @@ function ProducerConsumer() {
         }
     };
 
-    const produceMsg = async () => {
+    const readDir = async () => {
         try {
-            // Action.ReadDir("web_dir/.git")
             sendAction({ReadDir: msg});
         } catch (err) {
             console.error("Error calling consumer: ", err);
         }
     };
 
-    const stopConsumer= async () => {
+    const openFile = async () => {
+        try {
+            sendAction({OpenFile: msg});
+        } catch (err) {
+            console.error("Error calling consumer: ", err);
+        }
+    };
+
+    const readFile = async () => {
+        try {
+            sendAction({ReadFile: msg});
+        } catch (err) {
+            console.error("Error calling consumer: ", err);
+        }
+    };
+    const metadata = async () => {
+        try {
+            sendAction({Metadata: msg});
+        } catch (err) {
+            console.error("Error calling consumer: ", err);
+        }
+    };
+
+    const stopConsumer = async () => {
         try {
             sendAction("Stop");
             setConsumerStarted(false);
@@ -48,8 +70,15 @@ function ProducerConsumer() {
                 {/*<input type="submit" value="Submit"/>*/}
             </p>
             <div className="card">
-                <button onClick={startConsumer} disabled={consumerStarted}>Start Consumer</button>
-                <button onClick={produceMsg} disabled={!consumerStarted}>Produce</button>
+                <p>
+                    <button onClick={startConsumer} disabled={consumerStarted}>Start Consumer</button>
+                </p>
+                <p>
+                    <button onClick={readDir} disabled={!consumerStarted}>Action::ReadDir</button>
+                    <button onClick={openFile} disabled={!consumerStarted}>Action::OpenFile</button>
+                    <button onClick={readFile} disabled={!consumerStarted}>Action::ReadFile</button>
+                    <button onClick={metadata} disabled={!consumerStarted}>Action::Metadata</button>
+                </p>
             </div>
             <p>
                 <button onClick={stopConsumer} disabled={!consumerStarted}>Stop Consumer</button>

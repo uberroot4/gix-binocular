@@ -19,8 +19,13 @@ use shared::{debug, trace, warn};
 pub use web_fs::{Metadata, DirEntry, File};
 
 mod channel;
+mod answer;
+mod message;
+mod action;
+
 use channel::{Channel};
-pub use channel::Action;
+pub use action::Action;
+use crate::action::ActionHandler;
 
 thread_local! {
     static CHANNEL: RefCell<Channel<Action>> = RefCell::new(Channel::new(8*100));
@@ -59,7 +64,17 @@ pub fn start_webfs_consumer() {
                 CONSUMER_RUNNING.with(|cr| cr.store(true, Ordering::SeqCst));
                 while let Ok(action) = rx.recv() {
                     trace!("recv: {:?}", action);
-                    crate::channel::perform_action(action).await
+                    let perform_action_result = match action {
+                        Action::Metadata(e) => {
+                            // let result = MetadataHandler::handle_message(MetadataCmd::new(e));
+                            crate::action::MetadataAction::new(e).handle().await
+                        }
+                        _ => {
+                            unimplemented!("lol")
+                        }
+                    };
+                    // crate::channel::perform_action(action).await;
+                    // trace!("perform_action_result: {}", perform_action_result.as_debug());
                 }
                 drop(rx);
                 trace!("No further messages can be processed; the channel is closed.");

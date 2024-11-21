@@ -128,36 +128,41 @@ pub fn send_action(action: Action) {
 
 #[wasm_bindgen]
 pub async fn something_async() {
-    use futures_channel::oneshot;
-    let (tx, rx) = oneshot::channel();
+    // use futures_channel::oneshot;
+    // let (tx, rx) = oneshot::channel();
 
-    // use gix_fs;
-    let _ = wasm_thread::spawn(|| {
-        // wasm_bindgen_futures::spawn_local(async {
-        //     let read_dir = gix_fs::read_dir(WEB_REPO_ROOT.as_ref(), false).unwrap();
+    use gix_fs;
+    let read_dir = gix_fs::read_dir(WEB_REPO_ROOT.as_ref(), false);
+    // for d in read_dir {
+    //     info!("d = {:?}", d)
+    // }
 
-        /// opfs::read_dir EXAMPLE
-        // let read_dir = opfs::read_dir::<&Path>(WEB_REPO_ROOT.as_ref()).unwrap();
-        // for d in read_dir {
-        //     info!("d = {:?}", d)
-        // }
-
-        /// File Example
-        let file = crate::ThreadSafeFile::open("web_repo/.git/HEAD").unwrap();
-        info!("web_fs::File::open_sync: {:?}", file);
-
-        /// METADATA Example
-        // let metadata = opfs::metadata::<&Path>("web_repo/.git/HEAD".as_ref()).unwrap();
-        // info!("metadata {:?}", metadata);
-
-        drop(tx.send(std::io::Result::Ok("file")));
-        // web_sys::js_sys::eval("self")
-        //     .unwrap()
-        //     .dyn_into::<web_sys::DedicatedWorkerGlobalScope>()
-        //     .unwrap()
-        //     .close();
-        // });
-    }).join_async().await;
+    // let _ = wasm_thread::spawn(|| {
+    //     // wasm_bindgen_futures::spawn_local(async {
+    //     //     let read_dir = gix_fs::read_dir(WEB_REPO_ROOT.as_ref(), false).unwrap();
+    //
+    //     /// opfs::read_dir EXAMPLE
+    //     // let read_dir = opfs::read_dir::<&Path>(WEB_REPO_ROOT.as_ref()).unwrap();
+    //     // for d in read_dir {
+    //     //     info!("d = {:?}", d)
+    //     // }
+    //
+    //     /// File Example
+    //     let file = crate::ThreadSafeFile::open("web_repo/.git/HEAD").unwrap();
+    //     info!("web_fs::File::open_sync: {:?}", file);
+    //
+    //     /// METADATA Example
+    //     // let metadata = opfs::metadata::<&Path>("web_repo/.git/HEAD".as_ref()).unwrap();
+    //     // info!("metadata {:?}", metadata);
+    //
+    //     drop(tx.send(std::io::Result::Ok("file")));
+    //     // web_sys::js_sys::eval("self")
+    //     //     .unwrap()
+    //     //     .dyn_into::<web_sys::DedicatedWorkerGlobalScope>()
+    //     //     .unwrap()
+    //     //     .close();
+    //     // });
+    // }).join_async().await;
 
 
     // use gix_discover;
@@ -174,23 +179,23 @@ pub async fn something_async() {
     // }).join_async();
 
     // trace!("Within done_handle");
-    let is_git = match rx.await.unwrap() {
-        Ok(_data) => {
-            info!("_data: {:?}", _data);
-            // let mut output = Vec::with_capacity(4000);
-            // let content = web_fs::File::open("/web_repo/.git/HEAD").await.unwrap().read_to_end(&mut output).await.unwrap();
-
-            // info!("web_fs::File::content: {:?}", content );
-            // info!("web_fs::File::output: {:?}", String::from_utf8(output) );
-            Ok(JsValue::from_str("If you see this, everything is OK"))
-        }
-        Err(e) => {
-            log::error!("{}", e);
-            Err(JsError::new(&e.to_string()))
-        }
-    };
-
-    info!("is_git {:?}" , is_git);
+    // let is_git = match rx.await.unwrap() {
+    //     Ok(_data) => {
+    //         info!("_data: {:?}", _data);
+    //         // let mut output = Vec::with_capacity(4000);
+    //         // let content = web_fs::File::open("/web_repo/.git/HEAD").await.unwrap().read_to_end(&mut output).await.unwrap();
+    //
+    //         // info!("web_fs::File::content: {:?}", content );
+    //         // info!("web_fs::File::output: {:?}", String::from_utf8(output) );
+    //         Ok(JsValue::from_str("If you see this, everything is OK"))
+    //     }
+    //     Err(e) => {
+    //         log::error!("{}", e);
+    //         Err(JsError::new(&e.to_string()))
+    //     }
+    // };
+    //
+    // info!("is_git {:?}" , is_git);
 }
 // pub fn something_async_old() {
 //     use wasm_thread;

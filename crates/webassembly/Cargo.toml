@@ -54,7 +54,8 @@ web-sys = { workspace = true, features = [
     "Worker",
     "Document",
     "HtmlElement",
-    "Element"
+    "Element",
+    "BroadcastChannel",
 ] }
 
 opfs = { path = "../opfs" }

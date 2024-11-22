@@ -12,12 +12,25 @@ import {something_async} from "commits-wasm-web";
 import {useState} from "react";
 import ProducerConsumer from "./ProducerConsumer.tsx";
 
+
+// const channel = ;
+
 function App() {
     const [count, setCount] = useState(11)
+    const [channel, _] = useState(new BroadcastChannel("a-b-c"))
     // const [fileContent, setFileContent] = useState<string>("");
     // const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | null>(null);
     // const [dirHandle, setDirHandle] = useState<WebDir | null>(null);
     // const [tsWorker, _] = useState(new ViteWorker());
+
+    channel.addEventListener("message", (ev: MessageEvent) => {
+        console.trace("Received message on port1");
+        console.debug(ev);
+    });
+    channel.addEventListener("messageerror", (ev: MessageEvent) => {
+        console.trace("Received messageerror on port1");
+        console.error(ev);
+    })
 
 
     const startWorker = () => {
@@ -62,7 +75,7 @@ function App() {
 
     const something = async () => {
         try {
-            something_async()
+            something_async(channel)
                 .then((e) => {
                     console.log(`something_async returned ${e}`);
                 })

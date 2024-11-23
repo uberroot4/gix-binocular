@@ -2,17 +2,16 @@
 
 extern crate console_error_panic_hook;
 
+use opfs::{start_webfs_consumer, Action, ThreadSafeFile};
+use shared::{debug, error, info, trace, warn};
 use std::cell::RefCell;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use wasm_bindgen::prelude::*;
-use opfs::{ThreadSafeFile, Action, start_webfs_consumer};
-use shared::{info, trace, warn, debug, error};
 use wasm_thread as thread;
 
-mod utils;
 mod external;
-
+mod utils;
 
 const WEB_REPO_ROOT: &'static str = "web_repo/.git";
 
@@ -22,7 +21,9 @@ async fn run() {
     console_log::init_with_level(log::Level::Trace).unwrap();
     web_fs::init_logging();
     info!("run");
-    web_fs::create_dir_all(WEB_REPO_ROOT).await.expect("Error creating WEB_REPO_ROOT");
+    web_fs::create_dir_all(WEB_REPO_ROOT)
+        .await
+        .expect("Error creating WEB_REPO_ROOT");
 }
 
 #[wasm_bindgen]
@@ -50,7 +51,6 @@ pub async fn exec() -> Result<JsValue, JsError> {
     //     Ok(())
     // }
     // main(opfs_root).expect("TODO: panic message");
-
 
     // let root_dir = JsFuture::from(opfs_root.get_directory_handle_with_options(WEB_REPO_ROOT, &options)).await
     //     .unwrap()
@@ -123,10 +123,11 @@ pub async fn exec() -> Result<JsValue, JsError> {
 
 #[wasm_bindgen(js_name = "sendAction")]
 pub fn send_action(action: Action) {
+    unimplemented!()
     // let (tx, rx) = opfs::init_channels();
     // tx.unwrap().send(action).unwrap();
     // rx.recv();
-    let _ = opfs::send_action(action);
+    // let _ = opfs::send_action(action);
     // match opfs::send_action(action) {
     //     Ok(val) => {
     //         Ok(val)
@@ -154,7 +155,10 @@ pub async fn something_async(msg_channel: web_sys::BroadcastChannel) -> Result<(
         wasm_bindgen_futures::spawn_local(async {
             {
                 use gix_fs;
-                // let read_dir = gix_fs::read_dir(WEB_REPO_ROOT.as_ref(), false);
+                let read_dir = gix_fs::read_dir(WEB_REPO_ROOT.as_ref(), false);
+                for d in read_dir {
+                    info!("d = {:?}", d)
+                }
             }
             // {
             //     /// opfs::read_dir EXAMPLE
@@ -180,8 +184,9 @@ pub async fn something_async(msg_channel: web_sys::BroadcastChannel) -> Result<(
                 .unwrap()
                 .close();
         });
-    }).join_async().await;
-
+    })
+    .join_async()
+    .await;
 
     // use gix_discover;
     // info!("pre thread spawned");
@@ -213,7 +218,7 @@ pub async fn something_async(msg_channel: web_sys::BroadcastChannel) -> Result<(
         }
     };
 
-    info!("is_git {:?}" , is_git.clone());
+    info!("is_git {:?}", is_git.clone());
 
     match msg_channel.post_message(&is_git?) {
         Ok(_) => {

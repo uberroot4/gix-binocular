@@ -21,6 +21,7 @@ wasm_thread = { workspace = true }
 serde = { workspace = true }
 web-sys = { workspace = true }
 web-fs = { workspace = true }
+anyhow = { workspace = true }
 
 futures-channel-preview = "0.3.0-alpha.19"
 futures = "0.3.31"

@@ -1,10 +1,10 @@
+use crate::action::{ActionHandler, Answer};
+use async_std::stream::StreamExt;
 use std::collections::BTreeSet;
-use std::{fmt, io};
+use std::fmt;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use async_std::stream::StreamExt;
-use crate::action::{ActionHandler, Answer, AnswerResult};
 
 #[derive(Debug, Clone)]
 pub struct InnerReadDir {
@@ -12,18 +12,26 @@ pub struct InnerReadDir {
     pub(crate) root: PathBuf,
 }
 
+#[derive(Clone)]
 pub struct ReadDir {
     inner: Arc<InnerReadDir>,
-    iter: std::collections::btree_set::IntoIter<crate::DirEntry>,
 }
 
+impl IntoIterator for ReadDir {
+    type Item = crate::DirEntry;
+    type IntoIter = std::collections::btree_set::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.dirp.clone().into_iter()
+    }
+}
 
 impl ReadDir {
     pub fn new(inner: InnerReadDir) -> Self {
-        let iter = inner.dirp.clone().into_iter(); // Consumes the BTreeSet to create the iterator
+        // let iter = inner.dirp.clone().into_iter(); // Consumes the BTreeSet to create the iterator
         Self {
             inner: Arc::new(inner),
-            iter,
+            // iter,
         }
     }
 }
@@ -34,15 +42,6 @@ impl fmt::Debug for ReadDir {
         // Thus the result will be e g 'ReadDir("/home")'
         // fmt::Debug::fmt(&*self.inner.root, f)
         write!(f, "ReadDir({:?})", &*self.inner.root)
-    }
-}
-
-impl Iterator for ReadDir {
-    type Item = io::Result<crate::DirEntry>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        // Use the stored iterator to maintain state between calls
-        self.iter.next().map(Ok) // Iterate and wrap in Ok
     }
 }
 
@@ -57,19 +56,7 @@ impl ReadDirAction {
     }
 }
 
-// #[derive(Debug)]
-// pub struct ReadDirActionResultWrapper {
-//     inner: self::ReadDir,
-// }
-// impl ActionResultWrapper for ReadDirActionResultWrapper {
-//     fn inner(self) -> Box<self::ReadDir> {
-//         Box::new(self.inner)
-//     }
-// }
-
 impl ActionHandler for ReadDirAction {
-    type Output = self::ReadDir;
-
     async fn handle(&self) -> std::io::Result<Box<dyn Answer>> {
         let mut entries = vec![];
         let p = std::path::PathBuf::from(&self.dir);
@@ -80,18 +67,13 @@ impl ActionHandler for ReadDirAction {
             }
             let root = p.clone();
             let dirp = BTreeSet::from_iter(entries);
-            let inner = InnerReadDir {
-                dirp,
-                root,
-            };
-            Ok(
-                // Box::new(ReadDirActionResultWrapper { inner: self::ReadDir::new(inner) })
-                Box::new(AnswerResult::DirectoryContents(self::ReadDir::new(inner)))
-            )
+            let inner = InnerReadDir { dirp, root };
+            Ok(Box::new(self::ReadDir::new(inner)))
         } else {
-            Err(
-                Error::new(ErrorKind::Other, format!("handle({})#web_fs::read_dir", self.dir))
-            )
+            Err(Error::new(
+                ErrorKind::Other,
+                format!("handle({})#web_fs::read_dir", self.dir),
+            ))
         }
     }
 }

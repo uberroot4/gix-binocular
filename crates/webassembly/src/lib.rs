@@ -2,11 +2,8 @@
 
 extern crate console_error_panic_hook;
 
-use opfs::{start_webfs_consumer, Action, ThreadSafeFile};
-use shared::{debug, error, info, trace, warn};
-use std::cell::RefCell;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use opfs::{Action};
+use shared::{error, info, trace};
 use wasm_bindgen::prelude::*;
 use wasm_thread as thread;
 
@@ -155,9 +152,9 @@ pub async fn something_async(msg_channel: web_sys::BroadcastChannel) -> Result<(
         wasm_bindgen_futures::spawn_local(async {
             {
                 use gix_fs;
-                let read_dir = gix_fs::read_dir(WEB_REPO_ROOT.as_ref(), false);
+                let read_dir = gix_fs::read_dir(WEB_REPO_ROOT.as_ref(), false).expect("gix_fs::read_dir should not fail");
                 for d in read_dir {
-                    info!("d = {:?}", d)
+                    info!("d1 = {:?}", d)
                 }
             }
             // {

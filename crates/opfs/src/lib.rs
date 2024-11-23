@@ -6,26 +6,19 @@ use std::sync::atomic::{AtomicBool};
 use web_sys::wasm_bindgen::JsCast;
 use wasm_thread as thread;
 
-mod wasm32 {
-    pub(crate) mod metadata;
-    pub(crate) mod file;
-}
-
 mod opfs {
     pub mod opfs;
 }
-pub use opfs::opfs::Opfs;
-use crate::wasm32 as fs_imp;
-
-pub use fs_imp::file::{ThreadSafeFile};
-pub use web_fs::{Metadata, DirEntry, File};
+pub use {
+    web_fs::{Metadata, DirEntry, File, OpenOptions, FileType},
+    opfs::opfs::Opfs
+};
 
 mod channel;
 mod action;
 
 use channel::{Channel};
 pub use action::{Action, Answer, ReadDir};
-use crate::action::{ActionHandler};
 
 thread_local! {
     static ACTION_CHANNEL: RefCell<Channel<Action>> = RefCell::new(Channel::new(8*100));

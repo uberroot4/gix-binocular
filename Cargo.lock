@@ -238,17 +238,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b75356056920673b02621b35afd0f7dda9306d03c79a30f5c56c44cf256e3de"
 
 [[package]]
-name = "async-trait"
-version = "0.1.83"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "721cae7de5c34fbb2acd27e21e6d2cf7b886dce0c27388d46c4e6c47ea4318dd"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.87",
-]
-
-[[package]]
 name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -483,6 +472,7 @@ dependencies = [
  "console_log",
  "futures",
  "futures-channel-preview",
+ "gix-fs 0.12.0",
  "instant",
  "log",
  "opfs",
@@ -1383,11 +1373,10 @@ dependencies = [
  "gix-trace 0.1.11",
  "gix-utils 0.1.13",
  "libc",
- "no_std_io",
+ "opfs",
  "prodash 29.0.0",
  "sha1_smol",
  "walkdir",
- "web-fs",
 ]
 
 [[package]]
@@ -1426,13 +1415,11 @@ dependencies = [
 name = "gix-fs"
 version = "0.12.0"
 dependencies = [
- "async-trait",
  "fastrand",
- "futures",
  "gix-features 0.39.0",
  "gix-utils 0.1.13",
  "log",
- "web-fs",
+ "opfs",
  "web-time",
 ]
 
@@ -2473,6 +2460,7 @@ checksum = "b410bbe7e14ab526a0e86877eb47c6996a2bd7746f027ba551028c925390e4e9"
 name = "opfs"
 version = "0.0.1"
 dependencies = [
+ "anyhow",
  "async-std",
  "crossbeam",
  "futures",

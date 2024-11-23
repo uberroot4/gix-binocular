@@ -1,9 +1,8 @@
 use crate::action::ActionHandler;
 use crate::channel::Channel;
 use crate::thread;
-use crate::{Action, Answer, ReadDir};
-use shared::{debug, error, info, trace};
-use std::any::Any;
+use crate::{Action, Answer};
+use shared::{debug, error, trace};
 use std::cell::RefCell;
 use std::io::{Error, ErrorKind};
 use std::path::Path;

@@ -101,7 +101,6 @@ impl Opfs {
     }
 
     pub fn read_dir<P: AsRef<Path>>(&self, path: P) -> std::io::Result<crate::ReadDir> {
-        // pub fn read_dir<P: AsRef<Path>>(&self, path: P) {
         trace!("Opfs::read_dir({:?})", path.as_ref());
         Self::check_running_consumer();
         let action = Action::ReadDir(
@@ -139,6 +138,44 @@ impl Opfs {
         x
     }
 
+    pub fn metadata<P: AsRef<Path>>(&self, path: P) -> std::io::Result<crate::Metadata> {
+        trace!("Opfs::read_dir({:?})", path.as_ref());
+        Self::check_running_consumer();
+        let action = Action::Metadata(
+            path.as_ref()
+                .as_os_str()
+                .to_os_string()
+                .into_string()
+                .unwrap(),
+        );
+        debug!("action {:?}", action);
+        match self.action_channel.borrow().send(action.clone()) {
+            Ok(_) => {
+                trace!("Action sent successfully: {:?}", action)
+            }
+            Err(e) => {
+                error!("Error sending Action: {:?}", e.to_string());
+                return Err(Error::new(ErrorKind::Other, e.to_string()));
+            }
+        }
+        trace!("Waiting for answer");
+        let x = match self.answer_channel.borrow().recv() {
+            Ok(recv) => {
+                debug!("Received: {:?}", recv);
+                let result = &*recv
+                    .as_any()
+                    .downcast_ref::<crate::Metadata>()
+                    .expect("Failed to downcast to crate::ReadDir");
+                Ok(result.clone())
+            }
+            Err(e) => {
+                error!("Error receiving Answer: {:?}", e.to_string());
+                Err(Error::new(ErrorKind::Other, e.to_string()))
+            }
+        };
+        x
+    }
+
     fn check_running_consumer() {
         if !CONSUMER_RUNNING.with(|cr| cr.load(Ordering::SeqCst)) {
             let msg = "WebFS consumer not running. Call start_webfs_consumer() prior!";
@@ -146,9 +183,6 @@ impl Opfs {
             panic!("{}", msg);
         }
     }
-    // pub fn metadata<P: AsRef<Path>>(path: P) -> std::io::Result<crate::Metadata> {
-    //     fs_imp::metadata::metadata(path)
-    // }
 
     // pub fn open<P: AsRef<Path>>(path: P) -> std::io::Result<ThreadSafeFile> {
     //     fs_imp::file::open(path)

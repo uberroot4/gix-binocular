@@ -157,6 +157,11 @@ pub async fn something_async(msg_channel: web_sys::BroadcastChannel) -> Result<(
                     info!("d1 = {:?}", d)
                 }
             }
+            {
+                use gix_discover;
+                let is_git = gix_discover::is_git(WEB_REPO_ROOT.as_ref());
+                info!("is_git? {:?}", is_git);
+            }
             // {
             //     /// opfs::read_dir EXAMPLE
             //     // let read_dir = opfs::read_dir::<&Path>(WEB_REPO_ROOT.as_ref()).unwrap();
@@ -184,19 +189,6 @@ pub async fn something_async(msg_channel: web_sys::BroadcastChannel) -> Result<(
     })
     .join_async()
     .await;
-
-    // use gix_discover;
-    // info!("pre thread spawned");
-    // let _gix_discover_thread_handle = wasm_thread::spawn(|| {
-    //     info!("thread spawned");
-    //     let is_git = gix_discover::is_git(WEB_REPO_ROOT.as_ref());
-    //     drop(tx.send(is_git));
-    //     web_sys::js_sys::eval("self")
-    //         .unwrap()
-    //         .dyn_into::<web_sys::DedicatedWorkerGlobalScope>()
-    //         .unwrap()
-    //         .close();
-    // }).join_async();
 
     trace!("Within done_handle");
     let is_git = match rx.await.unwrap() {

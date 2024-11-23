@@ -59,8 +59,7 @@ web-sys = { workspace = true, features = [
 ] }
 
 opfs = { path = "../opfs" }
-instant = { version = "0.1.13", features = ["wasm-bindgen"] }
-#gix-discover = { path = "../../../../gitoxide/gix-discover", default-features = false, features = ["wasm"] }
+gix-discover = { path = "../../../../gitoxide/gix-discover", default-features = false, features = ["wasm"] }
 #gix = { path = "../../../../../gitoxide/gix" }
 gix-fs = { path = "../../../../gitoxide/gix-fs/", default-features = false, features = ["wasm"] }
 #gix-path = { path = "../../../../gitoxide/gix-path/", default-features = false }

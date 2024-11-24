@@ -8,6 +8,7 @@ use std::io::{Error, ErrorKind};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use futures_channel::oneshot;
 
 thread_local! {
     static CONSUMER_RUNNING : Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
@@ -61,6 +62,17 @@ impl Opfs {
                             Action::ReadDir(dir) => {
                                 trace!("Action::ReadDir({:?})", dir);
                                 crate::action::ReadDirAction::new(dir).handle().await
+                            }
+                            Action::ReadFile(file ) => {
+                                trace!("Action::ReadFile({:?})", file);
+                                let (tx, rx) = oneshot::channel();
+                                wasm_thread::spawn(|| {
+                                    wasm_bindgen_futures::spawn_local(async move {
+                                        let val = crate::action::ReadFileAction::new(file).handle().await;
+                                        drop(tx.send(val))
+                                    });
+                                });
+                                rx.await.unwrap()
                             }
                             _ => {
                                 unimplemented!("lol")
@@ -176,6 +188,44 @@ impl Opfs {
         x
     }
 
+    pub fn read_file<P: AsRef<Path>>(&self, path: P) -> std::io::Result<Vec<u8>> {
+        trace!("Opfs::read_file({:?})", path.as_ref());
+        Self::check_running_consumer();
+        let action = Action::ReadFile(
+            path.as_ref()
+                .as_os_str()
+                .to_os_string()
+                .into_string()
+                .unwrap(),
+        );
+        debug!("action {:?}", action);
+        match self.action_channel.borrow().send(action.clone()) {
+            Ok(_) => {
+                trace!("Action sent successfully: {:?}", action)
+            }
+            Err(e) => {
+                error!("Error sending Action: {:?}", e.to_string());
+                return Err(Error::new(ErrorKind::Other, e.to_string()));
+            }
+        }
+        trace!("Waiting for answer");
+        let x = match self.answer_channel.borrow().recv() {
+            Ok(recv) => {
+                debug!("Received: {:?}", recv);
+                let result = &*recv
+                    .as_any()
+                    .downcast_ref::<Vec<u8>>()
+                    .expect("Failed to downcast to crate::ReadDir");
+                Ok(result.clone())
+            }
+            Err(e) => {
+                error!("Error receiving Answer: {:?}", e.to_string());
+                Err(Error::new(ErrorKind::Other, e.to_string()))
+            }
+        };
+        x
+    }
+
     fn check_running_consumer() {
         if !CONSUMER_RUNNING.with(|cr| cr.load(Ordering::SeqCst)) {
             let msg = "WebFS consumer not running. Call start_webfs_consumer() prior!";
@@ -183,10 +233,6 @@ impl Opfs {
             panic!("{}", msg);
         }
     }
-
-    // pub fn open<P: AsRef<Path>>(path: P) -> std::io::Result<ThreadSafeFile> {
-    //     fs_imp::file::open(path)
-    // }
 }
 
 impl Default for Opfs {

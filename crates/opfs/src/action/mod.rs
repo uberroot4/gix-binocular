@@ -1,5 +1,6 @@
 mod metadata;
 mod read_dir;
+mod read_file;
 
 use serde::{Deserialize, Serialize};
 use std::any::Any;
@@ -64,11 +65,23 @@ impl Answer for ReadDir {
     }
 }
 
+impl Answer for Vec<u8> {
+    fn inner_debug(&self) -> String {
+        format!("{:?}", self)
+    }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 impl fmt::Debug for dyn Answer {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.inner_debug())
     }
 }
 
-pub use metadata::MetadataAction;
-pub use read_dir::{ReadDir, ReadDirAction};
+pub use {
+    metadata::MetadataAction,
+    read_dir::{ReadDir, ReadDirAction},
+    read_file::ReadFileAction
+};

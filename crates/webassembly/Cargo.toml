@@ -60,13 +60,14 @@ web-sys = { workspace = true, features = [
 
 opfs = { path = "../opfs" }
 gix-discover = { path = "../../../../gitoxide/gix-discover", default-features = false, features = ["wasm"] }
-#gix = { path = "../../../../../gitoxide/gix" }
+#gix = { path = "../../../../gitoxide/gix/", default-features = false, features = ["wasm"] }
 gix-fs = { path = "../../../../gitoxide/gix-fs/", default-features = false, features = ["wasm"] }
-#gix-path = { path = "../../../../gitoxide/gix-path/", default-features = false }
-#gix-worktree = { path = "../../../../gitoxide/gix-worktree/", default-features = false }
-#gix-dir = { path = "../../../../../gitoxide/gix-dir/", default-features = false, features = [] }
-#gix-index = { path = "../../../../../gitoxide/gix-index/", default-features = false, features = [] }
-# gix-discover = "0.36.0"
+gix-glob = { path = "../../../../gitoxide/gix-glob/", default-features = false, features = ["wasm"] }
+gix-sec = { path = "../../../../gitoxide/gix-sec/", default-features = false, features = ["wasm"] }
+gix-path = { path = "../../../../gitoxide/gix-path/", default-features = false, features = ["wasm"] }
+gix-worktree = { path = "../../../../gitoxide/gix-worktree/", default-features = false }
+gix-index = { path = "../../../../gitoxide/gix-index/", default-features = false }
+gix-dir = { path = "../../../../gitoxide/gix-dir/", default-features = false }
 console_log = { version = "1.0.0", features = ["color"] }
 # commits = { path = ".." }
 #gix = { version = "0.66.0", default-features = false, features = [] }

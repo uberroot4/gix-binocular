@@ -2,7 +2,8 @@
 
 extern crate console_error_panic_hook;
 
-use opfs::{Action};
+use gix_discover::upwards_opts;
+use opfs::Action;
 use shared::{error, info, trace};
 use wasm_bindgen::prelude::*;
 use wasm_thread as thread;
@@ -152,7 +153,8 @@ pub async fn something_async(msg_channel: web_sys::BroadcastChannel) -> Result<(
         wasm_bindgen_futures::spawn_local(async {
             {
                 use gix_fs;
-                let read_dir = gix_fs::read_dir(WEB_REPO_ROOT.as_ref(), false).expect("gix_fs::read_dir should not fail");
+                let read_dir = gix_fs::read_dir(WEB_REPO_ROOT.as_ref(), false)
+                    .expect("gix_fs::read_dir should not fail");
                 for d in read_dir {
                     info!("d1 = {:?}", d)
                 }
@@ -161,6 +163,25 @@ pub async fn something_async(msg_channel: web_sys::BroadcastChannel) -> Result<(
                 use gix_discover;
                 let is_git = gix_discover::is_git(WEB_REPO_ROOT.as_ref());
                 info!("is_git? {:?}", is_git);
+                drop(is_git);
+                let (path, trust) =
+                    gix_discover::upwards(WEB_REPO_ROOT.as_ref()).expect("upwards should not fail");
+                info!("(path, trust) {:?}", (path.clone(), trust));
+                let (git_dir, worktree_dir) = path.into_repository_and_work_tree_directories();
+                info!("(git_dir, worktree_dir): {:?}", (git_dir, worktree_dir));
+                // let trust_map: gix_sec::trust::Mapping<crate::open::Options> = Default::default();
+                // let mut options = trust_map.into_value_by_level(trust);
+                // options.git_dir_trust = trust.into();
+                // // Note that we will adjust the `current_dir` later so it matches the value of `core.precomposeUnicode`.
+                // options.current_dir = Some(gix_fs::current_dir(false).map_err(gix_discover::upwards::Error::CurrentDir).unwrap());
+                // info!("options {:?}", options);
+            }
+            {
+                #[allow(unused_imports)]
+                use {gix_dir, gix_fs, gix_glob, gix_sec, gix_worktree, gix_path, gix_index};
+                let f = opfs::File::open("web_repo/.git/HEAD").await.expect("TODO");
+                trace!("f = {:?}", f);
+                trace!("f.metadata = {:?}", f.metadata().await.expect("TODO"));
             }
             // {
             //     /// opfs::read_dir EXAMPLE

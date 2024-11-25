@@ -2,13 +2,13 @@ use crate::action::ActionHandler;
 use crate::channel::Channel;
 use crate::thread;
 use crate::{Action, Answer};
+use futures_channel::oneshot;
 use shared::{debug, error, trace};
 use std::cell::RefCell;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use futures_channel::oneshot;
 
 thread_local! {
     static CONSUMER_RUNNING : Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
@@ -17,6 +17,13 @@ thread_local! {
 pub struct Opfs {
     pub action_channel: RefCell<Channel<Action>>,
     pub answer_channel: RefCell<Channel<Box<dyn Answer>>>,
+}
+
+impl Drop for Opfs {
+    fn drop(&mut self) {
+        self.action_channel.borrow_mut().close();
+        self.answer_channel.borrow_mut().close();
+    }
 }
 
 impl Opfs {
@@ -63,16 +70,16 @@ impl Opfs {
                                 trace!("Action::ReadDir({:?})", dir);
                                 crate::action::ReadDirAction::new(dir).handle().await
                             }
-                            Action::ReadFile(file ) => {
+                            Action::ReadFile(file) => {
                                 trace!("Action::ReadFile({:?})", file);
-                                let (tx, rx) = oneshot::channel();
-                                wasm_thread::spawn(|| {
-                                    wasm_bindgen_futures::spawn_local(async move {
-                                        let val = crate::action::ReadFileAction::new(file).handle().await;
-                                        drop(tx.send(val))
-                                    });
-                                });
-                                rx.await.unwrap()
+                                // let (tx, rx) = oneshot::channel();
+                                // wasm_thread::spawn(|| {
+                                //     wasm_bindgen_futures::spawn_local(async move {
+                                crate::action::ReadFileAction::new(file).handle().await
+                                // drop(tx.send(val))
+                                // });
+                                // });
+                                // rx.await.unwrap()
                             }
                             _ => {
                                 unimplemented!("lol")

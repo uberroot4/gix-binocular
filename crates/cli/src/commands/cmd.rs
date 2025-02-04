@@ -39,7 +39,7 @@ pub struct GlobalOpts {
     #[clap(long, global = true)]
     pub no_merges: bool,
     /// Number of commits to return
-    #[clap(short, long, global = true)]
+    #[clap(long, global = true)]
     pub limit: Option<usize>,
     /// git directory to use
     #[clap(name = "dir", long = "git-dir", global = true, default_missing_value = ".")]

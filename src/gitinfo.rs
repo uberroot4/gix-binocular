@@ -69,12 +69,12 @@ fn main() {
                 Err(_) => panic!("Error traversing diffs"),
             }
         }
-        Commands::Blame(blame_args) => {
-            trace!("{:?}", blame_args);
-            use blame::lookup;
-
-            let blames = lookup(&repo, blame_args.source_commit, blame_args.target_commit);
-        }
+        // Commands::Blame(blame_args) => {
+        //     trace!("{:?}", blame_args);
+        //     use blame::lookup;
+        //
+        //     let blames = lookup(&repo, blame_args.source_commit, blame_args.target_commit);
+        // }
         Commands::Commits(commit_args) => {
             trace!("{:?}", commit_args);
             use commits::traverse;
@@ -92,9 +92,10 @@ fn main() {
                 }
                 Err(_) => panic!("Error traversing commit graph"),
             }
-        } // Commands::DiffList {
-          //     ..
-          // } => todo!(),
+        }
+        other => {
+            eprintln!("Unknown Command {:?}", other);
+        }
     }
 
     let elapsed = now.elapsed();

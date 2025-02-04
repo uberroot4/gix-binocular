@@ -93,9 +93,6 @@ fn main() {
                 Err(_) => panic!("Error traversing commit graph"),
             }
         }
-        other => {
-            eprintln!("Unknown Command {:?}", other);
-        }
     }
 
     let elapsed = now.elapsed();

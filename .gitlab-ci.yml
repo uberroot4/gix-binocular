@@ -170,10 +170,13 @@ build:gitinfo:release:python:
   variables:
   before_script:
     - apk add bash make cmake gcc g++
+    - pip install --upgrade pip
     - pip install maturin
     - maturin --help
   script:
     - cd ./crates/python
+    - pwd
+    - ls -la .
     - maturin build -r
 
 ########## BENCHMARKING ##########

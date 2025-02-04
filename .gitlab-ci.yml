@@ -166,13 +166,13 @@ build:gitinfo:release:
 
 build:gitinfo:release:python:
   stage: release
-  extends: .default_python
+  extends: .rust-base
   needs:
     - build:gitinfo
-  image: $PY_VER
   variables:
   before_script:
-    - apk add bash make cmake gcc g++
+    - !reference [rust-base, before_script]
+    - apk add pip
     - pip install --upgrade pip
     - pip install maturin
     - maturin --help

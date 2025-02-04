@@ -12,16 +12,9 @@ license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-#[[bin]]
-#name = "gitinfo"
-#path = "src/gitinfo.rs"
-#doc = false
-#test = false
-#doctest = false
-
 [[bin]]
-name = "demo"
-path = "src/demo.rs"
+name = "gitinfo"
+path = "src/gitinfo.rs"
 doc = false
 test = false
 doctest = false
@@ -43,45 +36,29 @@ members = [
     "crates/commits/tests",
     "crates/render",
     "crates/shared",
-#    "crates/python",
-    "crates/webassembly",
-    "crates/webassembly/crates/worker",
-    "crates/opfs",
-    # "crates/neon-npm"
 ]
 
 [workspace.dependencies]
-gix = { version = "=0.66.0", default-features = false }
-#gix = { path = "../../se-analytics/gitoxide/gix", default-features = false }
+gix = { version = "=0.70.0", default-features = false }
 clap = { version = "4.1.1", features = ["derive", "cargo"] }
 clap_complete = "4.4.3"
 log = "0.4.21"
 env_logger = "0.11.3"
 anyhow = "1.0.42"
 
-async-std = "1.13.0"
-wasm-bindgen = "0.2.95"
-wasm_thread = { git = "https://github.com/adamgerhant/wasm_thread.git", branch = "main" }
-serde = { version = "1.0.214", features = ["derive"] }
-web-sys = { version = "0.3.72" }
-web-fs = { path = "./web-fs" }
-
-
 [dependencies]
-#diff = { path = "./crates/diff", default-features = false }
-#commits = { path = "./crates/commits", default-features = false }
-#cli = { path = "./crates/cli", default-features = false }
-#render = { path = "./crates/render", default-features = false }
-#shared = { path = "./crates/shared", default-features = false }
 
-#[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+shared = { path = "./crates/shared", default-features = true }
+commits = { path = "./crates/commits", default-features = false }
+diff = { path = "./crates/diff", default-features = false }
+render = { path = "./crates/render", default-features = false }
+cli = { path = "./crates/cli", default-features = false }
 clap = { workspace = true }
 gix = { workspace = true }
 log = { workspace = true }
 anyhow = { workspace = true }
 
 comfy-table = "7.1.0"
-# chrono = "0.4.38"
 
 [dev-dependencies]
 criterion = "0.5.1"

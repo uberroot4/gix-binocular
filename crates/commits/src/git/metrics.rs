@@ -1,6 +1,6 @@
-use render::{Renderable};
 use crate::GitCommitMetricVector;
 use base64::prelude::*;
+use render::{Renderable, Value};
 
 #[derive(Debug)]
 pub struct GitCommitMetric {
@@ -10,7 +10,7 @@ pub struct GitCommitMetric {
     pub committer: Option<shared::Sig>,
     pub author: Option<shared::Sig>,
     pub branch: Option<String>,
-    pub parents: String,
+    pub parents: Vec<String>,
 }
 
 impl From<gix::revision::walk::Info<'_>> for GitCommitMetric {
@@ -22,8 +22,8 @@ impl From<gix::revision::walk::Info<'_>> for GitCommitMetric {
             .filter(|p| p.object().is_ok())
             .map(|p| p.object().unwrap().into_commit())
             .map(|p_id| p_id.id.to_string())
-            .collect::<Vec<_>>()
-            .join(";");
+            .collect::<Vec<_>>();
+        // .join(";");
         Self {
             commit: commit.id,
             commit_str: commit.id.to_string(),
@@ -40,7 +40,7 @@ impl From<gix::revision::walk::Info<'_>> for GitCommitMetric {
 impl From<Vec<GitCommitMetric>> for GitCommitMetricVector {
     fn from(value: Vec<GitCommitMetric>) -> Self {
         Self {
-            value_vector: value
+            value_vector: value,
         }
     }
 }
@@ -61,39 +61,57 @@ impl Renderable for GitCommitMetricVector {
         ]
     }
 
-    fn values(&self) -> Vec<Vec<String>> {
-        let mut values: Vec<Vec<String>> = Vec::new();
+    fn values(&self) -> Vec<Value> {
+        let mut values: Vec<Value> = Vec::new();
         for val in &self.value_vector {
             let (committer_name, committer_email, committer_time) = match &val.committer {
-                None => (render::const_values::NULL.clone(), render::const_values::NULL.clone(), render::const_values::NULL.clone()),
+                None => (
+                    render::const_values::NULL.clone(),
+                    render::const_values::NULL.clone(),
+                    render::const_values::NULL.clone(),
+                ),
                 Some(sig) => (
                     sig.name.to_string(),
                     sig.email.to_string(),
-                    sig.time.format(gix::date::time::format::ISO8601_STRICT)
-                )
+                    sig.time.format(gix::date::time::format::ISO8601_STRICT),
+                ),
             };
             let (author_name, author_email, author_time) = match &val.author {
-                None => (render::const_values::NULL.clone(), render::const_values::NULL.clone(), render::const_values::NULL.clone()),
+                None => (
+                    render::const_values::NULL.clone(),
+                    render::const_values::NULL.clone(),
+                    render::const_values::NULL.clone(),
+                ),
                 Some(sig) => (
                     sig.name.to_string(),
                     sig.email.to_string(),
-                    sig.time.format(gix::date::time::format::ISO8601_STRICT)
-                )
+                    sig.time.format(gix::date::time::format::ISO8601_STRICT),
+                ),
             };
 
-            values.push(vec![
-                val.branch.clone().unwrap_or(render::const_values::NULL.clone()),
-                (*(val.commit_str)).parse().unwrap(),
-                committer_time,
-                committer_name,
-                committer_email,
-                (*(val.message)).parse().unwrap(),
-                author_time,
-                author_name,
-                author_email,
-                (*(val.parents)).parse().unwrap(),
-                // (*(val.committer.unwrap().name).to_string()).parse().unwrap()
-            ]);
+            let value_list_parents: Vec<Value> = val
+                .parents
+                .iter() // borrow each element
+                .cloned() // clone the String so we own it
+                .map(Value::Str) // wrap each String in Value::Str
+                .collect();
+
+            values.push(Value::List(vec![
+                Value::Str(
+                    val.branch
+                        .clone()
+                        .unwrap_or(render::const_values::NULL.clone()),
+                ),
+                Value::Str((*(val.commit_str)).parse().unwrap()),
+                Value::Str(committer_time),
+                Value::Str(committer_name),
+                Value::Str(committer_email),
+                Value::Str((*(val.message)).parse().unwrap()),
+                Value::Str(author_time),
+                Value::Str(author_name),
+                Value::Str(author_email),
+                Value::List(value_list_parents),
+            ]))
         }
         values
     }

@@ -3,8 +3,8 @@ use gix::bstr::BString;
 use std::collections::HashMap;
 use gix::ObjectId;
 use crate::GitDiffMetricsVector;
-use render::{Renderable};
-use serde::{Deserialize, Serialize};
+use render::{Renderable, Value};
+use serde::{Serialize};
 
 #[derive(Debug)]
 pub struct GitDiffMetrics {
@@ -18,7 +18,7 @@ pub struct GitDiffMetrics {
     pub author: Option<shared::Sig>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize)]
 struct ChangesInfo {
     file: String,
     insertions: u32,
@@ -80,8 +80,8 @@ impl Renderable for GitDiffMetricsVector {
             "details_json".to_string(),
         ]
     }
-    fn values(&self) -> Vec<Vec<String>> {
-        let mut values: Vec<Vec<String>> = Vec::new();
+    fn values(&self) -> Vec<Value> {
+        let mut values: Vec<Value> = Vec::new();
         for val in &self.value_vector {
             // println!("change_map\t{:?}", val.change_map.iter().map(|cm| cm.0.to_string()).collect::<Vec<String>>());
 
@@ -90,23 +90,28 @@ impl Renderable for GitDiffMetricsVector {
                 insertions: cm.1.0,
                 deletions: cm.1.1,
             }).collect::<Vec<ChangesInfo>>();
-            // println!("{:}", serde_json::to_string(&changes_info_vec).unwrap());
 
-            values.push(vec![
+
+            let changes_info_list: Vec<_> = changes_info_vec.iter()
+                .map(|ci| serde_json::to_vec(ci).unwrap())
+                .map(|ci| String::from_utf8(ci).unwrap())
+                .map(Value::Str)
+                .collect();
+
+            values.push(Value::List(vec![
                 //val.branch.clone().unwrap_or(render::const_values::NULL.clone()),
-                val.commit.to_string(),
+                Value::Str(val.commit.to_string()),
                 match val.parent {
-                    None => { render::const_values::NULL.clone() }
+                    None => { Value::Str(render::const_values::NULL.clone()) }
                     Some(prnt) => {
-                        prnt.to_string()
+                        Value::Str(prnt.to_string())
                     }
                 },
-                val.total_number_of_files_changed.to_string(),
-                val.total_number_of_insertions.to_string(),
-                val.total_number_of_deletions.to_string(),
-                // val.change_map.iter().map(|cm| cm.0.to_string()).collect::<Vec<String>>().join(","),
-                format!("{:}", serde_json::to_string(&changes_info_vec).unwrap())
-            ]);
+                Value::Str(val.total_number_of_files_changed.to_string()),
+                Value::Str(val.total_number_of_insertions.to_string()),
+                Value::Str(val.total_number_of_deletions.to_string()),
+                Value::List(changes_info_list)
+            ]));
         }
         values
     }

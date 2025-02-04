@@ -57,28 +57,28 @@ build:gitinfo:
     paths:
       - "target/debug/gitinfo"
 
-.webassembly-base:
-  extends: .rust-base
-  before_script:
-    - apk add --no-cache musl-dev
-    - cargo install wasm-bindgen-cli #wasm-pack
-    - apk add wasm-pack
-    - wasm-pack --version
-
-build:commits:webassembly:
-  extends: .webassembly-base
-  stage: build
-  script:
-    - cd crates/commits/webassembly
-    - cargo build --no-default-features --target=wasm32-unknown-unknown --verbose
-    - wasm-pack build --dev --target web
-  artifacts:
-    # untracked: false
-    # when: on_success
-    # access: all
-    expire_in: "60 days"
-    paths:
-      - "crates/commits/webassembly/pkg"
+#.webassembly-base:
+#  extends: .rust-base
+#  before_script:
+#    - apk add --no-cache musl-dev
+#    - cargo install wasm-bindgen-cli #wasm-pack
+#    - apk add wasm-pack
+#    - wasm-pack --version
+#
+#build:commits:webassembly:
+#  extends: .webassembly-base
+#  stage: build
+#  script:
+#    - cd crates/commits/webassembly
+#    - cargo build --no-default-features --target=wasm32-unknown-unknown --verbose
+#    - wasm-pack build --dev --target web
+#  artifacts:
+#    # untracked: false
+#    # when: on_success
+#    # access: all
+#    expire_in: "60 days"
+#    paths:
+#      - "crates/commits/webassembly/pkg"
 
 .test-default:
   extends: .rust-base

@@ -5,8 +5,8 @@ use std::time::Instant;
 use clap::Parser;
 use log::{debug, info, trace};
 
-use cli::diff::DiffAlgorithm;
 use cli::cmd::{Cli, Commands};
+use cli::diff::DiffAlgorithm;
 use render::Renderable;
 use shared::logging;
 
@@ -28,16 +28,16 @@ fn main() {
     let now = Instant::now();
     trace!("args: {:?}", args);
     let git_dir = match args.global_opts.git_dir {
-        None => { panic!("No Path to .git Repository provided") }
-        Some(git_dir) => {
-            git_dir
+        None => {
+            panic!("No Path to .git Repository provided")
         }
+        Some(git_dir) => git_dir,
     };
     let repo = match gix::discover(git_dir) {
-        Ok(r) => {
-            r
+        Ok(r) => r,
+        Err(_) => {
+            panic!("Repository not found")
         }
-        Err(_) => { panic!("Repository not found") }
     };
 
     match args.command {
@@ -52,39 +52,37 @@ fn main() {
             };
             use diff::traverse::traverse_commit_graph;
 
-            let result = traverse_commit_graph(&repo, diff_args.threads.unwrap_or(1), args.global_opts.no_merges, Some(algo), diff_args.breadth_first, diff_args.committish, args.global_opts.limit);
+            let result = traverse_commit_graph(
+                &repo,
+                diff_args.threads.unwrap_or(1),
+                args.global_opts.no_merges,
+                Some(algo),
+                diff_args.breadth_first,
+                diff_args.committish,
+                args.global_opts.limit,
+            );
             match result {
                 Ok(result) => {
                     let printable_result: diff::GitDiffMetricsVector = result.into();
                     printable_result.render(args.global_opts.output_format);
                 }
-                Err(_) => panic!("Error traversing diffs")
+                Err(_) => panic!("Error traversing diffs"),
             }
         }
-        // Commands::DiffExtended(diff_args) => {
-        //     trace!("{:?}", diff_args);
-        //
-        //     let algo = match diff_args.algorithm {
-        //         DiffAlgorithm::Histogram => gix::diff::blob::Algorithm::Histogram,
-        //         DiffAlgorithm::Myers => gix::diff::blob::Algorithm::Myers,
-        //         DiffAlgorithm::MyersMinimal => gix::diff::blob::Algorithm::MyersMinimal,
-        //         // None => gix::diff::blob::Algorithm::Histogram,
-        //     };
-        //     use diff::traverse::traverse_commit_graph_extended;
-        //
-        //     let result = traverse_commit_graph_extended(&repo, diff_args.threads.unwrap_or(1), args.global_opts.no_merges, Some(algo), diff_args.breadth_first, diff_args.committish, args.global_opts.limit);
-        //     match result {
-        //         Ok(result) => {
-        //             let printable_result: diff::GitDiffExtendedMetricsVector = result.into();
-        //             printable_result.render(args.global_opts.output_format);
-        //         }
-        //         Err(_) => panic!("Error traversing diffs")
-        //     }
-        // }
+        Commands::Blame(blame_args) => {
+            trace!("{:?}", blame_args);
+            use blame::lookup;
+
+            let blames = lookup(&repo, blame_args.source_commit, blame_args.target_commit);
+        }
         Commands::Commits(commit_args) => {
             trace!("{:?}", commit_args);
             use commits::traverse;
-            let commit_ids = traverse::traverse_commit_graph(repo, commit_args.branches, args.global_opts.no_merges);
+            let commit_ids = traverse::traverse_commit_graph(
+                repo,
+                commit_args.branches,
+                args.global_opts.no_merges,
+            );
             match commit_ids {
                 Ok(cids) => {
                     info!("Found {:?} commits", cids.len());
@@ -92,12 +90,11 @@ fn main() {
                     let cids2: commits::GitCommitMetricVector = cids.into();
                     cids2.render(args.global_opts.output_format);
                 }
-                Err(_) => panic!("Error traversing commit graph")
+                Err(_) => panic!("Error traversing commit graph"),
             }
-        }
-        // Commands::DiffList {
-        //     ..
-        // } => todo!(),
+        } // Commands::DiffList {
+          //     ..
+          // } => todo!(),
     }
 
     let elapsed = now.elapsed();

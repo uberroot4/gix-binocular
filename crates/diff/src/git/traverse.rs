@@ -13,7 +13,6 @@ use log::{debug, error, info, trace};
 
 pub fn traverse_commit_graph(
     repo: &gix::Repository,
-    // no_bots: &Option<Option<MyRegex>>,
     max_threads: usize,
     no_merges: bool,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
@@ -138,8 +137,7 @@ fn get_churn_channel(
     let mut children = Vec::new();
 
     let mut rewrite_cache = repo
-        .diff_resource_cache(gix::diff::blob::pipeline::Mode::ToGit, Default::default())
-        .unwrap();
+        .diff_resource_cache(gix::diff::blob::pipeline::Mode::ToGit, Default::default())?;
     rewrite_cache
         .options
         .skip_internal_diff_if_external_is_configured = false;

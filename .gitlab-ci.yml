@@ -175,7 +175,7 @@ build:gitinfo:release:python:
     - !reference [".rust-base", "before_script"]
     - apk add --no-cache python3 py3-pip
     - python3 -m venv ./venv
-    - ./venv/bin/activate
+    - . ./venv/bin/activate
     - pip install --upgrade pip
     - pip install maturin
     - maturin --help

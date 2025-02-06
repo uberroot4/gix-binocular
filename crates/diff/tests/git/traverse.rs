@@ -1,5 +1,5 @@
 use crate::git::traverse::util::{get_demo_repo, get_demo_repo_merges};
-use diff::traverse::traverse_commit_graph;
+use cartography_diff::traverse::traverse_commit_graph;
 use gix::date::time::Sign;
 use gix_testtools::bstr::BString;
 use pretty_assertions::assert_eq;

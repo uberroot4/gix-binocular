@@ -50,7 +50,7 @@ anyhow = "1.0.42"
 
 shared = { path = "./crates/shared", default-features = true }
 commits = { path = "./crates/commits", default-features = false }
-diff = { path = "./crates/diff", default-features = false }
+cartography-diff = { path = "./crates/diff", default-features = false }
 render = { path = "./crates/render", default-features = false }
 cli = { path = "./crates/cli", default-features = false }
 clap = { workspace = true }

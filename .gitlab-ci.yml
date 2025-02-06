@@ -101,7 +101,7 @@ unit_test:crate:diff:
   extends: .test-default
   stage: unit_test
   script:
-    - RUST_LOG=TRACE cargo test --verbose -p diff
+    - RUST_LOG=TRACE cargo test --verbose -p cartography-diff
 
 unit_test:crate:render:
   extends: .test-default
@@ -135,7 +135,7 @@ integration_test:crate:diff-test:
   extends: .integration_test:base
   variables:
     CRATE: diff
-    PACKAGE: diff-test
+    PACKAGE: cartography-diff-test
 
 integration_test:crate:commits-test:
   extends: .integration_test:base

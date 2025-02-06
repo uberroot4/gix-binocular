@@ -1,5 +1,5 @@
 [package]
-name = "diff"
+name = "cartography-diff"
 edition.workspace = true
 version.workspace = true
 authors.workspace = true

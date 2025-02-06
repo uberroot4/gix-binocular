@@ -15,6 +15,8 @@ ctor = { version = "0.2.8" }
 gix-testtools = { version = "=0.15.0" }
 gix = { workspace = true, features = ["max-performance-safe", "blob-diff", "revision", "mailmap", ] }
 log = { workspace = true }
+assertables = { version = "9.5.0" }
+pretty_assertions = { version = "1.4.1" }
 
 commits = { path = ".." }
 shared = { path = "../../shared" }

@@ -26,3 +26,6 @@ log = { workspace = true }
 env_logger = { workspace = true }
 anyhow = { workspace = true }
 serde = { version = "1.0.210", features = ["derive"] }
+
+[dev-dependencies]
+pretty_assertions = { version = "1.4.1" }

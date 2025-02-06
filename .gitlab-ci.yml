@@ -174,10 +174,12 @@ build:gitinfo:release:python:
   before_script:
     - !reference [".rust-base", "before_script"]
     - apk add --no-cache python3 py3-pip
+    - !reference [".before_script", "before_script"]
     - pip install --upgrade pip
     - pip install maturin
     - maturin --help
   script:
+    - which python
     - cd ./crates/python
     - pwd
     - ls -la .

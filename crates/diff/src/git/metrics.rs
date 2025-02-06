@@ -1,10 +1,10 @@
+use crate::GitDiffMetricsVector;
 use anyhow::Result;
 use gix::bstr::BString;
-use std::collections::HashMap;
 use gix::ObjectId;
-use crate::GitDiffMetricsVector;
 use render::{Renderable, Value};
-use serde::{Serialize};
+use serde::Serialize;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct GitDiffMetrics {
@@ -34,9 +34,9 @@ impl GitDiffMetrics {
         author: Option<shared::Sig>,
     ) -> Result<Self> {
         let total_number_of_files_changed = change_map.values().count();
-        let totals = change_map.values().fold((0u32, 0u32), |acc, val| {
-            (acc.0 + val.0, acc.1 + val.1)
-        });
+        let totals = change_map
+            .values()
+            .fold((0u32, 0u32), |acc, val| (acc.0 + val.0, acc.1 + val.1));
         let total_number_of_insertions = totals.0;
         let total_number_of_deletions = totals.1;
 
@@ -62,11 +62,10 @@ impl GitDiffMetrics {
 impl From<Vec<GitDiffMetrics>> for GitDiffMetricsVector {
     fn from(value: Vec<GitDiffMetrics>) -> Self {
         Self {
-            value_vector: value
+            value_vector: value,
         }
     }
 }
-
 
 impl Renderable for GitDiffMetricsVector {
     fn headers() -> Vec<String> {
@@ -85,14 +84,19 @@ impl Renderable for GitDiffMetricsVector {
         for val in &self.value_vector {
             // println!("change_map\t{:?}", val.change_map.iter().map(|cm| cm.0.to_string()).collect::<Vec<String>>());
 
-            let changes_info_vec = val.change_map.clone().iter().map(|cm| ChangesInfo {
-                file: cm.0.to_string(),
-                insertions: cm.1.0,
-                deletions: cm.1.1,
-            }).collect::<Vec<ChangesInfo>>();
+            let changes_info_vec = val
+                .change_map
+                .clone()
+                .iter()
+                .map(|cm| ChangesInfo {
+                    file: cm.0.to_string(),
+                    insertions: cm.1 .0,
+                    deletions: cm.1 .1,
+                })
+                .collect::<Vec<ChangesInfo>>();
 
-
-            let changes_info_list: Vec<_> = changes_info_vec.iter()
+            let changes_info_list: Vec<_> = changes_info_vec
+                .iter()
                 .map(|ci| serde_json::to_vec(ci).unwrap())
                 .map(|ci| String::from_utf8(ci).unwrap())
                 .map(Value::Str)
@@ -102,15 +106,13 @@ impl Renderable for GitDiffMetricsVector {
                 //val.branch.clone().unwrap_or(render::const_values::NULL.clone()),
                 Value::Str(val.commit.to_string()),
                 match val.parent {
-                    None => { Value::Str(render::const_values::NULL.clone()) }
-                    Some(prnt) => {
-                        Value::Str(prnt.to_string())
-                    }
+                    None => Value::Str(render::const_values::NULL.clone()),
+                    Some(prnt) => Value::Str(prnt.to_string()),
                 },
                 Value::Str(val.total_number_of_files_changed.to_string()),
                 Value::Str(val.total_number_of_insertions.to_string()),
                 Value::Str(val.total_number_of_deletions.to_string()),
-                Value::List(changes_info_list)
+                Value::List(changes_info_list),
             ]));
         }
         values
@@ -120,9 +122,9 @@ impl Renderable for GitDiffMetricsVector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
-    use gix::ObjectId;
     use gix::bstr::BString;
+    use gix::ObjectId;
+    use std::collections::HashMap;
 
     // Mock ObjectId for testing
     fn mock_object_id() -> ObjectId {
@@ -159,7 +161,8 @@ mod tests {
         let committer = Some(mock_signature());
         let author = Some(mock_signature());
 
-        let metrics = GitDiffMetrics::new(change_map.clone(), commit, parent, committer, author).unwrap();
+        let metrics =
+            GitDiffMetrics::new(change_map.clone(), commit, parent, committer, author).unwrap();
 
         assert_eq!(metrics.total_number_of_files_changed, 2);
         assert_eq!(metrics.total_number_of_insertions, 13);
@@ -180,7 +183,8 @@ mod tests {
         let committer = Some(mock_signature());
         let author = None;
 
-        let metrics = GitDiffMetrics::new(change_map.clone(), commit, parent, committer, author).unwrap();
+        let metrics =
+            GitDiffMetrics::new(change_map.clone(), commit, parent, committer, author).unwrap();
 
         assert_eq!(metrics.total_number_of_files_changed, 0);
         assert_eq!(metrics.total_number_of_insertions, 0);
@@ -211,14 +215,17 @@ mod tests {
     #[test]
     fn test_git_diff_metrics_vector_headers() {
         let headers = GitDiffMetricsVector::headers();
-        assert_eq!(headers, vec![
-            "commit".to_string(),
-            "parent".to_string(),
-            "files_changed".to_string(),
-            "insertions".to_string(),
-            "deletions".to_string(),
-            "details_json".to_string(),
-        ]);
+        assert_eq!(
+            headers,
+            vec![
+                "commit".to_string(),
+                "parent".to_string(),
+                "files_changed".to_string(),
+                "insertions".to_string(),
+                "deletions".to_string(),
+                "details_json".to_string(),
+            ]
+        );
     }
 
     // Test 5: Test Renderable values() for GitDiffMetricsVector with valid data
@@ -229,20 +236,58 @@ mod tests {
 
         let commit = mock_object_id();
         let parent = mock_object_id();
-        let metrics = GitDiffMetrics::new(change_map.clone(), commit, Some(parent), None, None).unwrap();
+        let metrics =
+            GitDiffMetrics::new(change_map.clone(), commit, Some(parent), None, None).unwrap();
 
         let vector = GitDiffMetricsVector::from(vec![metrics]);
 
         let values = vector.values();
         assert_eq!(values.len(), 1);
-        assert_eq!(values[0][0], commit.to_string());
-        assert_eq!(values[0][1], parent.to_string());
-        assert_eq!(values[0][2], "1".to_string());
-        assert_eq!(values[0][3], "10".to_string());
-        assert_eq!(values[0][4], "5".to_string());
-        assert!(values[0][5].contains("file1.txt"));
-        assert!(values[0][5].contains("10"));
-        assert!(values[0][5].contains("5"));
+        let inner = match &values[0] {
+            Value::List(inner) => {
+                // Ensure the inner list has the expected content.
+                assert_eq!(
+                    inner.len(),
+                    6,
+                    "Ensure the inner list has the expected content"
+                );
+                inner
+            }
+            _ => panic!("Expected a Value::List for the inner element"),
+        };
+
+        fn check_inner(inner: &Value, expected_string: String) {
+            match &inner {
+                Value::Str(s) => {
+                    assert_eq!(
+                        *s, expected_string,
+                        "Ensure the inner Value::Str has the expected content"
+                    );
+                }
+                _ => panic!("Expected a Value::Str for the inner element"),
+            }
+        }
+        check_inner(&inner[0], commit.to_string());
+        check_inner(&inner[1], parent.to_string());
+        check_inner(&inner[2], "1".to_string());
+        check_inner(&inner[3], "10".to_string());
+        check_inner(&inner[4], "5".to_string());
+
+        match &inner[5] {
+            Value::List(inner) => {
+                assert_eq!(inner.len(), 1);
+                let inner_value = &inner[0];
+                match &inner_value {
+                    Value::Str(s) => {
+                        assert!(s.contains("file1.txt"));
+                        assert!(s.contains("10"));
+                        assert!(s.contains("5"));
+                    }
+                    _ => panic!("Expected a Value::Str for the inner element"),
+                }
+            }
+            _ => panic!("Expected a Value::List for the inner[5] element"),
+        }
     }
 
     // Test 6: Test Renderable values() for GitDiffMetricsVector with empty data
@@ -285,7 +330,26 @@ mod tests {
 
         let values = vector.values();
         assert_eq!(values.len(), 2);
-        assert_eq!(values[0][0], commit1.to_string());
-        assert_eq!(values[1][0], commit2.to_string());
+        fn check_inner_values(value: &Value, inner_str: String) {
+            match &value {
+                Value::List(inner) => {
+                    // Ensure the inner list has the expected content.
+                    assert_eq!(
+                        inner.len(),
+                        6,
+                        "Ensure the inner list has the expected content"
+                    );
+
+                    if let Value::Str(s) = &inner[0] {
+                        assert_eq!(*s, inner_str);
+                    } else {
+                        panic!("Expected a Value::Str in the inner[0]");
+                    }
+                }
+                _ => panic!("Expected a Value::List for the inner element"),
+            };
+        }
+        check_inner_values(&values[0], commit1.to_string());
+        check_inner_values(&values[1], commit2.to_string());
     }
 }

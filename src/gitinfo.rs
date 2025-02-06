@@ -48,7 +48,7 @@ fn main() {
                 DiffAlgorithm::MyersMinimal => gix::diff::blob::Algorithm::MyersMinimal,
                 // None => gix::diff::blob::Algorithm::Histogram,
             };
-            use diff::traverse::traverse_commit_graph;
+            use cartography_diff::traverse::traverse_commit_graph;
 
             let result = traverse_commit_graph(
                 &repo,
@@ -62,7 +62,7 @@ fn main() {
             );
             match result {
                 Ok(result) => {
-                    let printable_result: diff::GitDiffMetricsVector = result.into();
+                    let printable_result: cartography_diff::GitDiffMetricsVector = result.into();
                     printable_result.render(args.global_opts.output_format);
                 }
                 Err(_) => panic!("Error traversing diffs"),

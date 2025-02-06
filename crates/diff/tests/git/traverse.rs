@@ -2,6 +2,7 @@ use crate::git::traverse::util::{get_demo_repo, get_demo_repo_merges};
 use diff::traverse::traverse_commit_graph;
 use gix::date::time::Sign;
 use gix_testtools::bstr::BString;
+use pretty_assertions::assert_eq;
 
 #[test]
 fn check_correct_number_of_results_unlimited() {

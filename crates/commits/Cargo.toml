@@ -25,4 +25,4 @@ anyhow = { workspace = true }
 render = { path = "../render" }
 shared = { path = "../shared" }
 [dev-dependencies]
-pretty_assertions = { version = "1.4.1" }
+assertables = { version = "9.5.0" }

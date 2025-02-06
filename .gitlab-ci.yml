@@ -87,6 +87,7 @@ build:gitinfo:
   extends: .rust-base
   needs:
     - build:gitinfo
+  cache:
 
 ########## UNIT TESTS ##########
 

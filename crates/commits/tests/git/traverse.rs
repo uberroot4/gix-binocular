@@ -2,6 +2,7 @@ use gix::date::time::Sign;
 use crate::git::traverse::util::{get_demo_repo, get_demo_repo_merges};
 use commits::traverse::traverse_commit_graph;
 use shared::logging;
+use assertables::assert_contains;
 // Marks a function or static variable as a library/executable constructor
 #[ctor::ctor]
 fn init() {
@@ -132,7 +133,7 @@ fn check_correct_metric_properties() {
     assert_eq!(result_0.commit_str, "0cf7a4fe3ad6c49ae7beb394a1c1df7cc5173ce4");
     assert_ne!(result_0.committer, None);
     assert_ne!(result_0.author, None);
-    assert_eq!(result_0.parents, "a9f4112b75ecad0cb07a45e20e2a363f29729157");
+    assert_contains!(result_0.parents, &String::from("a9f4112b75ecad0cb07a45e20e2a363f29729157"));
     let committer = result_0.committer.clone().unwrap();
     assert_eq!(committer.name.to_string(), "committer");
     assert_eq!(committer.email.to_string(), "committer@example.com");
@@ -172,7 +173,7 @@ fn check_correct_metric_properties_mailmap() {
     assert_eq!(result_0.commit_str, "f1c027f839e1facea509b8efc2ddd9bf2ccc9c7e");
     assert_ne!(result_0.committer, None);
     assert_ne!(result_0.author, None);
-    assert_eq!(result_0.parents, "21995c9faa19ca2c03f4f66e5bf32578b7c3e945");
+    assert_contains!(result_0.parents, &String::from("21995c9faa19ca2c03f4f66e5bf32578b7c3e945"));
     let committer = result_0.committer.clone().unwrap();
     assert_eq!(committer.name.to_string(), "Ronald McDonald");
     assert_eq!(committer.email.to_string(), "ronald@mcdonald.lol");
@@ -211,7 +212,7 @@ fn check_correct_metric_properties_no_committer_no_author() {
     let result_0 = result.get(0).unwrap();
     assert_eq!(result_0.commit.to_string(), "f1c027f839e1facea509b8efc2ddd9bf2ccc9c7e");
     assert_eq!(result_0.commit_str, "f1c027f839e1facea509b8efc2ddd9bf2ccc9c7e");
-    assert_eq!(result_0.parents, "21995c9faa19ca2c03f4f66e5bf32578b7c3e945");
+    assert_contains!(result_0.parents, &String::from("21995c9faa19ca2c03f4f66e5bf32578b7c3e945"));
     assert_ne!(result_0.committer, None);
     assert_eq!(result_0.author, None);
     let committer = result_0.committer.clone().unwrap();

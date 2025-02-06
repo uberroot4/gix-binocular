@@ -25,7 +25,7 @@ pub fn traverse_commit_graph(
         warn!("limit = 0 provided, not doing any calculation!");
         return Ok(Vec::new());
     } else if commitlist.iter().count() == 0 {
-        warn!("limit = 0 provided, not doing any calculation!");
+        warn!("No commits provided, not doing any calculation!");
         return Ok(Vec::new());
     } else if follow && commitlist.iter().count() > 1 {
         error!("Cannot follow more than 1 commit");

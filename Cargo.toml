@@ -36,6 +36,7 @@ members = [
     "crates/commits/tests",
     "crates/render",
     "crates/shared",
+    "crates/python",
 ]
 
 [workspace.dependencies]

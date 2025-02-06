@@ -3,7 +3,6 @@ mod tabular;
 
 pub use cli::output_format::OutputFormat;
 
-
 pub mod const_values {
     use lazy_static::lazy_static;
     lazy_static! {
@@ -27,8 +26,7 @@ pub(crate) fn format_value(val: &Value) -> String {
         Value::List(list) => {
             let formatted: Vec<String> = list.iter().map(|v| format_value(v)).collect();
             format!("[{}]", formatted.join(", "))
-        },
-        // Value::JsonObject(obj) => obj.clone(),
+        }
     }
 }
 
@@ -39,12 +37,8 @@ pub trait Renderable {
 
     fn format(&self, format: OutputFormat) -> String {
         match format {
-            OutputFormat::Render => {
-                tabular::render_tabular(Self::headers(), self.values())
-            }
-            OutputFormat::CSV => {
-                csv::render_csv(Self::headers(), self.values())
-            }
+            OutputFormat::Render => tabular::render_tabular(Self::headers(), self.values()),
+            OutputFormat::CSV => csv::render_csv(Self::headers(), self.values()),
             OutputFormat::JSON => {
                 todo!("Not yet implemented")
             }
@@ -57,9 +51,11 @@ pub trait Renderable {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{const_values, OutputFormat, Renderable, Value};
     use csv::Writer;
     use std::string::ToString;
+    use pretty_assertions::assert_eq;
+    use assertables::{assert_contains, assert_not_contains};
 
     #[derive(Default)]
     struct TestStruct;
@@ -69,10 +65,16 @@ mod tests {
             vec!["Column1".to_string(), "Column2".to_string()]
         }
 
-        fn values(&self) -> Vec<Vec<String>> {
+        fn values(&self) -> Vec<Value> {
             vec![
-                vec!["Value1".to_string(), "Value2".to_string()],
-                vec!["Value3".to_string(), "Value4".to_string()],
+                Value::List(vec![
+                    Value::Str("Value1".to_string()),
+                    Value::Str("Value2".to_string()),
+                ]),
+                Value::List(vec![
+                    Value::Str("Value3".to_string()),
+                    Value::Str("Value4".to_string()),
+                ]),
             ]
         }
     }
@@ -85,7 +87,7 @@ mod tests {
             vec![]
         }
 
-        fn values(&self) -> Vec<Vec<String>> {
+        fn values(&self) -> Vec<Value> {
             vec![]
         }
     }
@@ -110,9 +112,9 @@ mod tests {
     fn test_render_output_format_basic() {
         let test_data = TestStruct;
         let output = test_data.format(OutputFormat::Render);
-        assert!(output.contains("Column1"));
-        assert!(output.contains("Value1"));
-        assert!(output.contains("Value4"));
+        assert_contains!(output, "Column1");
+        assert_contains!(output, "Value1");
+        assert_contains!(output, "Value4");
     }
 
     // Test 2: CSV output format basic test
@@ -120,8 +122,8 @@ mod tests {
     fn test_csv_output_format_basic() {
         let test_data = TestStruct;
         let output = test_data.format(OutputFormat::CSV);
-        assert!(output.contains("Column1,Column2"));
-        assert!(output.contains("Value1,Value2"));
+        assert_contains!(output, "Column1,Column2");
+        assert_contains!(output, "Value1,Value2");
     }
 
     // Test 3: Empty headers for Render output
@@ -160,15 +162,16 @@ mod tests {
                 vec!["Header1".to_string(), "Header2".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
+            fn values(&self) -> Vec<Value> {
                 vec![] // No values
             }
         }
 
         let data = TestWithHeadersNoRows;
         let output = data.format(OutputFormat::Render);
-        assert!(output.contains("Header1"));
-        assert!(!output.contains("Value"));
+        assert_contains!(output, "Header1");
+        assert_contains!(output, "Header2");
+        assert_not_contains!(output, "Value");
     }
 
     // Test 6: Handling empty rows in CSV output
@@ -180,7 +183,7 @@ mod tests {
                 vec!["Header1".to_string(), "Header2".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
+            fn values(&self) -> Vec<Value> {
                 vec![] // No values
             }
         }
@@ -200,14 +203,16 @@ mod tests {
                 vec!["Header1".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
-                vec![vec![String::from_utf8_lossy(&[0x80, 0x81]).to_string()]]
+            fn values(&self) -> Vec<Value> {
+                vec![Value::List(vec![Value::Str(
+                    String::from_utf8_lossy(&[0x80, 0x81]).to_string(),
+                )])]
             }
         }
 
         let data = NonUTF8Struct;
         let output = data.format(OutputFormat::CSV);
-        assert!(output.contains("�")); // Non-UTF8 should be replaced with �
+        assert_contains!(output, "�"); // Non-UTF8 should be replaced with �
     }
 
     // Test 8: Empty struct Render output
@@ -237,7 +242,7 @@ mod tests {
                 vec!["Header1".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
+            fn values(&self) -> Vec<Value> {
                 vec![]
             }
 
@@ -268,14 +273,14 @@ mod tests {
                 vec!["He@der#1$".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
-                vec![vec!["Value!".to_string()]]
+            fn values(&self) -> Vec<Value> {
+                vec![Value::List(vec![Value::Str("Value!".to_string())])]
             }
         }
 
         let data = SpecialHeader;
         let output = data.format(OutputFormat::Render);
-        assert!(output.contains("He@der#1$"));
+        assert_contains!(output, "He@der#1$");
     }
 
     // Test 12: Render with NULL replacement in values
@@ -288,14 +293,16 @@ mod tests {
                 vec!["Header1".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
-                vec![vec![const_values::NULL.to_string()]]
+            fn values(&self) -> Vec<Value> {
+                vec![Value::List(vec![Value::Str(
+                    const_values::NULL.to_string(),
+                )])]
             }
         }
 
         let data = NullValues;
         let output = data.format(OutputFormat::Render);
-        assert!(output.contains("NULL"));
+        assert_contains!(output, "NULL");
     }
 
     // Test 13: CSV with NULL replacement in values
@@ -308,14 +315,16 @@ mod tests {
                 vec!["Header1".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
-                vec![vec![const_values::NULL.to_string()]]
+            fn values(&self) -> Vec<Value> {
+                vec![Value::List(vec![Value::Str(
+                    const_values::NULL.to_string(),
+                )])]
             }
         }
 
         let data = NullValues;
         let output = data.format(OutputFormat::CSV);
-        assert!(output.contains("NULL"));
+        assert_contains!(output, "NULL");
     }
 
     // Test 14: Render with long column headers
@@ -328,14 +337,14 @@ mod tests {
                 vec!["ThisIsAReallyLongHeaderNameThatShouldBeFormattedCorrectly".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
-                vec![vec!["Value1".to_string()]]
+            fn values(&self) -> Vec<Value> {
+                vec![Value::List(vec![Value::Str("Value1".to_string())])]
             }
         }
 
         let data = LongHeader;
         let output = data.format(OutputFormat::Render);
-        assert!(output.contains("ThisIsAReallyLongHeaderNameThatShouldBeFormattedCorrectly"));
+        assert_contains!(output, "ThisIsAReallyLongHeaderNameThatShouldBeFormattedCorrectly");
     }
 
     // Test 15: Render large dataset
@@ -348,14 +357,14 @@ mod tests {
                 vec!["Header1".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
-                (0..1000).map(|i| vec![format!("Value{i}")]).collect()
+            fn values(&self) -> Vec<Value> {
+                (0..1000).map(|i| Value::List(vec![Value::Str(format!("Value{i}"))])).collect()
             }
         }
 
         let data = LargeDataSet;
         let output = data.format(OutputFormat::Render);
-        assert!(output.contains("Value999"));
+        assert_contains!(output, "Value999");
     }
 
     // Test 16: CSV large dataset
@@ -368,14 +377,15 @@ mod tests {
                 vec!["Header1".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
-                (0..1000).map(|i| vec![format!("Value{i}")]).collect()
+            fn values(&self) -> Vec<Value> {
+                (0..1000).map(|i| Value::List(vec![Value::Str(format!("Value{i}"))])).collect()
             }
         }
 
         let data = LargeDataSet;
         let output = data.format(OutputFormat::CSV);
-        assert!(output.contains("Value999"));
+        assert_contains!(output, "Value999")
+
     }
 
     // Test 17: Render with numeric values
@@ -388,14 +398,14 @@ mod tests {
                 vec!["Header1".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
-                vec![vec!["12345".to_string()]]
+            fn values(&self) -> Vec<Value> {
+                vec![Value::List(vec![Value::Str("12345".to_string())])]
             }
         }
 
         let data = NumericValues;
         let output = data.format(OutputFormat::Render);
-        assert!(output.contains("12345"));
+        assert_contains!(output, "12345");
     }
 
     // Test 18: CSV with numeric values
@@ -408,14 +418,14 @@ mod tests {
                 vec!["Header1".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
-                vec![vec!["12345".to_string()]]
+            fn values(&self) -> Vec<Value> {
+                vec![Value::List(vec![Value::Str("12345".to_string())])]
             }
         }
 
         let data = NumericValues;
         let output = data.format(OutputFormat::CSV);
-        assert!(output.contains("12345"));
+        assert_contains!(output, "12345");
     }
 
     // Test 19: Render with boolean values
@@ -428,14 +438,14 @@ mod tests {
                 vec!["Header1".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
-                vec![vec!["true".to_string()]]
+            fn values(&self) -> Vec<Value> {
+                vec![Value::List(vec![Value::Str("true".to_string())])]
             }
         }
 
         let data = BooleanValues;
         let output = data.format(OutputFormat::Render);
-        assert!(output.contains("true"));
+        assert_contains!(output, "true");
     }
 
     // Test 20: CSV with boolean values
@@ -448,13 +458,13 @@ mod tests {
                 vec!["Header1".to_string()]
             }
 
-            fn values(&self) -> Vec<Vec<String>> {
-                vec![vec!["true".to_string()]]
+            fn values(&self) -> Vec<Value> {
+                vec![Value::List(vec![Value::Str("true".to_string())])]
             }
         }
 
         let data = BooleanValues;
         let output = data.format(OutputFormat::CSV);
-        assert!(output.contains("true"));
+        assert_contains!(output, "true");
     }
 }

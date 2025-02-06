@@ -37,7 +37,7 @@ pub struct GlobalOpts {
     pub output_format: crate::output_format::OutputFormat,
     /// Show only non-merge commits (implies --max-parents=1)
     #[clap(long, global = true)]
-    pub no_merges: bool,
+    pub skip_merges: bool,
     /// Number of commits to return
     #[clap(long, global = true)]
     pub limit: Option<usize>,

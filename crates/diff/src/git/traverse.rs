@@ -1,27 +1,38 @@
-use crate::git::metrics::{GitDiffMetrics};
+use crate::git::metrics::GitDiffMetrics;
 use crate::utils;
 use anyhow::Result;
 use gix::{
+    diff::blob::Platform, revision::walk::Sorting, traverse::commit::simple::CommitTimeOrder,
     Commit, ObjectId,
-    traverse::commit::simple::CommitTimeOrder,
-    revision::walk::Sorting,
-    diff::blob::Platform
 };
+use log::{debug, error, trace, warn, info};
 use std::cmp::min_by;
 use std::thread::JoinHandle;
-use log::{debug, error, info, trace};
 
 pub fn traverse_commit_graph(
     repo: &gix::Repository,
+    commitlist: Vec<String>,
     max_threads: usize,
-    no_merges: bool,
+    skip_merges: bool,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
     breadth_first: bool,
-    committish: Option<String>,
+    follow: bool,
     limit: Option<usize>,
 ) -> Result<Vec<GitDiffMetrics>> {
+    let result_limit = limit.unwrap_or(usize::MAX);
+    // Do not calculate anything if limit is set to <= 0
+    if result_limit <= 0 {
+        warn!("limit = 0 provided, not doing any calculation!");
+        return Ok(Vec::new());
+    } else if commitlist.iter().count() == 0 {
+        warn!("limit = 0 provided, not doing any calculation!");
+        return Ok(Vec::new());
+    } else if follow && commitlist.iter().count() > 1 {
+        error!("Cannot follow more than 1 commit");
+        panic!("Cannot follow more than 1 commit")
+    }
+
     let mailmap = repo.open_mailmap();
-    // let total_number_of_commits = Arc::new(AtomicUsize::default());
 
     let num_threads = std::thread::available_parallelism()
         .map(|p| p.get())
@@ -40,65 +51,94 @@ pub fn traverse_commit_graph(
         Sorting::ByCommitTime(CommitTimeOrder::NewestFirst)
     };
 
-    let commit = repo
-        .rev_parse_single({
-            committish
-                .map(|mut c| {
-                    c.push_str("^{commit}");
-                    c
-                })
-                .as_deref()
-                .unwrap_or("HEAD")
-        })?
-        .object()?
-        .try_into_commit()?;
-    debug!("commit: {:?}", commit.id());
+    let commit_iter: Vec<Commit> = commitlist
+        .iter()
+        .map(|c| {
+            repo.rev_parse_single(gix::bstr::BStr::new(c.as_bytes()))
+                .expect(format!("Commit '{:?}' must exist (1)", c).as_str())
+                .object()
+                .expect(format!("Commit object '{:?}' must exist", c).as_str())
+                .try_into_commit()
+                .expect(format!("Commit '{:?}' must exist (2)", c).as_str())
+        })
+        .collect();
 
-    let commit_iter = commit
-        .id()
-        .ancestors()
-        .sorting(sorting)
-        .use_commit_graph(can_use_author_threads)
-        .with_commit_graph(commit_graph)
-        .all()?;
+    // Generate a commit list based on the 'follow' flag.
+    let commits: Vec<Commit> = if follow {
+        // When following ancestors, we expect exactly one commit.
+        assert_eq!(
+            commit_iter.len(),
+            1,
+            "Expected exactly one commit when 'follow' is enabled"
+        );
+        // Safely retrieve the single commit.
+        let commit = commit_iter
+            .get(0)
+            .expect("Commit must exist when following ancestors");
 
-    let (churn_threads, churn_tx) = get_churn_channel(
-        repo,
-        threads_used,
-        &mailmap,
-        diff_algorithm,
-    )?;
+        // Get the commit’s ancestors using the provided options.
+        let ancestors = commit
+            // .expect(format!("Commit '{:?}' must exist (3)", cmt).as_str())
+            .id()
+            .ancestors()
+            .sorting(sorting)
+            .use_commit_graph(can_use_author_threads)
+            .with_commit_graph(commit_graph)
+            .all()
+            .expect(&format!(
+                "Failed to retrieve ancestors for commit {:?}",
+                commit
+            ));
 
-    let commit_iter_clone = commit
-        .id()
-        .ancestors()
-        .sorting(sorting)
-        .use_commit_graph(can_use_author_threads)
-        .with_commit_graph(repo.commit_graph().ok())
-        .all()?;
+        // Process the ancestor iterator:
+        //   - Skip any erroneous entries by filtering with `filter_map`
+        //   - Convert each successful entry to a commit object
+        //   - Limit the number of results by `result_limit`
+        ancestors
+            .filter_map(|res| {
+                res.ok() // Only consider Ok values
+                    .and_then(|entry| entry.object().ok()) // Get the commit object if available
+            })
+            .take(result_limit)
+            .collect()
+    } else {
+        // If not following ancestors, use the provided commit list as-is.
+        commit_iter.into_iter().collect()
+    };
 
-    let commits: Vec<_> = commit_iter_clone.collect(); // Collecting all commits into a vector
-    trace!("Number of commits: {}", commits.len());
-    let limit = limit.unwrap_or(usize::MAX);
-    info!("Processing {} commit(s)", limit);
+    // Optionally filter out merge commits (those with more than one parent)
+    // when the `no_merges` flag is enabled.
+    let final_commit_list: Vec<Commit> = commits
+        .into_iter()
+        .filter(|commit| {
+            if skip_merges && commit.parent_ids().count() > 1 {
+                trace!("Skipping merge commit {:?}", commit.id);
+                false
+            } else {
+                true
+            }
+        })
+        .collect();
+
+    if final_commit_list.iter().count() == 0 {
+        warn!("No more commits left based on the arguments, aborting with empty result");
+        return Ok(Vec::new());
+    }
+
+    let (churn_threads, churn_tx) =
+        get_churn_channel(repo, threads_used, &mailmap, diff_algorithm)?;
+
+    info!("Processing {} commit(s)", final_commit_list.iter().count());
 
     let mut count = 0;
-    for commit in commit_iter.take(limit) {
-        let commit = commit?;
-        {
-            if no_merges && commit.parent_ids.len() > 1 {
-                trace!("Skipping Merge Commit {:?}", commit.id);
-                continue;
+    for commit in final_commit_list {
+        match churn_tx.send(commit.id) {
+            Ok(_) => {}
+            Err(e) => {
+                error!("Send Error {:?}", e);
             }
-
-            match churn_tx.send(commit.id) {
-                Ok(_) => {}
-                Err(e) => {
-                    error!("Send Error {:?}", e);
-                }
-            }
-            count += 1;
         }
+        count += 1;
     }
 
     // total_number_of_commits.store(count, Ordering::SeqCst);
@@ -119,7 +159,7 @@ pub fn traverse_commit_graph(
         }
     }
 
-    diff_results.truncate(limit);
+    //diff_results.truncate(limit);
     Ok(diff_results)
 }
 
@@ -136,8 +176,8 @@ fn get_churn_channel(
     let repo_sync = repo.clone().into_sync();
     let mut children = Vec::new();
 
-    let mut rewrite_cache = repo
-        .diff_resource_cache(gix::diff::blob::pipeline::Mode::ToGit, Default::default())?;
+    let mut rewrite_cache =
+        repo.diff_resource_cache(gix::diff::blob::pipeline::Mode::ToGit, Default::default())?;
     rewrite_cache
         .options
         .skip_internal_diff_if_external_is_configured = false;
@@ -155,10 +195,7 @@ fn get_churn_channel(
                 debug!("std::thread::spawn: {:?}", std::thread::current().id());
                 while let Ok(commit_id) = rx_clone.recv() {
                     let commit = repo.find_object(commit_id)?.into_commit();
-                    debug!(
-                        "(recv)\t{:?}",
-                        commit.id
-                    );
+                    debug!("(recv)\t{:?}", commit.id);
                     let mut diff_result = compute_diff_with_parent(
                         //&mut HashMap::new(),
                         &commit,
@@ -172,7 +209,6 @@ fn get_churn_channel(
                         diff.author = Some(author.clone().into());
                         diff.committer = Some(committer.clone().into());
                     }
-
 
                     commits_vec.append(diff_result.as_mut())
                 }
@@ -191,11 +227,13 @@ fn compute_diff_with_parent(
     repo: &gix::Repository,
     rewrite_cache: &mut Platform,
 ) -> Result<Vec<GitDiffMetrics>> {
-    let parent_commits: Vec<Commit> = commit.parent_ids()
+    let parent_commits: Vec<Commit> = commit
+        .parent_ids()
         .filter(|p| p.object().is_ok())
         .map(|p| p.object().unwrap().into_commit())
         .collect();
-    let mut parent_trees: Vec<(Option<&Commit>, gix::Tree)> = parent_commits.iter()
+    let mut parent_trees: Vec<(Option<&Commit>, gix::Tree)> = parent_commits
+        .iter()
         .map(|parent_commit| {
             let parent_commit_id = parent_commit.id();
             match repo
@@ -203,41 +241,44 @@ fn compute_diff_with_parent(
                 .ok()
                 .and_then(|c| c.peel_to_tree().ok())
             {
-                Some(tree) => {
-                    (Some(parent_commit), tree)
-                }
+                Some(tree) => (Some(parent_commit), tree),
                 None => panic!("parent_commit could not be found"),
             }
-        }).collect();
+        })
+        .collect();
     if parent_trees.is_empty() {
         debug!("Adding empty tree");
         parent_trees.push((None, repo.empty_tree()));
     }
 
-    trace!("commit {:?}\tparents {:?}", commit, parent_commits);
+    debug!("commit {:?}\tparents {:?}", commit, parent_commits);
 
-    let diffs: Vec<GitDiffMetrics> = parent_trees.iter().map(|(parent_commit, parent_tree)| {
-        // let mut change_map = Default::default();
+    let diffs: Vec<GitDiffMetrics> = parent_trees
+        .iter()
+        .map(|(parent_commit, parent_tree)| {
+            // let mut change_map = Default::default();
 
-        // should be usable in any next version > 0.66.0
-        // let changes = repo.diff_tree_to_tree(&parent_tree, &commit.tree().unwrap(), None)?;
-        let change_map = utils::git_helper::calculate_changes(
-            &parent_tree,
-            &commit.tree().unwrap(),
-            rewrite_cache,
-            &mut rewrite_cache.clone(),
-        );
-        GitDiffMetrics::new(
-            change_map,
-            commit.id,
-            match parent_commit {
-                Some(pc) => Some(pc.id),
-                None => None
-            },
-            None,
-            None,
-        ).expect("Diff result should be processable")
-    }).collect();
+            // should be usable in any next version > 0.66.0
+            // let changes = repo.diff_tree_to_tree(parent_tree, &commit.tree().unwrap(), None).unwrap();
+            let change_map = utils::git_helper::calculate_changes(
+                &parent_tree,
+                &commit.tree().unwrap(),
+                rewrite_cache,
+                &mut rewrite_cache.clone(),
+            );
+            GitDiffMetrics::new(
+                change_map,
+                commit.id,
+                match parent_commit {
+                    Some(pc) => Some(pc.id),
+                    None => None,
+                },
+                None,
+                None,
+            )
+            .expect("Diff result should be processable")
+        })
+        .collect();
 
     debug!(
         "parents-commit {:?}\t{:?}\t|\t{:?} diffs",
@@ -256,7 +297,5 @@ fn compute_diff_with_parent(
         );
     }
 
-
     Ok(diffs)
 }
-

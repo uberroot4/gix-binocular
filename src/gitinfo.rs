@@ -52,11 +52,12 @@ fn main() {
 
             let result = traverse_commit_graph(
                 &repo,
+                diff_args.delegate.commitlist,
                 diff_args.threads.unwrap_or(1),
-                args.global_opts.no_merges,
+                args.global_opts.skip_merges,
                 Some(algo),
                 diff_args.breadth_first,
-                diff_args.committish,
+                diff_args.follow,
                 args.global_opts.limit,
             );
             match result {
@@ -79,7 +80,7 @@ fn main() {
             let commit_ids = traverse::traverse_commit_graph(
                 repo,
                 commit_args.branches,
-                args.global_opts.no_merges,
+                args.global_opts.skip_merges,
             );
             match commit_ids {
                 Ok(cids) => {
@@ -90,6 +91,9 @@ fn main() {
                 }
                 Err(_) => panic!("Error traversing commit graph"),
             }
+        }
+        other => {
+            eprintln!("Unknown Command {:?}", other);
         }
     }
 

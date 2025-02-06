@@ -1,9 +1,9 @@
 #[derive(Debug, clap::Parser, Clone)]
 #[clap(name = "diff", about = "diff")]
 pub struct Args {
-    /// The ref-spec for the first commit to use, or HEAD (default).
-    #[clap(short = 'c', long, group="commit_args")]
-    pub committish: Option<String>,
+    /// Follow the given commit history (only allowed with one SHA!)
+    #[clap(long, default_value_t=false)]
+    pub follow: bool,
 
     /// Commits are sorted as they are mentioned in the commit graph.
     #[clap(short, long)]
@@ -34,5 +34,5 @@ pub enum DiffAlgorithm {
 pub struct CommitArgs {
     /// The ref-spec list for the commits to process (only processes given commit hashes!)
     #[clap(name = "commitlist")]
-    pub commitlist: Option<Vec<String>>,
+    pub commitlist: Vec<String>,
 }

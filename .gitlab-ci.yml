@@ -178,7 +178,7 @@ build:gitinfo:release:python:
     - python3 -m venv ./venv
     - . ./venv/bin/activate
     - pip install --upgrade pip
-    - pip install maturin[patchelf]
+    - pip install maturin
     - maturin --help
   script:
     - which python

@@ -6,7 +6,7 @@ mod git {
 
 pub use crate::git::traverse;
 
-// pub use crate::git::metrics::GitCommitMetric;
+pub use crate::git::metrics::GitCommitMetric;
 pub struct GitCommitMetricVector {
-    value_vector: Vec<git::metrics::GitCommitMetric>,
+    value_vector: Vec<GitCommitMetric>,
 }

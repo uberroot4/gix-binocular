@@ -181,7 +181,7 @@ build:gitinfo:release:python:
     - maturin --help
   script:
     - which python
-    - cd ./crates/python
+    - cd ./crates/pyo3-bindings
     - pwd
     - ls -la .
     - maturin build -r

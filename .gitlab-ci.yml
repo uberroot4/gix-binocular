@@ -52,6 +52,7 @@ build:gitinfo:
     - target/debug/gitinfo -h
     - target/debug/gitinfo diff -h
     - target/debug/gitinfo commits -h
+    - target/debug/gitinfo blame -h
   artifacts:
     # untracked: false
     # when: on_success
@@ -177,7 +178,7 @@ build:gitinfo:release:python:
     - python3 -m venv ./venv
     - . ./venv/bin/activate
     - pip install --upgrade pip
-    - pip install maturin
+    - pip install maturin[patchelf]
     - maturin --help
   script:
     - which python

@@ -1,0 +1,25 @@
+[package]
+name = "blame"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+documentation.workspace = true
+license.workspace = true
+
+autotests = false
+include = ["src/**/*"]
+
+[lib]
+doctest = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gix = { workspace = true, features = ["max-performance-safe", "revision"] }
+gix-odb = {version = "=0.67.0"}
+gix-blame = "0.0.0"
+#gix-odb = { git = "https://github.com/cruessler/gitoxide.git", branch = "gix-blame" }
+log = { workspace = true }
+anyhow = { workspace = true }
+#diff = { path = "../diff", default-features = false }

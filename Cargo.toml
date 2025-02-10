@@ -36,6 +36,7 @@ members = [
     "crates/commits/tests",
     "crates/render",
     "crates/shared",
+    "crates/blame",
     "crates/pyo3-bindings",
 ]
 
@@ -47,13 +48,15 @@ log = "0.4.21"
 env_logger = "0.11.3"
 anyhow = "1.0.42"
 
-[dependencies]
 
+[dependencies]
+dotenv = { version = "0.15.0" }
 shared = { path = "./crates/shared", default-features = true }
 commits = { path = "./crates/commits", default-features = false }
 cartography-diff = { path = "./crates/diff", default-features = false }
 render = { path = "./crates/render", default-features = false }
 cli = { path = "./crates/cli", default-features = false }
+blame = { path = "./crates/blame", default-features = false }
 clap = { workspace = true }
 gix = { workspace = true }
 log = { workspace = true }

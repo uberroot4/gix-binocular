@@ -1,13 +1,13 @@
 use crate::git::traverse::util::{get_demo_repo, get_demo_repo_merges};
-use cartography_diff::traverse::traverse_commit_graph;
+use cartography_diff::traversal::main;
 use gix::date::time::Sign;
 use gix_testtools::bstr::BString;
 use pretty_assertions::assert_eq;
-
+use assertables::assert_none;
 #[test]
 fn check_correct_number_of_results_unlimited() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         &local_repo,              // repo
         vec!["HEAD".to_string()], // commitlist
         1,                        // max_threads
@@ -24,7 +24,7 @@ fn check_correct_number_of_results_unlimited() {
 #[test]
 fn check_correct_number_of_results_20_committish() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         &local_repo,
         vec!["HEAD".to_string()],
         1,
@@ -46,7 +46,7 @@ fn check_correct_number_of_results_3_commitlist_with_limit_1() {
         String::from("a9f4112b75ecad0cb07a45e20e2a363f29729157"),
         String::from("d78c63c5ea3149040767e4387e7fc743cda118fd"),
     ];
-    let result = traverse_commit_graph(
+    let result = main(
         &local_repo,
         commitlist,
         1,
@@ -69,7 +69,7 @@ fn check_correct_number_of_results_3_commitlist_unlimited() {
         String::from("d78c63c5ea3149040767e4387e7fc743cda118fd"),
     ];
     let result =
-        traverse_commit_graph(&local_repo, commitlist,1, false, None, true, false, None).unwrap();
+        main(&local_repo, commitlist,1, false, None, true, false, None).unwrap();
     assert_eq!(result.iter().clone().count(), 3);
 }
 
@@ -78,21 +78,21 @@ fn check_correct_number_of_results_3_commitlist_unlimited() {
 fn check_commitlist_fail_on_non_existent_sha() {
     let local_repo = get_demo_repo();
     let commitlist = vec![String::from("0cf7a4fe3ad6c49ae7beb394a1c1df7cc5173cad")];
-    traverse_commit_graph(&local_repo, commitlist,1, false, None, true, true , None).unwrap();
+    main(&local_repo, commitlist,1, false, None, true, true , None).unwrap();
 }
 
 #[test]
 fn check_correct_number_of_results_commitlist_empty_input() {
     let local_repo = get_demo_repo();
     let result =
-        traverse_commit_graph(&local_repo, vec![],1, false, None, true, true, None).unwrap();
+        main(&local_repo, vec![],1, false, None, true, true, None).unwrap();
     assert_eq!(result.iter().clone().count(), 0);
 }
 
 #[test]
 fn check_correct_number_of_results_19_committish() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         &local_repo,
         vec!["HEAD".to_string()],
         1,
@@ -109,7 +109,7 @@ fn check_correct_number_of_results_19_committish() {
 #[test]
 fn check_correct_number_of_results_21_committish() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         &local_repo,
         vec!["HEAD".to_string()],
         1,
@@ -126,7 +126,7 @@ fn check_correct_number_of_results_21_committish() {
 #[test]
 fn check_correct_number_of_results_22_committish() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         &local_repo,
         vec!["HEAD".to_string()],
         1,
@@ -144,7 +144,7 @@ fn check_correct_number_of_results_22_committish() {
 #[test]
 fn check_correct_number_of_results_0_committish() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         &local_repo,
         vec!["HEAD".to_string()],
         1,
@@ -160,7 +160,7 @@ fn check_correct_number_of_results_0_committish() {
 #[test]
 fn check_correct_number_of_results_0_commitlist() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         &local_repo,
         vec![String::from("922051b304015810e6056a72d9ef61d55e7763ed")],
         1,
@@ -179,7 +179,7 @@ fn check_correct_number_of_results_start_hash_922051b304015810e6056a72d9ef61d55e
     // first commit, initial
     let start_hash = String::from("922051b304015810e6056a72d9ef61d55e7763ed");
     let local_repo = get_demo_repo();
-    let result_vec = traverse_commit_graph(
+    let result_vec = main(
         &local_repo,
         vec![start_hash.clone()],
         1,
@@ -201,7 +201,7 @@ fn check_correct_number_of_results_start_hash_ed292b87739f56b1179f64aa813dc96fb6
     // first commit, initial
     let start_hash = String::from("ed292b87739f56b1179f64aa813dc96fb6128555");
     let local_repo = get_demo_repo();
-    let result_vec = traverse_commit_graph(
+    let result_vec = main(
         &local_repo,
         vec![start_hash.clone()],
         1,
@@ -223,7 +223,7 @@ fn check_correct_number_of_results_start_hash_ed292b87739f56b1179f64aa813dc96fb6
     // first commit, initial
     let start_hash = String::from("ed292b87739f56b1179f64aa813dc96fb6128555");
     let local_repo = get_demo_repo();
-    let result_vec = traverse_commit_graph(
+    let result_vec = main(
         &local_repo,
         vec![start_hash],
         1,
@@ -243,7 +243,7 @@ fn check_correct_result_start_hash_922051b304015810e6056a72d9ef61d55e7763ed() {
     // first commit, initial
     let start_hash = String::from("922051b304015810e6056a72d9ef61d55e7763ed");
     let local_repo = get_demo_repo();
-    let result_vec = traverse_commit_graph(
+    let result_vec = main(
         &local_repo,
         vec![start_hash.clone()],                   // commitlist
         1,                        // max_threads
@@ -314,7 +314,7 @@ fn check_correct_number_of_result_start_hash_11899e89f0d6c9d7fd68aa79f356c9a49a9
     // first commit, initial
     let start_hash = String::from("11899e89f0d6c9d7fd68aa79f356c9a49a9f319a");
     let local_repo = get_demo_repo();
-    let result_vec = traverse_commit_graph(
+    let result_vec = main(
         &local_repo,
         vec![start_hash.clone()],
         1,
@@ -344,6 +344,9 @@ fn check_correct_number_of_result_start_hash_11899e89f0d6c9d7fd68aa79f356c9a49a9
         result_1.commit.to_string(),
         "922051b304015810e6056a72d9ef61d55e7763ed"
     );
+    assert_none!(
+        result_1.parent
+    )
 }
 
 #[test]
@@ -351,7 +354,7 @@ fn check_correct_number_of_result_start_hash_2a8baaceb3d79f157aaf6a7967278eb6528
     // first commit, initial
     let start_hash = String::from("2a8baaceb3d79f157aaf6a7967278eb65288e073");
     let local_repo = get_demo_repo();
-    let result_vec = traverse_commit_graph(
+    let result_vec = main(
         &local_repo,
         vec![start_hash.clone()],
         1,
@@ -391,7 +394,7 @@ fn check_correct_number_of_result_start_hash_b6c93f947ec4c96039bac4971c681d7a18b
     // first commit, initial
     let start_hash = String::from("b6c93f947ec4c96039bac4971c681d7a18bc436d");
     let local_repo = get_demo_repo();
-    let result_vec = traverse_commit_graph(
+    let result_vec = main(
         &local_repo,
         vec![start_hash.clone()],
         1,
@@ -440,7 +443,7 @@ fn check_correct_number_of_result_start_hash_f3b695021ac313bd223396abb70e2c47210
     // first commit, initial
     let start_hash = String::from("f3b695021ac313bd223396abb70e2c472106220a");
     let local_repo = get_demo_repo();
-    let result_vec = traverse_commit_graph(
+    let result_vec = main(
         &local_repo,
         vec![start_hash.clone()],
         1,
@@ -506,7 +509,7 @@ fn check_correct_number_of_result_start_hash_f3b695021ac313bd223396abb70e2c47210
 #[test]
 fn check_correct_number_of_results_skip_merges_false() {
     let local_repo = get_demo_repo_merges();
-    let result_vec = traverse_commit_graph(
+    let result_vec = main(
         &local_repo,
         vec!["HEAD".to_string()],
         1,
@@ -525,7 +528,7 @@ fn check_correct_number_of_results_skip_merges_false() {
 fn check_correct_history_of_merges() {
     let start_hash = String::from("1823ac918111531ef2984bc3b667f5c199a584b9");
     let local_repo = get_demo_repo_merges();
-    let result_vec = traverse_commit_graph(
+    let result_vec = main(
         &local_repo,
         vec![start_hash.clone()],
         1,
@@ -563,7 +566,7 @@ fn check_correct_history_of_merges() {
 #[test]
 fn check_correct_number_of_results_skip_merges_true() {
     let local_repo = get_demo_repo_merges();
-    let result_vec = traverse_commit_graph(
+    let result_vec = main(
         &local_repo,
         vec!["HEAD".to_string()],
         1,

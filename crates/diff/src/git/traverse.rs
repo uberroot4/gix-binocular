@@ -2,136 +2,26 @@ use crate::git::metrics::GitDiffMetrics;
 use crate::utils;
 use anyhow::Result;
 use gix::{
-    diff::blob::Platform, revision::walk::Sorting, traverse::commit::simple::CommitTimeOrder,
+    diff::blob::Platform,
     Commit, ObjectId,
 };
-use log::{debug, error, trace, warn, info};
-use std::cmp::min_by;
+use log::{debug, error, trace};
+// use std::cmp::min_by;
 use std::thread::JoinHandle;
 
 pub fn traverse_commit_graph(
     repo: &gix::Repository,
-    commitlist: Vec<String>,
-    max_threads: usize,
-    skip_merges: bool,
+    commitlist: Vec<Commit>,
+    num_threads: usize,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
-    breadth_first: bool,
-    follow: bool,
-    limit: Option<usize>,
 ) -> Result<Vec<GitDiffMetrics>> {
-    let result_limit = limit.unwrap_or(usize::MAX);
-    // Do not calculate anything if limit is set to <= 0
-    if result_limit <= 0 {
-        warn!("limit = 0 provided, not doing any calculation!");
-        return Ok(Vec::new());
-    } else if commitlist.iter().count() == 0 {
-        warn!("No commits provided, not doing any calculation!");
-        return Ok(Vec::new());
-    } else if follow && commitlist.iter().count() > 1 {
-        error!("Cannot follow more than 1 commit");
-        panic!("Cannot follow more than 1 commit")
-    }
-
     let mailmap = repo.open_mailmap();
-
-    let num_threads = std::thread::available_parallelism()
-        .map(|p| p.get())
-        .unwrap_or(1);
-    let threads_used = min_by(max_threads, num_threads, |x, y| x.cmp(&y));
-    trace!("threads_used: {:?}", threads_used);
-    let commit_graph = repo.commit_graph().ok();
-    let can_use_author_threads = num_threads > 1 && commit_graph.is_some();
-    trace!("can_use_author_threads: {:?}", can_use_author_threads);
-    trace!("commit_graph.is_some(): {:?}", commit_graph.is_some());
     trace!("Algorithm: {:?}", diff_algorithm);
 
-    let sorting = if breadth_first {
-        Sorting::BreadthFirst
-    } else {
-        Sorting::ByCommitTime(CommitTimeOrder::NewestFirst)
-    };
-
-    let commit_iter: Vec<Commit> = commitlist
-        .iter()
-        .map(|c| {
-            repo.rev_parse_single(gix::bstr::BStr::new(c.as_bytes()))
-                .expect(format!("Commit '{:?}' must exist (1)", c).as_str())
-                .object()
-                .expect(format!("Commit object '{:?}' must exist", c).as_str())
-                .try_into_commit()
-                .expect(format!("Commit '{:?}' must exist (2)", c).as_str())
-        })
-        .collect();
-
-    // Generate a commit list based on the 'follow' flag.
-    let commits: Vec<Commit> = if follow {
-        // When following ancestors, we expect exactly one commit.
-        assert_eq!(
-            commit_iter.len(),
-            1,
-            "Expected exactly one commit when 'follow' is enabled"
-        );
-        // Safely retrieve the single commit.
-        let commit = commit_iter
-            .get(0)
-            .expect("Commit must exist when following ancestors");
-
-        // Get the commit’s ancestors using the provided options.
-        let ancestors = commit
-            // .expect(format!("Commit '{:?}' must exist (3)", cmt).as_str())
-            .id()
-            .ancestors()
-            .sorting(sorting)
-            .use_commit_graph(can_use_author_threads)
-            .with_commit_graph(commit_graph)
-            .all()
-            .expect(&format!(
-                "Failed to retrieve ancestors for commit {:?}",
-                commit
-            ));
-
-        // Process the ancestor iterator:
-        //   - Skip any erroneous entries by filtering with `filter_map`
-        //   - Convert each successful entry to a commit object
-        //   - Limit the number of results by `result_limit`
-        ancestors
-            .filter_map(|res| {
-                res.ok() // Only consider Ok values
-                    .and_then(|entry| entry.object().ok()) // Get the commit object if available
-            })
-            .take(result_limit)
-            .collect()
-    } else {
-        // If not following ancestors, use the provided commit list as-is.
-        commit_iter.into_iter().collect()
-    };
-
-    // Optionally filter out merge commits (those with more than one parent)
-    // when the `no_merges` flag is enabled.
-    let final_commit_list: Vec<Commit> = commits
-        .into_iter()
-        .filter(|commit| {
-            if skip_merges && commit.parent_ids().count() > 1 {
-                trace!("Skipping merge commit {:?}", commit.id);
-                false
-            } else {
-                true
-            }
-        })
-        .collect();
-
-    if final_commit_list.iter().count() == 0 {
-        warn!("No more commits left based on the arguments, aborting with empty result");
-        return Ok(Vec::new());
-    }
-
-    let (churn_threads, churn_tx) =
-        get_churn_channel(repo, threads_used, &mailmap, diff_algorithm)?;
-
-    info!("Processing {} commit(s)", final_commit_list.iter().count());
+    let (churn_threads, churn_tx) = get_churn_channel(repo, num_threads, &mailmap, diff_algorithm)?;
 
     let mut count = 0;
-    for commit in final_commit_list {
+    for commit in commitlist {
         match churn_tx.send(commit.id) {
             Ok(_) => {}
             Err(e) => {
@@ -141,7 +31,6 @@ pub fn traverse_commit_graph(
         count += 1;
     }
 
-    // total_number_of_commits.store(count, Ordering::SeqCst);
     debug!("total_number_of_commits: {:?}", count);
 
     drop(churn_tx);
@@ -174,7 +63,8 @@ fn get_churn_channel(
 )> {
     let (tx, rx) = crossbeam_channel::bounded::<gix::hash::ObjectId>(8 * 100);
     let repo_sync = repo.clone().into_sync();
-    let mut children = Vec::new();
+    // let mut children = Vec::new();
+    let mut children = Vec::with_capacity(max_threads);
 
     let mut rewrite_cache =
         repo.diff_resource_cache(gix::diff::blob::pipeline::Mode::ToGit, Default::default())?;
@@ -195,13 +85,10 @@ fn get_churn_channel(
                 debug!("std::thread::spawn: {:?}", std::thread::current().id());
                 while let Ok(commit_id) = rx_clone.recv() {
                     let commit = repo.find_object(commit_id)?.into_commit();
+
                     debug!("(recv)\t{:?}", commit.id);
-                    let mut diff_result = compute_diff_with_parent(
-                        //&mut HashMap::new(),
-                        &commit,
-                        &repo,
-                        &mut rewrite_cache,
-                    )?;
+                    let mut diff_result =
+                        compute_diff_with_parent(&commit, &repo, &mut rewrite_cache)?;
                     let author = mailmap.resolve(commit.author()?);
                     let committer = mailmap.resolve(commit.committer()?);
 
@@ -212,12 +99,13 @@ fn get_churn_channel(
 
                     commits_vec.append(diff_result.as_mut())
                 }
+                drop(rx_clone);
                 Ok(commits_vec)
             }
         });
         children.push(child);
     }
-
+    drop(rx);
     Ok((children, tx))
 }
 
@@ -275,6 +163,7 @@ fn compute_diff_with_parent(
                 },
                 None,
                 None,
+                None
             )
             .expect("Diff result should be processable")
         })

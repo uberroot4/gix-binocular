@@ -5,6 +5,7 @@ use gix::ObjectId;
 use render::{Renderable, Value};
 use serde::Serialize;
 use std::collections::HashMap;
+use blame::GitBlameMetric;
 
 #[derive(Debug)]
 pub struct GitDiffMetrics {
@@ -16,6 +17,7 @@ pub struct GitDiffMetrics {
     pub parent: Option<ObjectId>,
     pub committer: Option<shared::Sig>,
     pub author: Option<shared::Sig>,
+    pub blame_info: Option<Vec<GitBlameMetric>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -32,6 +34,7 @@ impl GitDiffMetrics {
         parent: Option<ObjectId>,
         committer: Option<shared::Sig>,
         author: Option<shared::Sig>,
+        blame_info: Option<Vec<GitBlameMetric>>,
     ) -> Result<Self> {
         let total_number_of_files_changed = change_map.values().count();
         let totals = change_map
@@ -55,6 +58,7 @@ impl GitDiffMetrics {
             parent,
             committer,
             author,
+            blame_info
         })
     }
 }

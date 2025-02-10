@@ -14,8 +14,6 @@ doctest = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { workspace = true }
-clap_complete = { workspace = true }
 crossbeam-channel = "0.5.13"
 gix = { workspace = true, features = ["max-performance-safe", "blob-diff", "revision", "mailmap", ] }
 shared = { path = "../shared" }
@@ -23,9 +21,12 @@ render = { path = "../render" }
 serde_json = "1.0.128"
 
 log = { workspace = true }
-env_logger = { workspace = true }
 anyhow = { workspace = true }
 serde = { version = "1.0.210", features = ["derive"] }
+blame = { path = "../blame" }
+rayon = { version = "1.10.0" }
+hashbrown = { version = "0.15.2", features = ["rayon"], default-features = true }
+tqdm = { version = "0.7.0" }
 
 [dev-dependencies]
 pretty_assertions = { version = "1.4.1" }

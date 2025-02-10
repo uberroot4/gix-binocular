@@ -1,7 +1,7 @@
-use std::time::Instant;
-
 use clap::Parser;
+use dotenv::dotenv;
 use log::{debug, info, trace};
+use std::time::Instant;
 
 use cli::cmd::{Cli, Commands};
 use cli::diff::DiffAlgorithm;
@@ -9,6 +9,7 @@ use render::Renderable;
 use shared::logging;
 
 fn main() {
+    dotenv().ok();
     let args = Cli::parse_from(gix::env::args_os());
 
     match &args.global_opts.verbose {
@@ -48,9 +49,9 @@ fn main() {
                 DiffAlgorithm::MyersMinimal => gix::diff::blob::Algorithm::MyersMinimal,
                 // None => gix::diff::blob::Algorithm::Histogram,
             };
-            use cartography_diff::traverse::traverse_commit_graph;
+            use cartography_diff::traversal::main;
 
-            let result = traverse_commit_graph(
+            let result = main(
                 &repo,
                 diff_args.delegate.commitlist,
                 diff_args.threads.unwrap_or(1),
@@ -62,6 +63,7 @@ fn main() {
             );
             match result {
                 Ok(result) => {
+                    //         //cartography_diff::traversal::retrieve(result)
                     let printable_result: cartography_diff::GitDiffMetricsVector = result.into();
                     printable_result.render(args.global_opts.output_format);
                 }

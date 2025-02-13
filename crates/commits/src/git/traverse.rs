@@ -1,3 +1,4 @@
+use shared::signature::Sig;
 use gix::Reference;
 use log::{debug, trace};
 use crate::git::metrics::GitCommitMetric;
@@ -49,15 +50,15 @@ pub fn traverse_commit_graph(
                 } else { true };
             })
             .map(|c| {
-                let mut author: Option<shared::Sig> = None;
-                let mut committer: Option<shared::Sig> = None;
+                let mut author: Option<Sig> = None;
+                let mut committer: Option<Sig> = None;
                 if let Ok(commit) = c.object() {
                     author = if let Ok(author_sig) = commit.author() {
-                        Some(shared::Sig::from(mailmap.resolve(author_sig)))
+                        Some(Sig::from(mailmap.resolve(author_sig)))
                     } else { None };
 
                     committer = if let Ok(committer_sig) = commit.committer() {
-                        Some(shared::Sig::from(mailmap.resolve(committer_sig)))
+                        Some(Sig::from(mailmap.resolve(committer_sig)))
                     } else { None };
                 }
                 let mut gcm = GitCommitMetric::from((*c).clone());

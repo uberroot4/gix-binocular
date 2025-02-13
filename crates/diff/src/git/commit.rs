@@ -2,7 +2,6 @@ use gix::revision::walk::Sorting;
 use gix::traverse::commit::simple::CommitTimeOrder;
 use gix::Commit;
 use log::{error, info, trace, warn};
-// use std::cmp::min_by;
 
 pub(crate) fn prepare_commit_list(
     repo: &gix::Repository,

@@ -56,7 +56,7 @@ commits = { path = "./crates/commits", default-features = false }
 cartography-diff = { path = "./crates/diff", default-features = false }
 render = { path = "./crates/render", default-features = false }
 cli = { path = "./crates/cli", default-features = false }
-blame = { path = "./crates/blame", default-features = false }
+cartography-blame = { path = "./crates/blame", default-features = false, features = ["cli"] }
 clap = { workspace = true }
 gix = { workspace = true }
 log = { workspace = true }

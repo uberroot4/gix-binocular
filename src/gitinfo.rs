@@ -1,11 +1,15 @@
 use clap::Parser;
 use dotenv::dotenv;
-use log::{debug, info, trace};
+use log::{debug, error, info, trace};
+use std::path::PathBuf;
 use std::time::Instant;
 
 use cli::cmd::{Cli, Commands};
 use cli::diff::DiffAlgorithm;
+use cli::output_format::OutputFormat;
+use render::base::Printer;
 use render::Renderable;
+use render::{base::OutputPrinter, JSONPrinter};
 use shared::logging;
 
 fn main() {
@@ -39,7 +43,25 @@ fn main() {
         }
     };
 
-    match args.command {
+    let printer: Printer = match args.global_opts.output_format {
+        // OutputFormat::Render => {
+        //     Box::new(TablePrinter::new(arguments.pagination, arguments.page_size))
+        // }
+        // OutputFormat::JSON => Box::new(JSONPrinter { file_path: args.global_opts.output_file }),
+        OutputFormat::JSON => Printer::Json(JSONPrinter {
+            file_path: args.global_opts.output_file,
+        }),
+        //OutputFormat::CSV => Box::new(CSVPrinter {}),
+        _ => todo!("not implemented"),
+    };
+
+    // let algo = match &args.command {
+    //     Commands::Diff(_) || Commands::Blame(_) => {}
+    //     // Commands::Blame(_) => {}
+    //     _ => None
+    // }
+
+    match &args.command {
         Commands::Diff(diff_args) => {
             trace!("{:?}", diff_args);
 
@@ -53,7 +75,7 @@ fn main() {
 
             let result = main(
                 &repo,
-                diff_args.delegate.commitlist,
+                (*diff_args.delegate.commitlist).to_owned(),
                 diff_args.threads.unwrap_or(1),
                 args.global_opts.skip_merges,
                 Some(algo),
@@ -61,27 +83,42 @@ fn main() {
                 diff_args.follow,
                 args.global_opts.limit,
             );
-            match result {
-                Ok(result) => {
-                    //         //cartography_diff::traversal::retrieve(result)
-                    let printable_result: cartography_diff::GitDiffMetricsVector = result.into();
-                    printable_result.render(args.global_opts.output_format);
-                }
-                Err(_) => panic!("Error traversing diffs"),
+            // printer.print()
+            if let Ok(groups) = result {
+                printer.print(&groups);
             }
         }
-        // Commands::Blame(blame_args) => {
-        //     trace!("{:?}", blame_args);
-        //     use blame::lookup;
-        //
-        //     let blames = lookup(&repo, blame_args.source_commit, blame_args.target_commit);
-        // }
+        Commands::Blame(blame_args) => {
+            trace!("{:?}", blame_args);
+
+            let algo = match blame_args.algorithm {
+                DiffAlgorithm::Histogram => gix::diff::blob::Algorithm::Histogram,
+                DiffAlgorithm::Myers => gix::diff::blob::Algorithm::Myers,
+                DiffAlgorithm::MyersMinimal => gix::diff::blob::Algorithm::MyersMinimal,
+            };
+
+            use cartography_blame::lookup;
+
+            // let blames = lookup(&repo, blame_args.source_commit, blame_args.target_commit);
+            let result = lookup(
+                &repo,
+                (*blame_args.defines_file).parse().unwrap(),
+                Some(algo),
+                blame_args.threads.unwrap_or(1),
+            );
+            match result {
+                Ok(groups) => {
+                    printer.print(&groups);
+                }
+                Err(e) => { panic!("{}", e) }
+            }
+        }
         Commands::Commits(commit_args) => {
             trace!("{:?}", commit_args);
             use commits::traverse;
             let commit_ids = traverse::traverse_commit_graph(
                 repo,
-                commit_args.branches,
+                (*commit_args.branches).to_owned(),
                 args.global_opts.skip_merges,
             );
             match commit_ids {
@@ -94,8 +131,8 @@ fn main() {
                 Err(_) => panic!("Error traversing commit graph"),
             }
         }
-        other => {
-            eprintln!("Unknown Command {:?}", other);
+        _other => {
+            eprintln!("Unknown Command {:?}", _other);
         }
     }
 

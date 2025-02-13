@@ -1,4 +1,3 @@
-use crate::git::metrics::GitDiffMetrics;
 use crate::utils;
 use anyhow::Result;
 use gix::{
@@ -6,22 +5,23 @@ use gix::{
     Commit, ObjectId,
 };
 use log::{debug, error, trace};
-// use std::cmp::min_by;
 use std::thread::JoinHandle;
+use tqdm::tqdm;
+use crate::git::object::GitDiffOutcome;
 
 pub fn traverse_commit_graph(
     repo: &gix::Repository,
     commitlist: Vec<Commit>,
     num_threads: usize,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
-) -> Result<Vec<GitDiffMetrics>> {
+) -> Result<Vec<GitDiffOutcome>> {
     let mailmap = repo.open_mailmap();
     trace!("Algorithm: {:?}", diff_algorithm);
 
     let (churn_threads, churn_tx) = get_churn_channel(repo, num_threads, &mailmap, diff_algorithm)?;
 
     let mut count = 0;
-    for commit in commitlist {
+    for commit in tqdm(commitlist).desc(Some("Commits sent")) {
         match churn_tx.send(commit.id) {
             Ok(_) => {}
             Err(e) => {
@@ -36,7 +36,7 @@ pub fn traverse_commit_graph(
     drop(churn_tx);
 
     // Wait for the threads to complete any remaining work
-    let mut diff_results: Vec<GitDiffMetrics> = Vec::new();
+    let mut diff_results: Vec<GitDiffOutcome> = Vec::new();
     for child in churn_threads {
         let result = child.join().expect("oops! the child thread panicked");
         match result {
@@ -58,7 +58,7 @@ fn get_churn_channel(
     mailmap: &gix::mailmap::Snapshot,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
 ) -> Result<(
-    Vec<JoinHandle<Result<Vec<GitDiffMetrics>>>>,
+    Vec<JoinHandle<Result<Vec<GitDiffOutcome>>>>,
     crossbeam_channel::Sender<ObjectId>,
 )> {
     let (tx, rx) = crossbeam_channel::bounded::<gix::hash::ObjectId>(8 * 100);
@@ -114,7 +114,7 @@ fn compute_diff_with_parent(
     commit: &Commit,
     repo: &gix::Repository,
     rewrite_cache: &mut Platform,
-) -> Result<Vec<GitDiffMetrics>> {
+) -> Result<Vec<GitDiffOutcome>> {
     let parent_commits: Vec<Commit> = commit
         .parent_ids()
         .filter(|p| p.object().is_ok())
@@ -141,7 +141,7 @@ fn compute_diff_with_parent(
 
     debug!("commit {:?}\tparents {:?}", commit, parent_commits);
 
-    let diffs: Vec<GitDiffMetrics> = parent_trees
+    let diffs: Vec<GitDiffOutcome> = parent_trees
         .iter()
         .map(|(parent_commit, parent_tree)| {
             // let mut change_map = Default::default();
@@ -154,14 +154,13 @@ fn compute_diff_with_parent(
                 rewrite_cache,
                 &mut rewrite_cache.clone(),
             );
-            GitDiffMetrics::new(
+            GitDiffOutcome::new(
                 change_map,
                 commit.id,
                 match parent_commit {
                     Some(pc) => Some(pc.id),
                     None => None,
                 },
-                None,
                 None,
                 None
             )
@@ -175,8 +174,10 @@ fn compute_diff_with_parent(
         commit.id,
         diffs.len(),
     );
-    for d in diffs.iter().clone() {
-        debug!(
+    #[cfg(debug_assertions)]
+    {
+        for d in diffs.iter().clone() {
+            debug!(
             "\t{:?}\t{:?}\t|\t{:?} files changed, {:?} insertions(+), {:?} deletions(-)",
             d.parent,
             d.commit,
@@ -184,7 +185,9 @@ fn compute_diff_with_parent(
             d.total_number_of_deletions,
             d.total_number_of_deletions,
         );
+        }
     }
+
 
     Ok(diffs)
 }

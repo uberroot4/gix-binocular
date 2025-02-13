@@ -11,7 +11,7 @@ path = "./main.rs"
 
 [dev-dependencies]
 gix-testtools = { version = "=0.15.0" }
-gix = { workspace = true, features = ["max-performance-safe", "blob-diff", "revision", "mailmap", ] }
+gix = { workspace = true, features = ["max-performance-safe", "blob-diff", "revision", "mailmap", "blame"] }
 cartography-diff = { path = ".." }
 shared = { path = "../../shared" }
 pretty_assertions = { version = "1.4.1" }

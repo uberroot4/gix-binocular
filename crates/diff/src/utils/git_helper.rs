@@ -1,6 +1,7 @@
 use gix::bstr::BString;
 use std::collections::HashMap;
 
+#[deprecated]
 pub fn get_trees<'a>(
     commit: &'a gix::Commit,
     repo: &'a gix::Repository,

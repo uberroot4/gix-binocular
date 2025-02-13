@@ -1,10 +1,25 @@
 use gix::bstr::BString;
+use serde::ser::SerializeStruct;
 
 #[derive(Hash, PartialOrd, Ord, Eq, PartialEq, Debug, Clone)]
 pub struct Sig {
     pub name: BString,
     pub email: BString,
     pub time: gix::date::Time,
+}
+
+impl serde::ser::Serialize for Sig {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        // 3 is the number of fields in the struct.
+        let mut state = serializer.serialize_struct("Signature", 3)?;
+        state.serialize_field("name", &self.name.to_string())?;
+        state.serialize_field("email", &self.email.to_string())?;
+        state.serialize_field("time", &crate::tz_utils::time_to_utc_with_offset(self.time))?;
+        state.end()
+    }
 }
 
 impl From<gix::actor::Signature> for Sig {

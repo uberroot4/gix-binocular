@@ -2,7 +2,7 @@
 #[clap(name = "diff", about = "diff")]
 pub struct Args {
     /// Follow the given commit history (only allowed with one SHA!)
-    #[clap(long, default_value_t=false)]
+    #[clap(long, default_value_t = false)]
     pub follow: bool,
 
     /// Commits are sorted as they are mentioned in the commit graph.
@@ -24,13 +24,13 @@ pub struct Args {
 // gix::diff::blob::Algorithm
 #[derive(clap::ValueEnum, Clone, Debug)]
 pub enum DiffAlgorithm {
-    Histogram, //gix::diff::blob::Algorithm::Histogram
+    Histogram,    //gix::diff::blob::Algorithm::Histogram
     Myers,        // gix::diff::blob::Algorithm::Myers
     MyersMinimal, // gix::diff::blob::Algorithm::MyersMinimal
 }
 
-#[derive(clap::Args,Clone,Debug)]
-#[group(multiple=false, id="commit_args")]
+#[derive(clap::Args, Clone, Debug)]
+#[group(multiple = false, id = "commit_args")]
 pub struct CommitArgs {
     /// The ref-spec list for the commits to process (only processes given commit hashes!)
     #[clap(name = "commitlist")]

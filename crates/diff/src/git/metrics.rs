@@ -1,40 +1,71 @@
+use crate::object::{ChangesInfo, GitDiffOutcome};
 use crate::GitDiffMetricsVector;
 use anyhow::Result;
 use gix::bstr::BString;
 use gix::ObjectId;
 use render::{Renderable, Value};
-use serde::Serialize;
+use shared::object::{CartographyObject, Group, Row};
+use shared::signature::Sig;
 use std::collections::HashMap;
-use blame::GitBlameMetric;
-
-#[derive(Debug)]
-pub struct GitDiffMetrics {
-    pub change_map: HashMap<BString, (u32, u32)>,
-    pub total_number_of_files_changed: usize,
-    pub total_number_of_insertions: u32,
-    pub total_number_of_deletions: u32,
-    pub commit: ObjectId,
-    pub parent: Option<ObjectId>,
-    pub committer: Option<shared::Sig>,
-    pub author: Option<shared::Sig>,
-    pub blame_info: Option<Vec<GitBlameMetric>>,
+impl From<ChangesInfo> for Row {
+    fn from(ci_value: ChangesInfo) -> Self {
+        Self {
+            values: vec![
+                Value::Str(ci_value.file),
+                Value::Str(ci_value.insertions.to_string()),
+                Value::Str(ci_value.deletions.to_string()),
+            ],
+        }
+    }
 }
 
-#[derive(Debug, Serialize)]
-struct ChangesInfo {
-    file: String,
-    insertions: u32,
-    deletions: u32,
+impl From<GitDiffOutcome> for Row {
+    fn from(value: GitDiffOutcome) -> Self {
+        fn values(val: &GitDiffOutcome) -> Vec<Value> {
+            let mut changes_info_obj = CartographyObject::default();
+
+            changes_info_obj.titles = vec!["file".into(), "insertions".into(), "deletions".into()];
+            let changes_info_vec = val
+                .change_map
+                .clone()
+                .iter()
+                .map(|cm| ChangesInfo {
+                    file: cm.0.to_string(),
+                    insertions: cm.1 .0,
+                    deletions: cm.1 .1,
+                })
+                .map(Row::from)
+                .collect::<Vec<_>>();
+            changes_info_obj.groups.push(Group {
+                rows: changes_info_vec,
+            });
+
+            vec![
+                Value::Str(val.commit.to_string()),
+                match val.parent {
+                    None => Value::Str(render::const_values::NULL.clone()),
+                    Some(prnt) => Value::Str(prnt.to_string()),
+                },
+                Value::Str(val.total_number_of_files_changed.to_string()),
+                Value::Str(val.total_number_of_insertions.to_string()),
+                Value::Str(val.total_number_of_deletions.to_string()),
+                Value::Object(changes_info_obj),
+            ]
+        }
+
+        Self {
+            values: values(&value),
+        }
+    }
 }
 
-impl GitDiffMetrics {
+impl GitDiffOutcome {
     pub fn new(
         change_map: HashMap<BString, (u32, u32)>,
         commit: ObjectId,
         parent: Option<ObjectId>,
-        committer: Option<shared::Sig>,
-        author: Option<shared::Sig>,
-        blame_info: Option<Vec<GitBlameMetric>>,
+        committer: Option<Sig>,
+        author: Option<Sig>,
     ) -> Result<Self> {
         let total_number_of_files_changed = change_map.values().count();
         let totals = change_map
@@ -42,12 +73,6 @@ impl GitDiffMetrics {
             .fold((0u32, 0u32), |acc, val| (acc.0 + val.0, acc.1 + val.1));
         let total_number_of_insertions = totals.0;
         let total_number_of_deletions = totals.1;
-
-        // println!("commit {:?}", commit);
-        // println!("parent {:?}", parent);
-        // for i in change_map.clone() {
-        //     println!("{:?}", i);
-        // }
 
         Ok(Self {
             change_map,
@@ -58,68 +83,15 @@ impl GitDiffMetrics {
             parent,
             committer,
             author,
-            blame_info
         })
     }
 }
 
-impl From<Vec<GitDiffMetrics>> for GitDiffMetricsVector {
-    fn from(value: Vec<GitDiffMetrics>) -> Self {
+impl From<Vec<GitDiffOutcome>> for GitDiffMetricsVector {
+    fn from(value: Vec<GitDiffOutcome>) -> Self {
         Self {
             value_vector: value,
         }
-    }
-}
-
-impl Renderable for GitDiffMetricsVector {
-    fn headers() -> Vec<String> {
-        vec![
-            //"branch".to_string(),
-            "commit".to_string(),
-            "parent".to_string(),
-            "files_changed".to_string(),
-            "insertions".to_string(),
-            "deletions".to_string(),
-            "details_json".to_string(),
-        ]
-    }
-    fn values(&self) -> Vec<Value> {
-        let mut values: Vec<Value> = Vec::new();
-        for val in &self.value_vector {
-            // println!("change_map\t{:?}", val.change_map.iter().map(|cm| cm.0.to_string()).collect::<Vec<String>>());
-
-            let changes_info_vec = val
-                .change_map
-                .clone()
-                .iter()
-                .map(|cm| ChangesInfo {
-                    file: cm.0.to_string(),
-                    insertions: cm.1 .0,
-                    deletions: cm.1 .1,
-                })
-                .collect::<Vec<ChangesInfo>>();
-
-            let changes_info_list: Vec<_> = changes_info_vec
-                .iter()
-                .map(|ci| serde_json::to_vec(ci).unwrap())
-                .map(|ci| String::from_utf8(ci).unwrap())
-                .map(Value::Str)
-                .collect();
-
-            values.push(Value::List(vec![
-                //val.branch.clone().unwrap_or(render::const_values::NULL.clone()),
-                Value::Str(val.commit.to_string()),
-                match val.parent {
-                    None => Value::Str(render::const_values::NULL.clone()),
-                    Some(prnt) => Value::Str(prnt.to_string()),
-                },
-                Value::Str(val.total_number_of_files_changed.to_string()),
-                Value::Str(val.total_number_of_insertions.to_string()),
-                Value::Str(val.total_number_of_deletions.to_string()),
-                Value::List(changes_info_list),
-            ]));
-        }
-        values
     }
 }
 
@@ -141,8 +113,8 @@ mod tests {
     }
 
     // Mock Sig for testing
-    fn mock_signature() -> shared::Sig {
-        shared::Sig {
+    fn mock_signature() -> Sig {
+        Sig {
             name: BString::from("John Doe"),
             email: BString::from("john@example.com"),
             time: gix::date::Time {
@@ -166,7 +138,7 @@ mod tests {
         let author = Some(mock_signature());
 
         let metrics =
-            GitDiffMetrics::new(change_map.clone(), commit, parent, committer, author).unwrap();
+            GitDiffOutcome::new(change_map.clone(), commit, parent, committer, author).unwrap();
 
         assert_eq!(metrics.total_number_of_files_changed, 2);
         assert_eq!(metrics.total_number_of_insertions, 13);
@@ -188,7 +160,7 @@ mod tests {
         let author = None;
 
         let metrics =
-            GitDiffMetrics::new(change_map.clone(), commit, parent, committer, author).unwrap();
+            GitDiffOutcome::new(change_map.clone(), commit, parent, committer, author).unwrap();
 
         assert_eq!(metrics.total_number_of_files_changed, 0);
         assert_eq!(metrics.total_number_of_insertions, 0);
@@ -207,7 +179,7 @@ mod tests {
         change_map.insert(BString::from("file1.txt"), (10, 5));
 
         let commit = mock_object_id();
-        let metrics = GitDiffMetrics::new(change_map.clone(), commit, None, None, None).unwrap();
+        let metrics = GitDiffOutcome::new(change_map.clone(), commit, None, None, None).unwrap();
 
         let vector = GitDiffMetricsVector::from(vec![metrics]);
 
@@ -241,7 +213,7 @@ mod tests {
         let commit = mock_object_id();
         let parent = mock_object_id();
         let metrics =
-            GitDiffMetrics::new(change_map.clone(), commit, Some(parent), None, None).unwrap();
+            GitDiffOutcome::new(change_map.clone(), commit, Some(parent), None, None).unwrap();
 
         let vector = GitDiffMetricsVector::from(vec![metrics]);
 
@@ -309,7 +281,7 @@ mod tests {
         change_map.insert(BString::from("file.rs"), (1, 0));
 
         let commit = mock_object_id();
-        let metrics = GitDiffMetrics::new(change_map.clone(), commit, None, None, None).unwrap();
+        let metrics = GitDiffOutcome::new(change_map.clone(), commit, None, None, None).unwrap();
 
         assert!(metrics.committer.is_none());
         assert!(metrics.author.is_none());
@@ -327,8 +299,8 @@ mod tests {
         let commit1 = mock_object_id();
         let commit2 = mock_object_id();
 
-        let metrics1 = GitDiffMetrics::new(change_map1.clone(), commit1, None, None, None).unwrap();
-        let metrics2 = GitDiffMetrics::new(change_map2.clone(), commit2, None, None, None).unwrap();
+        let metrics1 = GitDiffOutcome::new(change_map1.clone(), commit1, None, None, None).unwrap();
+        let metrics2 = GitDiffOutcome::new(change_map2.clone(), commit2, None, None, None).unwrap();
 
         let vector = GitDiffMetricsVector::from(vec![metrics1, metrics2]);
 

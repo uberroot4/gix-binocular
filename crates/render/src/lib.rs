@@ -1,7 +1,11 @@
 mod csv;
 mod tabular;
+mod json;
+pub mod base;
 
 pub use cli::output_format::OutputFormat;
+pub use json::JSONPrinter;
+pub use shared::object::Value;
 
 pub mod const_values {
     use lazy_static::lazy_static;
@@ -9,12 +13,6 @@ pub mod const_values {
         pub static ref NULL: String = "NULL".to_string();
     }
     // pub  const NULL: String = String::new("NULL");
-}
-
-#[derive(Debug)]
-pub enum Value {
-    Str(String),
-    List(Vec<Value>),
 }
 
 /// Recursively format a `Value` into a String.
@@ -27,9 +25,11 @@ pub(crate) fn format_value(val: &Value) -> String {
             let formatted: Vec<String> = list.iter().map(|v| format_value(v)).collect();
             format!("[{}]", formatted.join(", "))
         }
+        Value::Object(map) => todo!()
     }
 }
 
+#[deprecated]
 pub trait Renderable {
     // fn render_object(format: OutputFormat);
     fn headers() -> Vec<String>;
@@ -39,9 +39,8 @@ pub trait Renderable {
         match format {
             OutputFormat::Render => tabular::render_tabular(Self::headers(), self.values()),
             OutputFormat::CSV => csv::render_csv(Self::headers(), self.values()),
-            OutputFormat::JSON => {
-                todo!("Not yet implemented")
-            }
+            OutputFormat::JSON => json::render_json(Self::headers(), self.values()),
+            OutputFormat::None => String::new()
         }
     }
     fn render(&self, format: OutputFormat) {

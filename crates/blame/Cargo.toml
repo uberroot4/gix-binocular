@@ -1,5 +1,5 @@
 [package]
-name = "blame"
+name = "cartography-blame"
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
@@ -10,16 +10,24 @@ license.workspace = true
 autotests = false
 include = ["src/**/*"]
 
+[features]
+"cli" = []
+
 [lib]
 doctest = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-gix = { workspace = true, features = ["max-performance-safe", "revision"] }
-gix-odb = {version = "=0.67.0"}
-gix-blame = "0.0.0"
-#gix-odb = { git = "https://github.com/cruessler/gitoxide.git", branch = "gix-blame" }
+shared = { path = "../shared" }
+gix = { workspace = true, features = ["max-performance-safe", "revision", "blame"] }
+#gix-odb = { version = "=0.67.0" }
+#gix-blame = "0.0.0"
 log = { workspace = true }
 anyhow = { workspace = true }
-#diff = { path = "../diff", default-features = false }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { version = "1.0.138" }
+rayon = { version = "1.10.0" }
+hashbrown = { version = "0.15.2", features = ["rayon"], default-features = true }
+tqdm = { version = "0.7.0" }
+crossbeam-channel = { version = "0.5.14" }

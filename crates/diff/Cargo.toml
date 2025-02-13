@@ -14,19 +14,17 @@ doctest = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-crossbeam-channel = "0.5.13"
+crossbeam-channel = { version = "0.5.14" }
 gix = { workspace = true, features = ["max-performance-safe", "blob-diff", "revision", "mailmap", ] }
 shared = { path = "../shared" }
 render = { path = "../render" }
-serde_json = "1.0.128"
+serde_json = "1.0.138"
+derive_builder = { version = "0.20.2" }
+tqdm = { version = "0.7.0" }
 
 log = { workspace = true }
 anyhow = { workspace = true }
-serde = { version = "1.0.210", features = ["derive"] }
-blame = { path = "../blame" }
-rayon = { version = "1.10.0" }
-hashbrown = { version = "0.15.2", features = ["rayon"], default-features = true }
-tqdm = { version = "0.7.0" }
+serde = { workspace = true }
 
 [dev-dependencies]
 pretty_assertions = { version = "1.4.1" }

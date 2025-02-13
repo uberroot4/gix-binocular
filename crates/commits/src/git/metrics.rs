@@ -1,3 +1,4 @@
+use shared::signature::Sig;
 use crate::GitCommitMetricVector;
 use base64::prelude::*;
 use render::{Renderable, Value};
@@ -7,8 +8,8 @@ pub struct GitCommitMetric {
     pub commit: gix::ObjectId,
     pub commit_str: String,
     pub message: String,
-    pub committer: Option<shared::Sig>,
-    pub author: Option<shared::Sig>,
+    pub committer: Option<Sig>,
+    pub author: Option<Sig>,
     pub branch: Option<String>,
     pub parents: Vec<String>,
 }
@@ -29,8 +30,8 @@ impl From<gix::revision::walk::Info<'_>> for GitCommitMetric {
             commit_str: commit.id.to_string(),
             //message: commit_ref.message.to_string().trim().to_string(),
             message: BASE64_STANDARD.encode(commit_ref.message.to_string().trim()),
-            author: Some(shared::Sig::from(commit_ref.author)),
-            committer: Some(shared::Sig::from(commit_ref.committer)),
+            author: Some(Sig::from(commit_ref.author)),
+            committer: Some(Sig::from(commit_ref.committer)),
             branch: None,
             parents,
         }

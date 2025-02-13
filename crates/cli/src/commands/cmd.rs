@@ -18,8 +18,8 @@ pub enum Commands {
     Diff(crate::commands::diff::Args),
     /// Get the commit ids of a repository.
     Commits(crate::commands::commits::Args),
-    //// Compare two commits, extended information about changed files
-    // DiffList(crate::commands::diff::Args)
+    /// Perform blame for multiple commits and files
+    Blame(crate::commands::blame::Args)
 }
 
 
@@ -32,9 +32,12 @@ pub struct GlobalOpts {
     pub verbose: Option<String>,
     /// Define how the output is printed
     #[clap(
-        short = 'o', long = "output-format", value_enum, default_value_t = crate::output_format::OutputFormat::Render, global = true
+        long = "format", value_enum, default_value_t = crate::output_format::OutputFormat::Render, global = true
     )]
     pub output_format: crate::output_format::OutputFormat,
+    #[clap(long = "out", global = true)]
+    /// File to write the output to
+    pub output_file: Option<PathBuf>,
     /// Show only non-merge commits (implies --max-parents=1)
     #[clap(long, global = true)]
     pub skip_merges: bool,

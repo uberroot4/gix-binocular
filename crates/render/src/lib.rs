@@ -40,7 +40,6 @@ pub trait Renderable {
             OutputFormat::Render => tabular::render_tabular(Self::headers(), self.values()),
             OutputFormat::CSV => csv::render_csv(Self::headers(), self.values()),
             OutputFormat::JSON => json::render_json(Self::headers(), self.values()),
-            OutputFormat::None => String::new()
         }
     }
     fn render(&self, format: OutputFormat) {

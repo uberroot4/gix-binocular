@@ -52,7 +52,7 @@ build:gitinfo:
     - target/debug/gitinfo -h
     - target/debug/gitinfo diff -h
     - target/debug/gitinfo commits -h
-    # - target/debug/gitinfo blame -h
+     - target/debug/gitinfo blame -h
   artifacts:
     # untracked: false
     # when: on_success

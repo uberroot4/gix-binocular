@@ -7,7 +7,7 @@ use gix::{
 use log::{debug, error, trace};
 use std::thread::JoinHandle;
 use tqdm::tqdm;
-use crate::git::object::GitDiffOutcome;
+use crate::objects::GitDiffOutcome;
 
 pub fn traverse_commit_graph(
     repo: &gix::Repository,

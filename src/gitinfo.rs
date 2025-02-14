@@ -1,14 +1,12 @@
 use clap::Parser;
 use dotenv::dotenv;
-use log::{debug, error, info, trace};
-use std::path::PathBuf;
+use log::{debug, info, trace};
 use std::time::Instant;
 
 use cli::cmd::{Cli, Commands};
 use cli::diff::DiffAlgorithm;
 use cli::output_format::OutputFormat;
 use render::base::Printer;
-use render::Renderable;
 use render::{base::OutputPrinter, JSONPrinter};
 use shared::logging;
 
@@ -124,9 +122,6 @@ fn main() {
             match commit_ids {
                 Ok(cids) => {
                     info!("Found {:?} commits", cids.len());
-                    // cids.into();
-                    let cids2: commits::GitCommitMetricVector = cids.into();
-                    cids2.render(args.global_opts.output_format);
                 }
                 Err(_) => panic!("Error traversing commit graph"),
             }

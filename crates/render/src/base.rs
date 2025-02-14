@@ -1,6 +1,5 @@
-use serde::Serialize;
 // SOURCE: https://github.com/AmrDeveloper/GQL/blob/master/crates/gitql-cli/src/printer/base.rs
-use shared::object::CartographyObject;
+use serde::Serialize;
 use crate::JSONPrinter;
 
 /// A trait for printing serializable objects.

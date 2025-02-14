@@ -1,62 +1,20 @@
-use crate::object::{ChangesInfo, GitDiffOutcome};
-use crate::GitDiffMetricsVector;
-use anyhow::Result;
 use gix::bstr::BString;
 use gix::ObjectId;
-use render::{Renderable, Value};
-use shared::object::{CartographyObject, Group, Row};
+use serde::ser::SerializeStruct;
 use shared::signature::Sig;
 use std::collections::HashMap;
-impl From<ChangesInfo> for Row {
-    fn from(ci_value: ChangesInfo) -> Self {
-        Self {
-            values: vec![
-                Value::Str(ci_value.file),
-                Value::Str(ci_value.insertions.to_string()),
-                Value::Str(ci_value.deletions.to_string()),
-            ],
-        }
-    }
-}
+use crate::objects::ChangesInfo;
 
-impl From<GitDiffOutcome> for Row {
-    fn from(value: GitDiffOutcome) -> Self {
-        fn values(val: &GitDiffOutcome) -> Vec<Value> {
-            let mut changes_info_obj = CartographyObject::default();
-
-            changes_info_obj.titles = vec!["file".into(), "insertions".into(), "deletions".into()];
-            let changes_info_vec = val
-                .change_map
-                .clone()
-                .iter()
-                .map(|cm| ChangesInfo {
-                    file: cm.0.to_string(),
-                    insertions: cm.1 .0,
-                    deletions: cm.1 .1,
-                })
-                .map(Row::from)
-                .collect::<Vec<_>>();
-            changes_info_obj.groups.push(Group {
-                rows: changes_info_vec,
-            });
-
-            vec![
-                Value::Str(val.commit.to_string()),
-                match val.parent {
-                    None => Value::Str(render::const_values::NULL.clone()),
-                    Some(prnt) => Value::Str(prnt.to_string()),
-                },
-                Value::Str(val.total_number_of_files_changed.to_string()),
-                Value::Str(val.total_number_of_insertions.to_string()),
-                Value::Str(val.total_number_of_deletions.to_string()),
-                Value::Object(changes_info_obj),
-            ]
-        }
-
-        Self {
-            values: values(&value),
-        }
-    }
+#[derive(Debug, Clone)]
+pub struct GitDiffOutcome {
+    pub change_map: HashMap<BString, (u32, u32)>,
+    pub total_number_of_files_changed: usize,
+    pub total_number_of_insertions: u32,
+    pub total_number_of_deletions: u32,
+    pub commit: ObjectId,
+    pub parent: Option<ObjectId>,
+    pub committer: Option<Sig>,
+    pub author: Option<Sig>,
 }
 
 impl GitDiffOutcome {
@@ -66,7 +24,7 @@ impl GitDiffOutcome {
         parent: Option<ObjectId>,
         committer: Option<Sig>,
         author: Option<Sig>,
-    ) -> Result<Self> {
+    ) -> anyhow::Result<Self> {
         let total_number_of_files_changed = change_map.values().count();
         let totals = change_map
             .values()
@@ -87,13 +45,45 @@ impl GitDiffOutcome {
     }
 }
 
-impl From<Vec<GitDiffOutcome>> for GitDiffMetricsVector {
-    fn from(value: Vec<GitDiffOutcome>) -> Self {
-        Self {
-            value_vector: value,
-        }
+impl serde::ser::Serialize for GitDiffOutcome {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        // 3 is the number of fields in the struct.
+        let mut state = serializer.serialize_struct("GitDiffOutcome", 8)?;
+        state.serialize_field("commit", &self.commit.to_string())?;
+        state.serialize_field("parent", &self.parent.map_or(None, |p| Some(p.to_string())))?;
+        state.serialize_field(
+            "total_number_of_files_changed",
+            &self.total_number_of_files_changed,
+        )?;
+        state.serialize_field(
+            "total_number_of_insertions",
+            &self.total_number_of_insertions,
+        )?;
+        state.serialize_field("total_number_of_deletions", &self.total_number_of_deletions)?;
+        state.serialize_field(
+            "committer",
+            &self.clone().committer.map_or(None, |p| Some(p)),
+        )?;
+        state.serialize_field("author", &self.clone().author.map_or(None, |p| Some(p)))?;
+        let changes_info_vec = &self
+            .clone()
+            .change_map
+            .into_iter()
+            .map(|(k, (insertions, deletions))| ChangesInfo {
+                file: k.to_string(),
+                insertions,
+                deletions,
+            })
+            .collect::<Vec<ChangesInfo>>();
+        state.serialize_field("changes", changes_info_vec)?;
+        state.end()
     }
 }
+
+
 
 #[cfg(test)]
 mod tests {

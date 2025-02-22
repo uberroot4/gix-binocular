@@ -1,9 +1,9 @@
+use crate::objects::ChangesInfo;
 use gix::bstr::BString;
 use gix::ObjectId;
 use serde::ser::SerializeStruct;
 use shared::signature::Sig;
 use std::collections::HashMap;
-use crate::objects::ChangesInfo;
 
 #[derive(Debug, Clone)]
 pub struct GitDiffOutcome {
@@ -90,13 +90,12 @@ impl serde::ser::Serialize for GitDiffOutcome {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use gix::bstr::BString;
     use gix::ObjectId;
+    use pretty_assertions::assert_eq;
     use std::collections::HashMap;
 
     // Mock ObjectId for testing
@@ -178,27 +177,7 @@ mod tests {
         let commit = mock_object_id();
         let metrics = GitDiffOutcome::new(change_map.clone(), commit, None, None, None).unwrap();
 
-        let vector = GitDiffMetricsVector::from(vec![metrics]);
-
-        assert_eq!(vector.value_vector.len(), 1);
-        assert_eq!(vector.value_vector[0].change_map, change_map);
-    }
-
-    // Test 4: Test Renderable headers() for GitDiffMetricsVector
-    #[test]
-    fn test_git_diff_metrics_vector_headers() {
-        let headers = GitDiffMetricsVector::headers();
-        assert_eq!(
-            headers,
-            vec![
-                "commit".to_string(),
-                "parent".to_string(),
-                "files_changed".to_string(),
-                "insertions".to_string(),
-                "deletions".to_string(),
-                "details_json".to_string(),
-            ]
-        );
+        assert_eq!(metrics.change_map, change_map);
     }
 
     // Test 5: Test Renderable values() for GitDiffMetricsVector with valid data
@@ -212,117 +191,207 @@ mod tests {
         let metrics =
             GitDiffOutcome::new(change_map.clone(), commit, Some(parent), None, None).unwrap();
 
-        let vector = GitDiffMetricsVector::from(vec![metrics]);
+        assert_eq!(metrics.commit.to_string(), commit.to_string());
+        assert_eq!(
+            metrics.parent.expect("expected").to_string(),
+            parent.to_string()
+        );
+        assert_eq!(metrics.total_number_of_files_changed, 1);
+        assert_eq!(metrics.total_number_of_insertions, 10);
+        assert_eq!(metrics.total_number_of_deletions, 5);
 
-        let values = vector.values();
-        assert_eq!(values.len(), 1);
-        let inner = match &values[0] {
-            Value::List(inner) => {
-                // Ensure the inner list has the expected content.
-                assert_eq!(
-                    inner.len(),
-                    6,
-                    "Ensure the inner list has the expected content"
-                );
-                inner
-            }
-            _ => panic!("Expected a Value::List for the inner element"),
+        assert_eq!(metrics.change_map, change_map);
+    }
+}
+
+#[cfg(test)]
+mod ser_tests {
+    use super::*;
+    use serde_test::{assert_ser_tokens, Token};
+    use std::str::FromStr;
+    // Mock ObjectId for testing
+    fn mock_object_id() -> ObjectId {
+        let hex_string = "35f39037f97d1a0da12a383506c83b1a58492917";
+
+        // Convert the hex string to a buffer of 40 bytes
+        let buffer = Vec::from(hex_string);
+
+        ObjectId::from_hex(&*buffer).unwrap()
+    }
+
+    // Mock Sig for testing
+    fn mock_signature() -> Sig {
+        Sig {
+            name: BString::from("John Doe"),
+            email: BString::from("john@example.com"),
+            time: gix::date::Time {
+                seconds: 1609459200, // Jan 1, 2021
+                offset: 0,
+                sign: gix::date::time::Sign::Plus,
+            },
+        }
+    }
+
+    #[test]
+    fn serialize_git_diff_outcome_with_all_fields() {
+        // Create a deterministic change_map using a BTreeMap.
+        let mut change_map = HashMap::new();
+        change_map.insert(BString::from("file1"), (10, 2));
+        change_map.insert(BString::from("file2"), (0, 5));
+
+        let outcome = GitDiffOutcome {
+            commit: gix::ObjectId::from_str("35f39037f97d1a0da12a383506c83b1a58492917").unwrap(),
+            parent: Some(
+                gix::ObjectId::from_str("35f39037f97d1a0da12a383506c83b1a58492917").unwrap(),
+            ),
+            total_number_of_files_changed: 3,
+            total_number_of_insertions: 10,
+            total_number_of_deletions: 5,
+            committer: Some(mock_signature()),
+            author: Some(mock_signature()),
+            change_map,
         };
 
-        fn check_inner(inner: &Value, expected_string: String) {
-            match &inner {
-                Value::Str(s) => {
-                    assert_eq!(
-                        *s, expected_string,
-                        "Ensure the inner Value::Str has the expected content"
-                    );
-                }
-                _ => panic!("Expected a Value::Str for the inner element"),
-            }
-        }
-        check_inner(&inner[0], commit.to_string());
-        check_inner(&inner[1], parent.to_string());
-        check_inner(&inner[2], "1".to_string());
-        check_inner(&inner[3], "10".to_string());
-        check_inner(&inner[4], "5".to_string());
-
-        match &inner[5] {
-            Value::List(inner) => {
-                assert_eq!(inner.len(), 1);
-                let inner_value = &inner[0];
-                match &inner_value {
-                    Value::Str(s) => {
-                        assert!(s.contains("file1.txt"));
-                        assert!(s.contains("10"));
-                        assert!(s.contains("5"));
-                    }
-                    _ => panic!("Expected a Value::Str for the inner element"),
-                }
-            }
-            _ => panic!("Expected a Value::List for the inner[5] element"),
-        }
+        assert_ser_tokens(
+            &outcome,
+            &[
+                Token::Struct {
+                    name: "GitDiffOutcome",
+                    len: 8,
+                },
+                // Field "commit"
+                Token::Str("commit"),
+                Token::String("35f39037f97d1a0da12a383506c83b1a58492917"),
+                // Field "parent"
+                Token::Str("parent"),
+                Token::Some,
+                Token::String("35f39037f97d1a0da12a383506c83b1a58492917"),
+                // Field "total_number_of_files_changed"
+                Token::Str("total_number_of_files_changed"),
+                Token::U64(3),
+                // Field "total_number_of_insertions"
+                Token::Str("total_number_of_insertions"),
+                Token::U32(10),
+                // Field "total_number_of_deletions"
+                Token::Str("total_number_of_deletions"),
+                Token::U32(5),
+                // Field "committer"
+                Token::Str("committer"),
+                Token::Some,
+                Token::Struct {
+                    name: "Signature",
+                    len: 3,
+                },
+                Token::Str("name"),
+                Token::String("John Doe"),
+                Token::Str("email"),
+                Token::String("john@example.com"),
+                Token::Str("time"),
+                Token::String("2021-01-01T00:00:00Z"),
+                Token::StructEnd,
+                // Token::SomeEnd,
+                // Field "author"
+                Token::Str("author"),
+                Token::Some,
+                Token::Struct {
+                    name: "Signature",
+                    len: 3,
+                },
+                Token::Str("name"),
+                Token::String("John Doe"),
+                Token::Str("email"),
+                Token::String("john@example.com"),
+                Token::Str("time"),
+                Token::String("2021-01-01T00:00:00Z"),
+                Token::StructEnd,
+                // Field "changes" as a sequence of ChangesInfo structs.
+                Token::Str("changes"),
+                Token::Seq { len: Some(2) },
+                // ChangesInfo (for "file1")
+                Token::Struct {
+                    name: "ChangesInfo",
+                    len: 3,
+                },
+                Token::Str("file"),
+                Token::String("file1"),
+                Token::Str("insertions"),
+                Token::U32(10),
+                Token::Str("deletions"),
+                Token::U32(2),
+                Token::StructEnd,
+                // ChangesInfo (for "file2")
+                Token::Struct {
+                    name: "ChangesInfo",
+                    len: 3,
+                },
+                Token::Str("file"),
+                Token::String("file2"),
+                Token::Str("insertions"),
+                Token::U32(0),
+                Token::Str("deletions"),
+                Token::U32(5),
+                Token::StructEnd,
+                //
+                Token::SeqEnd,
+                //
+                Token::StructEnd,
+            ],
+        );
     }
 
-    // Test 6: Test Renderable values() for GitDiffMetricsVector with empty data
     #[test]
-    fn test_git_diff_metrics_vector_values_empty() {
-        let vector = GitDiffMetricsVector::from(vec![]);
-        let values = vector.values();
-        assert!(values.is_empty());
-    }
-
-    // Test 7: Test GitDiffMetrics with None committer and author
-    #[test]
-    fn test_git_diff_metrics_none_committer_author() {
+    fn serialize_git_diff_outcome_with_only_required_fields() {
+        // Create a deterministic change_map using a BTreeMap.
         let mut change_map = HashMap::new();
-        change_map.insert(BString::from("file.rs"), (1, 0));
+        // change_map.insert(BString::from("file1"), (10, 2));
+        // change_map.insert(BString::from("file2"), (0, 5));
 
-        let commit = mock_object_id();
-        let metrics = GitDiffOutcome::new(change_map.clone(), commit, None, None, None).unwrap();
+        let outcome = GitDiffOutcome {
+            commit: gix::ObjectId::from_str("35f39037f97d1a0da12a383506c83b1a58492917").unwrap(),
+            parent: None,
+            total_number_of_files_changed: 0,
+            total_number_of_insertions: 0,
+            total_number_of_deletions: 0,
+            committer: None,
+            author: None,
+            change_map,
+        };
+        // GitDiffOutcome::new()
 
-        assert!(metrics.committer.is_none());
-        assert!(metrics.author.is_none());
-    }
-
-    // Test 8: Test Renderable values() with multiple GitDiffMetrics
-    #[test]
-    fn test_git_diff_metrics_vector_values_multiple() {
-        let mut change_map1 = HashMap::new();
-        change_map1.insert(BString::from("file1.txt"), (10, 5));
-
-        let mut change_map2 = HashMap::new();
-        change_map2.insert(BString::from("file2.rs"), (3, 1));
-
-        let commit1 = mock_object_id();
-        let commit2 = mock_object_id();
-
-        let metrics1 = GitDiffOutcome::new(change_map1.clone(), commit1, None, None, None).unwrap();
-        let metrics2 = GitDiffOutcome::new(change_map2.clone(), commit2, None, None, None).unwrap();
-
-        let vector = GitDiffMetricsVector::from(vec![metrics1, metrics2]);
-
-        let values = vector.values();
-        assert_eq!(values.len(), 2);
-        fn check_inner_values(value: &Value, inner_str: String) {
-            match &value {
-                Value::List(inner) => {
-                    // Ensure the inner list has the expected content.
-                    assert_eq!(
-                        inner.len(),
-                        6,
-                        "Ensure the inner list has the expected content"
-                    );
-
-                    if let Value::Str(s) = &inner[0] {
-                        assert_eq!(*s, inner_str);
-                    } else {
-                        panic!("Expected a Value::Str in the inner[0]");
-                    }
-                }
-                _ => panic!("Expected a Value::List for the inner element"),
-            };
-        }
-        check_inner_values(&values[0], commit1.to_string());
-        check_inner_values(&values[1], commit2.to_string());
+        assert_ser_tokens(
+            &outcome,
+            &[
+                Token::Struct {
+                    name: "GitDiffOutcome",
+                    len: 8,
+                },
+                // Field "commit"
+                Token::Str("commit"),
+                Token::String("35f39037f97d1a0da12a383506c83b1a58492917"),
+                // Field "parent"
+                Token::Str("parent"),
+                Token::None,
+                // Field "total_number_of_files_changed"
+                Token::Str("total_number_of_files_changed"),
+                Token::U64(0),
+                // Field "total_number_of_insertions"
+                Token::Str("total_number_of_insertions"),
+                Token::U32(0),
+                // Field "total_number_of_deletions"
+                Token::Str("total_number_of_deletions"),
+                Token::U32(0),
+                // Field "committer"
+                Token::Str("committer"),
+                Token::None,
+                // Field "author"
+                Token::Str("author"),
+                Token::None,
+                // Field "changes" as a sequence of ChangesInfo structs.
+                Token::Str("changes"),
+                Token::Seq { len: Some(0) },
+                Token::SeqEnd,
+                Token::StructEnd,
+            ],
+        );
     }
 }

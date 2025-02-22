@@ -65,5 +65,4 @@ pub use crate::utils::structs;
 
 #[cfg(test)]
 mod tests {
-    use crate::traversal::main;
 }

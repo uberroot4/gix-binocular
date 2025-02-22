@@ -151,4 +151,36 @@ mod tests {
         assert!(debug_output.contains("Diane"));
         assert!(debug_output.contains("diane@example.com"));
     }
+
+    #[test]
+    fn test_ser_empty() {
+        use serde_test::{assert_ser_tokens, Token};
+
+        let name = BString::from("Diane");
+        let email = BString::from("diane@example.com");
+        let time = dummy_time();
+
+        let sig = Sig {
+            name: name.clone(),
+            email: email.clone(),
+            time,
+        };
+
+        assert_ser_tokens(
+            &sig,
+            &[
+                Token::Struct {
+                    len: 3,
+                    name: "Signature",
+                },
+                Token::Str("name"),
+                Token::String("Diane"),
+                Token::Str("email"),
+                Token::String("diane@example.com"),
+                Token::Str("time"),
+                Token::String("2021-01-01T00:00:00Z"),
+                Token::StructEnd,
+            ],
+        );
+    }
 }

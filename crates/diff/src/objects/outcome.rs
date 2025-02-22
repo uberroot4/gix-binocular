@@ -32,6 +32,11 @@ impl GitDiffOutcome {
         let total_number_of_insertions = totals.0;
         let total_number_of_deletions = totals.1;
 
+        #[cfg(debug_assertions)]
+        {
+            assert_eq!(total_number_of_files_changed, change_map.keys().len())
+        }
+
         Ok(Self {
             change_map,
             total_number_of_files_changed,
@@ -68,7 +73,7 @@ impl serde::ser::Serialize for GitDiffOutcome {
             &self.clone().committer.map_or(None, |p| Some(p)),
         )?;
         state.serialize_field("author", &self.clone().author.map_or(None, |p| Some(p)))?;
-        let changes_info_vec = &self
+        let changes_info_vec = &mut self
             .clone()
             .change_map
             .into_iter()
@@ -78,6 +83,8 @@ impl serde::ser::Serialize for GitDiffOutcome {
                 deletions,
             })
             .collect::<Vec<ChangesInfo>>();
+
+        changes_info_vec.sort_by(|a, b| a.file.cmp(&b.file));
         state.serialize_field("changes", changes_info_vec)?;
         state.end()
     }

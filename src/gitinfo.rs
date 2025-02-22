@@ -2,7 +2,7 @@ use clap::Parser;
 use dotenv::dotenv;
 use log::{debug, info, trace};
 use std::time::Instant;
-
+use serde::Serialize;
 use cli::cmd::{Cli, Commands};
 use cli::diff::DiffAlgorithm;
 use cli::output_format::OutputFormat;
@@ -81,9 +81,11 @@ fn main() {
                 diff_args.follow,
                 args.global_opts.limit,
             );
-            // printer.print()
-            if let Ok(groups) = result {
-                printer.print(&groups);
+            match result {
+                Ok(groups) => {
+                    printer.print(&groups);
+                }
+                Err(e) => { panic!("{}", e) }
             }
         }
         Commands::Blame(blame_args) => {
@@ -114,22 +116,28 @@ fn main() {
         Commands::Commits(commit_args) => {
             trace!("{:?}", commit_args);
             use commits::traverse;
-            let commit_ids = traverse::traverse_commit_graph(
+            let result = traverse::traverse_commit_graph(
                 repo,
                 (*commit_args.branches).to_owned(),
                 args.global_opts.skip_merges,
             );
-            match commit_ids {
-                Ok(cids) => {
-                    info!("Found {:?} commits", cids.len());
+            // match commit_ids {
+            //     Ok(cids) => {
+            //         info!("Found {:?} commits", cids.len());
+            //     }
+            //     Err(_) => panic!("Error traversing commit graph"),
+            // }
+            match result {
+                Ok(groups) => {
+                    printer.print(&groups);
                 }
-                Err(_) => panic!("Error traversing commit graph"),
+                Err(e) => { panic!("{}", e) }
             }
         }
         _other => {
             eprintln!("Unknown Command {:?}", _other);
         }
-    }
+    };
 
     let elapsed = now.elapsed();
     debug!("Elapsed: {:.2?}", elapsed);

@@ -1,22 +1,22 @@
+use crate::objects::{GitDiffOutcome, GitDiffOutcomeVec};
 use crate::utils;
 use anyhow::Result;
-use gix::{
-    diff::blob::Platform,
-    Commit, ObjectId,
-};
+use gix::{diff::blob::Platform, Commit, ObjectId};
 use log::{debug, error, trace};
+use shared::VecDataFrameExt;
 use std::thread::JoinHandle;
+use polars::frame::DataFrame;
 use tqdm::tqdm;
-use crate::objects::GitDiffOutcome;
 
 pub fn traverse_commit_graph(
     repo: &gix::Repository,
     commitlist: Vec<Commit>,
     num_threads: usize,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
-) -> Result<Vec<GitDiffOutcome>> {
+) -> Result<DataFrame> {
     let mailmap = repo.open_mailmap();
     trace!("Algorithm: {:?}", diff_algorithm);
+    let prob_capacity = commitlist.len() * 2;
 
     let (churn_threads, churn_tx) = get_churn_channel(repo, num_threads, &mailmap, diff_algorithm)?;
 
@@ -36,7 +36,7 @@ pub fn traverse_commit_graph(
     drop(churn_tx);
 
     // Wait for the threads to complete any remaining work
-    let mut diff_results: Vec<GitDiffOutcome> = Vec::new();
+    let mut diff_results: Vec<GitDiffOutcome> = Vec::with_capacity(prob_capacity);
     for child in churn_threads {
         let result = child.join().expect("oops! the child thread panicked");
         match result {
@@ -48,8 +48,11 @@ pub fn traverse_commit_graph(
         }
     }
 
+    let vectorized = GitDiffOutcomeVec(diff_results.clone());
+    let df = vectorized.to_df()?;
+    //println!("{:?}", df.head(Some(10)));
     //diff_results.truncate(limit);
-    Ok(diff_results)
+    Ok(df)
 }
 
 fn get_churn_channel(
@@ -110,7 +113,6 @@ fn get_churn_channel(
 }
 
 fn compute_diff_with_parent(
-    //change_map: &mut HashMap<BString, usize>,
     commit: &Commit,
     repo: &gix::Repository,
     rewrite_cache: &mut Platform,
@@ -144,10 +146,6 @@ fn compute_diff_with_parent(
     let diffs: Vec<GitDiffOutcome> = parent_trees
         .iter()
         .map(|(parent_commit, parent_tree)| {
-            // let mut change_map = Default::default();
-
-            // should be usable in any next version > 0.66.0
-            // let changes = repo.diff_tree_to_tree(parent_tree, &commit.tree().unwrap(), None).unwrap();
             let change_map = utils::git_helper::calculate_changes(
                 &parent_tree,
                 &commit.tree().unwrap(),
@@ -162,32 +160,11 @@ fn compute_diff_with_parent(
                     None => None,
                 },
                 None,
-                None
+                None,
             )
             .expect("Diff result should be processable")
         })
         .collect();
-
-    debug!(
-        "parents-commit {:?}\t{:?}\t|\t{:?} diffs",
-        parent_commits,
-        commit.id,
-        diffs.len(),
-    );
-    #[cfg(debug_assertions)]
-    {
-        for d in diffs.iter().clone() {
-            debug!(
-            "\t{:?}\t{:?}\t|\t{:?} files changed, {:?} insertions(+), {:?} deletions(-)",
-            d.parent,
-            d.commit,
-            d.total_number_of_files_changed,
-            d.total_number_of_deletions,
-            d.total_number_of_deletions,
-        );
-        }
-    }
-
 
     Ok(diffs)
 }

@@ -3,7 +3,7 @@ mod objects {
     mod outcome;
 
     use changes::ChangesInfo;
-    pub(crate) use outcome::GitDiffOutcome;
+    pub(crate) use outcome::{GitDiffOutcome, GitDiffOutcomeVec};
 }
 
 mod git {
@@ -12,13 +12,14 @@ mod git {
 }
 
 mod utils {
-    pub mod git_helper;
-    pub mod structs;
+    pub(crate) mod git_helper;
+    pub(crate) mod thread_helper;
 }
 
 pub mod traversal {
-    use log::{info, trace};
     use crate::objects::GitDiffOutcome;
+    use log::{info, trace};
+    use polars::frame::DataFrame;
 
     pub fn main(
         repo: &gix::Repository,
@@ -29,7 +30,7 @@ pub mod traversal {
         breadth_first: bool,
         follow: bool,
         limit: Option<usize>,
-    ) -> anyhow::Result<Vec<GitDiffOutcome>> {
+    ) -> anyhow::Result<DataFrame> {
         let cl = crate::git::commit::prepare_commit_list(
             repo,
             commitlist,
@@ -39,30 +40,13 @@ pub mod traversal {
             limit,
         )?;
         info!("Processing {} commit(s)", cl.iter().count());
-        let num_threads = num_threads(max_threads);
+        let num_threads = crate::utils::thread_helper::num_threads(max_threads);
         trace!("threads used: {:?}", num_threads);
         let diffs =
             crate::git::traverse::traverse_commit_graph(repo, cl, num_threads, diff_algorithm)?;
 
         Ok(diffs)
     }
-
-    fn num_threads(max_threads: usize) -> usize {
-        std::thread::available_parallelism()
-            .map(|p| p.get())
-            .unwrap_or(1)
-            .min(max_threads)
-    }
-
-    #[cfg(test)]
-    mod tests {
-    }
 }
 
 pub use crate::git::traverse;
-pub use crate::utils::git_helper;
-pub use crate::utils::structs;
-
-#[cfg(test)]
-mod tests {
-}

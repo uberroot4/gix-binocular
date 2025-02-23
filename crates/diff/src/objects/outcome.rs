@@ -1,14 +1,16 @@
 use crate::objects::ChangesInfo;
 use gix::bstr::BString;
 use gix::ObjectId;
+use polars::prelude::*;
 use serde::ser::SerializeStruct;
 use shared::signature::Sig;
+use shared::VecDataFrameExt;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct GitDiffOutcome {
     pub change_map: HashMap<BString, (u32, u32)>,
-    pub total_number_of_files_changed: usize,
+    pub total_number_of_files_changed: u64,
     pub total_number_of_insertions: u32,
     pub total_number_of_deletions: u32,
     pub commit: ObjectId,
@@ -16,6 +18,7 @@ pub struct GitDiffOutcome {
     pub committer: Option<Sig>,
     pub author: Option<Sig>,
 }
+pub(crate) struct GitDiffOutcomeVec(pub(crate) Vec<GitDiffOutcome>);
 
 impl GitDiffOutcome {
     pub fn new(
@@ -25,17 +28,17 @@ impl GitDiffOutcome {
         committer: Option<Sig>,
         author: Option<Sig>,
     ) -> anyhow::Result<Self> {
-        let total_number_of_files_changed = change_map.values().count();
+        let total_number_of_files_changed = change_map.values().count() as u64;
         let totals = change_map
             .values()
             .fold((0u32, 0u32), |acc, val| (acc.0 + val.0, acc.1 + val.1));
         let total_number_of_insertions = totals.0;
         let total_number_of_deletions = totals.1;
 
-        #[cfg(debug_assertions)]
-        {
-            assert_eq!(total_number_of_files_changed, change_map.keys().len())
-        }
+        debug_assert_eq!(
+            total_number_of_files_changed,
+            change_map.keys().len() as u64
+        );
 
         Ok(Self {
             change_map,
@@ -87,6 +90,66 @@ impl serde::ser::Serialize for GitDiffOutcome {
         changes_info_vec.sort_by(|a, b| a.file.cmp(&b.file));
         state.serialize_field("changes", changes_info_vec)?;
         state.end()
+    }
+}
+
+impl VecDataFrameExt for GitDiffOutcomeVec {
+    fn to_df(&self) -> PolarsResult<DataFrame> {
+        //let outcome_vec = &self.0;
+
+        struct OutcomeDfHelper {
+            pub commit: String,
+            pub parent: Option<String>,
+            filename: String,
+            insertions: u32,
+            deletions: u32,
+        }
+
+        let exploded: Vec<_> = self
+            .0
+            .iter()
+            .flat_map(|diff| {
+                // Capture the commit for use in the inner closure
+                let commit = diff.commit;
+                let parent = diff.parent;
+                diff.change_map
+                    .iter()
+                    .map(move |(filename, (insertions, deletions))| {
+                        OutcomeDfHelper {
+                            commit: commit.to_string(),
+                            parent: parent.map(|p| p.to_string()),
+                            filename: filename.to_string(),
+                            insertions: *insertions,
+                            deletions: *deletions,
+                        }
+                    })
+            })
+            .collect();
+
+        let capacity = exploded.len();
+        let mut commit_vec = Vec::with_capacity(capacity);
+        let mut parent_vec = Vec::with_capacity(capacity);
+        let mut filename_vec = Vec::with_capacity(capacity);
+        let mut insertions_vec = Vec::with_capacity(capacity);
+        let mut deletions_vec = Vec::with_capacity(capacity);
+
+        for val in exploded {
+            commit_vec.push(val.commit);
+            parent_vec.push(val.parent);
+            filename_vec.push(val.filename);
+            insertions_vec.push(val.insertions);
+            deletions_vec.push(val.deletions);
+        }
+
+        let df = df![
+            "commit" => commit_vec,
+            "parent" => parent_vec,
+            "filename" => filename_vec,
+            "insertions" => insertions_vec,
+            "deletions" => deletions_vec,
+        ]?;
+        debug_assert_eq!(capacity, df.height());
+        Ok(df)
     }
 }
 

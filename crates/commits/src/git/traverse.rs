@@ -1,34 +1,57 @@
-use shared::signature::Sig;
+use crate::git::metrics::{GitCommitMetric, GitCommitMetricVec};
 use gix::Reference;
 use log::{debug, trace};
-use crate::git::metrics::GitCommitMetric;
+use polars::df;
+use polars::prelude::*;
+use shared::{signature::Sig, time_to_utc_with_offset, VecDataFrameExt};
 
 pub fn traverse_commit_graph(
     repo: gix::Repository,
     branches: Vec<String>,
     skip_merges: bool,
-) -> anyhow::Result<Vec<GitCommitMetric>> {
+) -> anyhow::Result<DataFrame> {
     let mailmap = repo.open_mailmap();
-    let prefixed_branches: Vec<String> = branches.iter().map(|b|
-        if b.contains("origin/") {
-            format!("refs/remotes/{b}")
-        } else {
-            format!("refs/heads/{b}")
-        }
-    ).collect();
-    debug!("prefixed_branches ({:?}): {:?}", prefixed_branches.len(), prefixed_branches);
+    let prefixed_branches: Vec<String> = branches
+        .iter()
+        .map(|b| {
+            if b.contains("origin/") {
+                format!("refs/remotes/{b}")
+            } else {
+                format!("refs/heads/{b}")
+            }
+        })
+        .collect();
+    debug!(
+        "prefixed_branches ({:?}): {:?}",
+        prefixed_branches.len(),
+        prefixed_branches
+    );
     let references = repo.references()?;
     let local_branches = references.local_branches()?;
     let remote_branches = references.remote_branches()?;
-    debug!("local_branches: {:?}", references.local_branches()?.collect::<Vec<_>>());
-    let local_and_remote_branches = local_branches.chain(remote_branches).flatten().collect::<Vec<Reference>>();
+    debug!(
+        "local_branches: {:?}",
+        references.local_branches()?.collect::<Vec<_>>()
+    );
+    let local_and_remote_branches = local_branches
+        .chain(remote_branches)
+        .flatten()
+        .collect::<Vec<Reference>>();
     debug!("local_and_remote_branches: {:?}", local_and_remote_branches);
 
-    let available_branches: Vec<&Reference> = local_and_remote_branches.iter()
+    let available_branches: Vec<&Reference> = local_and_remote_branches
+        .iter()
         .filter(|r| prefixed_branches.contains(&r.name().as_bstr().to_string()))
         .collect();
 
-    trace!("available_branches: {:?}", available_branches.clone().iter().map(|b| b.name().as_bstr().to_string()).collect::<Vec<String>>());
+    trace!(
+        "available_branches: {:?}",
+        available_branches
+            .clone()
+            .iter()
+            .map(|b| b.name().as_bstr().to_string())
+            .collect::<Vec<String>>()
+    );
 
     let mut commit_metric_vec: Vec<GitCommitMetric> = Vec::new();
     for branch in available_branches {
@@ -42,12 +65,15 @@ pub fn traverse_commit_graph(
             Vec::new()
         };
         // trace!("commit_count: {:?}", commits);
-        let mut val: Vec<GitCommitMetric> = commits.iter()
+        let mut val: Vec<GitCommitMetric> = commits
+            .iter()
             .filter(|c| {
                 return if skip_merges && c.parent_ids.len() > 1 {
                     trace!("Skipping Merge Commit {:?}", c.id);
                     false
-                } else { true };
+                } else {
+                    true
+                };
             })
             .map(|c| {
                 let mut author: Option<Sig> = None;
@@ -55,11 +81,15 @@ pub fn traverse_commit_graph(
                 if let Ok(commit) = c.object() {
                     author = if let Ok(author_sig) = commit.author() {
                         Some(Sig::from(mailmap.resolve(author_sig)))
-                    } else { None };
+                    } else {
+                        None
+                    };
 
                     committer = if let Ok(committer_sig) = commit.committer() {
                         Some(Sig::from(mailmap.resolve(committer_sig)))
-                    } else { None };
+                    } else {
+                        None
+                    };
                 }
                 let mut gcm = GitCommitMetric::from((*c).clone());
                 // gcm.author = Some(author.into());
@@ -69,11 +99,13 @@ pub fn traverse_commit_graph(
                 gcm.branch = Option::from(branch.name().shorten().to_string());
 
                 gcm
-            }
-            ).collect();
+            })
+            .collect();
         commit_metric_vec.append(&mut val);
     }
 
-    // Ok(vec![GitCommitMetric::new()])
-    Ok(commit_metric_vec)
+    let vectorized = GitCommitMetricVec(commit_metric_vec);
+    let lf = vectorized.to_df()?;
+
+    Ok(lf)
 }

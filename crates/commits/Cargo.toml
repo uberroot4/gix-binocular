@@ -20,9 +20,10 @@ gix = { workspace = true, features = ["max-performance-safe", "mailmap"] }
 base64 = "0.22.1"
 log = { workspace = true }
 anyhow = { workspace = true }
-render = { path = "../render" }
 shared = { path = "../shared" }
 serde = { workspace = true }
+polars = { workspace = true, features = ["lazy"] }
+chrono = { workspace = true }
 
 [dev-dependencies]
 assertables = { version = "9.5.0" }

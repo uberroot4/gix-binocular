@@ -4,4 +4,3 @@ mod git {
 }
 
 pub use crate::git::traverse;
-pub use crate::git::metrics::GitCommitMetric;

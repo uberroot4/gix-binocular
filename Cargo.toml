@@ -47,9 +47,10 @@ clap_complete = "4.4.3"
 log = "0.4.21"
 env_logger = "0.11.3"
 anyhow = "1.0.42"
-serde = { version = "1.0.217" }
+serde = { version = "1.0.217", features = ["derive"] }
 serde_json = { version = "1.0.138", features = ["derive"] }
-
+polars = { version = "0.46.0", features = ["lazy"] }
+chrono = { version = "0.4.39" }
 
 [dependencies]
 dotenv = { version = "0.15.0" }
@@ -62,8 +63,8 @@ cartography-blame = { path = "./crates/blame", default-features = false, feature
 clap = { workspace = true }
 gix = { workspace = true }
 log = { workspace = true }
-anyhow = { workspace = true }
-
+serde = { workspace = true }
+polars = { workspace = true, features = ["json"] }
 comfy-table = "7.1.0"
 
 [dev-dependencies]

@@ -1,7 +1,7 @@
 use std::ops::Add;
 use gix::date::Time;
 
-pub(crate) fn time_to_utc_with_offset(time: Time) -> chrono::DateTime<chrono::Utc> {
+pub fn time_to_utc_with_offset(time: Time) -> chrono::DateTime<chrono::Utc> {
     // Adjust the offset based on the sign.
     // Assume that `time::Sign` has variants `Plus` and `Minus`.
     let offset_seconds = match time.sign {

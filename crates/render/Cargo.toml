@@ -20,6 +20,8 @@ serde_json = "1.0.138"
 shared = { path = "../shared" }
 hashbrown = { version = "0.15.2" }
 serde = { workspace = true }
+polars = { workspace = true, features = ["json", "csv", "parquet"] }
+
 [dev-dependencies]
 pretty_assertions = { version = "1.4.1" }
 assertables = { version = "9.5.0" }

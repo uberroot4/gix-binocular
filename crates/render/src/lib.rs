@@ -1,10 +1,8 @@
-mod csv;
-mod tabular;
-mod json;
-pub mod base;
+pub(crate) mod utils;
 
 pub use cli::output_format::OutputFormat;
-pub use json::JSONPrinter;
+
+pub mod printer;
 
 pub mod const_values {
     use lazy_static::lazy_static;
@@ -13,5 +11,3 @@ pub mod const_values {
     }
     // pub  const NULL: String = String::new("NULL");
 }
-
-

@@ -1,14 +1,14 @@
 use clap::Parser;
-use dotenv::dotenv;
-use log::{debug, info, trace};
-use std::time::Instant;
-use serde::Serialize;
 use cli::cmd::{Cli, Commands};
 use cli::diff::DiffAlgorithm;
 use cli::output_format::OutputFormat;
-use render::base::Printer;
-use render::{base::OutputPrinter, JSONPrinter};
+use dotenv::dotenv;
+use log::{debug, info, trace};
+use polars::prelude::JsonWriter;
+use render::printer::{CSVPrinter, JSONPrinter, OutputPrinter, ParquetPrinter, Printer, VoidPrinter};
+use serde::Serialize;
 use shared::logging;
+use std::time::Instant;
 
 fn main() {
     dotenv().ok();
@@ -42,33 +42,32 @@ fn main() {
     };
 
     let printer: Printer = match args.global_opts.output_format {
-        // OutputFormat::Render => {
-        //     Box::new(TablePrinter::new(arguments.pagination, arguments.page_size))
-        // }
-        // OutputFormat::JSON => Box::new(JSONPrinter { file_path: args.global_opts.output_file }),
         OutputFormat::JSON => Printer::Json(JSONPrinter {
             file_path: args.global_opts.output_file,
         }),
-        //OutputFormat::CSV => Box::new(CSVPrinter {}),
+        OutputFormat::CSV => Printer::Csv(CSVPrinter {
+            file_path: args.global_opts.output_file,
+        }),
+        OutputFormat::Parquet => Printer::Parquet(ParquetPrinter {
+            file_path: args.global_opts.output_file,
+        }),
         _ => Printer::Void(VoidPrinter {}),
     };
 
-    // let algo = match &args.command {
-    //     Commands::Diff(_) || Commands::Blame(_) => {}
-    //     // Commands::Blame(_) => {}
-    //     _ => None
-    // }
+    let algo = match &args.command {
+        Commands::Diff(diff_args) => Some(&diff_args.algorithm),
+        Commands::Blame(blame_args) => Some(&blame_args.algorithm),
+        _ => None,
+    }
+    .map(|algo| match algo {
+        DiffAlgorithm::Histogram => gix::diff::blob::Algorithm::Histogram,
+        DiffAlgorithm::Myers => gix::diff::blob::Algorithm::Myers,
+        DiffAlgorithm::MyersMinimal => gix::diff::blob::Algorithm::MyersMinimal,
+    });
 
-    match &args.command {
+    let result_df = match &args.command {
         Commands::Diff(diff_args) => {
             trace!("{:?}", diff_args);
-
-            let algo = match diff_args.algorithm {
-                DiffAlgorithm::Histogram => gix::diff::blob::Algorithm::Histogram,
-                DiffAlgorithm::Myers => gix::diff::blob::Algorithm::Myers,
-                DiffAlgorithm::MyersMinimal => gix::diff::blob::Algorithm::MyersMinimal,
-                // None => gix::diff::blob::Algorithm::Histogram,
-            };
             use cartography_diff::traversal::main;
 
             let result = main(
@@ -76,41 +75,37 @@ fn main() {
                 (*diff_args.delegate.commitlist).to_owned(),
                 diff_args.threads.unwrap_or(1),
                 args.global_opts.skip_merges,
-                Some(algo),
+                algo,
                 diff_args.breadth_first,
                 diff_args.follow,
                 args.global_opts.limit,
             );
             match result {
-                Ok(groups) => {
-                    printer.print(&groups);
+                Ok(mut groups) => {
+                    printer.print_df(&mut groups);
                 }
-                Err(e) => { panic!("{}", e) }
+                Err(e) => {
+                    panic!("{}", e)
+                }
             }
         }
         Commands::Blame(blame_args) => {
             trace!("{:?}", blame_args);
-
-            let algo = match blame_args.algorithm {
-                DiffAlgorithm::Histogram => gix::diff::blob::Algorithm::Histogram,
-                DiffAlgorithm::Myers => gix::diff::blob::Algorithm::Myers,
-                DiffAlgorithm::MyersMinimal => gix::diff::blob::Algorithm::MyersMinimal,
-            };
-
             use cartography_blame::lookup;
 
-            // let blames = lookup(&repo, blame_args.source_commit, blame_args.target_commit);
             let result = lookup(
                 &repo,
                 (*blame_args.defines_file).parse().unwrap(),
-                Some(algo),
+                algo,
                 blame_args.threads.unwrap_or(1),
             );
             match result {
                 Ok(groups) => {
                     printer.print(&groups);
                 }
-                Err(e) => { panic!("{}", e) }
+                Err(e) => {
+                    panic!("{}", e)
+                }
             }
         }
         Commands::Commits(commit_args) => {
@@ -121,17 +116,13 @@ fn main() {
                 (*commit_args.branches).to_owned(),
                 args.global_opts.skip_merges,
             );
-            // match commit_ids {
-            //     Ok(cids) => {
-            //         info!("Found {:?} commits", cids.len());
-            //     }
-            //     Err(_) => panic!("Error traversing commit graph"),
-            // }
             match result {
-                Ok(groups) => {
-                    printer.print(&groups);
+                Ok(mut groups) => {
+                    printer.print_df(&mut groups);
                 }
-                Err(e) => { panic!("{}", e) }
+                Err(e) => {
+                    panic!("{}", e)
+                }
             }
         }
         _other => {

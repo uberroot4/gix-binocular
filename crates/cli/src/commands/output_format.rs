@@ -7,4 +7,6 @@ pub enum OutputFormat {
     JSON,
     /// Print the output in csv format
     CSV,
+    /// Print the output in parquet format
+    Parquet,
 }

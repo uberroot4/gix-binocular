@@ -50,7 +50,7 @@ fn main() {
             file_path: args.global_opts.output_file,
         }),
         //OutputFormat::CSV => Box::new(CSVPrinter {}),
-        _ => todo!("not implemented"),
+        _ => Printer::Void(VoidPrinter {}),
     };
 
     // let algo = match &args.command {

@@ -31,3 +31,4 @@ rayon = { version = "1.10.0" }
 hashbrown = { version = "0.15.2", features = ["rayon"], default-features = true }
 tqdm = { version = "0.7.0" }
 crossbeam-channel = { version = "0.5.14" }
+polars = { workspace = true }

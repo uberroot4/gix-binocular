@@ -1,6 +1,6 @@
 use crate::objects::blame_result::BlameResult;
 use log::{debug, trace};
-
+use polars::prelude::*;
 mod git;
 pub(crate) mod objects;
 
@@ -13,7 +13,7 @@ pub fn lookup(
     defines_file_path: String,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
     max_threads: usize,
-) -> anyhow::Result<Vec<BlameResult>> {
+) -> anyhow::Result<DataFrame> {
     trace!("lookup({:?}, {})", repo, defines_file_path);
     let defines = input::read_json_content(defines_file_path)?;
 
@@ -47,22 +47,6 @@ pub fn lookup(
 
     let blame_results = process(repo, tmp, diff_algorithm, max_threads)?;
 
-    // let mut carto_obj = CartographyObject::default();
-    // for title in vec![
-    //     "commit".to_string(),
-    //     // "parent".to_string(),
-    //     // "files_changed".to_string(),
-    //     // "insertions".to_string(),
-    //     // "deletions".to_string(),
-    //     // "diff_details".to_string(),
-    //     "blames".to_string(),
-    // ] {
-    //     carto_obj.titles.push(title);
-    // }
-    //
-    // let diff_rows = blame_results.into_iter().map(Row::from).collect();
-    // carto_obj.groups.push(Group { rows: diff_rows });
-
     Ok(blame_results)
 }
 
@@ -71,7 +55,7 @@ pub fn process(
     defines: gix::hashtable::HashMap<gix::ObjectId, Vec<String>>,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
     max_threads: usize,
-) -> anyhow::Result<Vec<BlameResult>> {
+) -> anyhow::Result<DataFrame> {
     trace!(
         "process(repo={:?},#defines={},algo={:?},threads={})",
         repo,

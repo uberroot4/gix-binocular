@@ -95,8 +95,6 @@ impl serde::ser::Serialize for GitDiffOutcome {
 
 impl VecDataFrameExt for GitDiffOutcomeVec {
     fn to_df(&self) -> PolarsResult<DataFrame> {
-        //let outcome_vec = &self.0;
-
         struct OutcomeDfHelper {
             pub commit: String,
             pub parent: Option<String>,

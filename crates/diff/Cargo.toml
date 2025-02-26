@@ -26,4 +26,3 @@ anyhow = { workspace = true }
 [dev-dependencies]
 assertables = { version = "9.5.0" }
 pretty_assertions = { version = "1.4.1" }
-serde_test = { version = "1.0.177" }

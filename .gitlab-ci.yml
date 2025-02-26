@@ -49,17 +49,17 @@ build:gitinfo:
   stage: build
   script:
     - cargo build --profile=ci-dev --bin gitinfo
-    - target/debug/gitinfo -h
-    - target/debug/gitinfo diff -h
-    - target/debug/gitinfo commits -h
-    - target/debug/gitinfo blame -h
+    - target/ci-dev/gitinfo -h
+    - target/ci-dev/gitinfo diff -h
+    - target/ci-dev/gitinfo commits -h
+    - target/ci-dev/gitinfo blame -h
   artifacts:
     # untracked: false
     # when: on_success
     # access: all
     expire_in: "60 days"
     paths:
-      - "target/debug/gitinfo"
+      - "target/ci-dev/gitinfo"
 
 #.webassembly-base:
 #  extends: .rust-base

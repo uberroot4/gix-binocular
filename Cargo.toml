@@ -41,9 +41,8 @@ members = [
 ]
 
 [workspace.dependencies]
-gix = { version = "=0.70.0", default-features = false }
+gix = { version = "=0.70.0", default-features = true, features = ["blame"] }
 clap = { version = "4.1.1", features = ["derive", "cargo"] }
-clap_complete = "4.4.3"
 log = "0.4.21"
 env_logger = "0.11.3"
 anyhow = "1.0.42"
@@ -61,8 +60,6 @@ cartography-blame = { path = "./crates/blame", default-features = false, feature
 clap = { workspace = true }
 gix = { workspace = true }
 log = { workspace = true }
-polars = { workspace = true, features = ["json"] }
-comfy-table = "7.1.0"
 
 [dev-dependencies]
 criterion = "0.5.1"

@@ -22,7 +22,6 @@ log = { workspace = true }
 anyhow = { workspace = true }
 shared = { path = "../shared" }
 polars = { workspace = true, features = ["lazy"] }
-chrono = { workspace = true }
 
 [dev-dependencies]
 assertables = { version = "9.5.0" }

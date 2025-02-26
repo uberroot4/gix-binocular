@@ -9,7 +9,6 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   PY_VER: "python:3.13.0-alpine3.19"
   RUST_VER: "rust:1.81.0-alpine3.19"
-  RUST_BUILD_JOBS: 1
 
 .before_script:
   before_script:
@@ -44,14 +43,12 @@ variables:
     - bash --version
     - /usr/bin/env bash --version
     - git --version
-    - nproc --all
 
 build:gitinfo:
   extends: .rust-base
   stage: build
   script:
-    - echo RUST_BUILD_JOBS=${RUST_BUILD_JOBS}
-    - cargo build --bin gitinfo --jobs ${RUST_BUILD_JOBS}
+    - cargo build --bin gitinfo
     - target/debug/gitinfo -h
     - target/debug/gitinfo diff -h
     - target/debug/gitinfo commits -h

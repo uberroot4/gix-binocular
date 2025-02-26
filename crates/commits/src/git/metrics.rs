@@ -5,7 +5,7 @@ use shared::signature::Sig;
 use shared::{time_to_utc_with_offset, VecDataFrameExt};
 
 #[derive(Debug, Clone)]
-pub(crate) struct GitCommitMetric {
+pub struct GitCommitMetric {
     pub commit: gix::ObjectId,
     pub message: String,
     pub committer: Option<Sig>,

@@ -69,9 +69,9 @@ fn main() {
     let result_df = match &args.command {
         Commands::Diff(diff_args) => {
             trace!("{:?}", diff_args);
-            use cartography_diff::traversal::main;
+            use cartography_diff::traversal::process;
 
-            let result = main(
+            let result = process(
                 &repo,
                 (*diff_args.delegate.commitlist).to_owned(),
                 diff_args.threads.unwrap_or(1),
@@ -97,8 +97,8 @@ fn main() {
         }
         Commands::Commits(commit_args) => {
             trace!("{:?}", commit_args);
-            use commits::traverse;
-            let result = traverse::traverse_commit_graph(
+            use commits::traversal::process;
+            let result = process(
                 repo,
                 (*commit_args.branches).to_owned(),
                 args.global_opts.skip_merges,

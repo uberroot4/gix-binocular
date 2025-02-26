@@ -263,8 +263,8 @@ fn check_correct_result_start_hash_922051b304015810e6056a72d9ef61d55e7763ed() {
 
     assert_ne!(result.committer, None);
     assert_ne!(result.author, None);
-    let author = &<Option<shared::Sig> as Clone>::clone(&result.author).unwrap();
-    let committer = &<Option<shared::Sig> as Clone>::clone(&result.committer).unwrap();
+    let author = &<Option<shared::signature::Sig> as Clone>::clone(&result.author).unwrap();
+    let committer = &<Option<shared::signature::Sig> as Clone>::clone(&result.committer).unwrap();
 
     assert_ne!(author, committer);
     assert_eq!(author.name, "author");
@@ -288,10 +288,6 @@ fn check_correct_result_start_hash_922051b304015810e6056a72d9ef61d55e7763ed() {
             sign: Sign::Plus
         }
     );
-
-    assert_eq!(result.total_number_of_files_changed, 4);
-    assert_eq!(result.total_number_of_insertions, 0);
-    assert_eq!(result.total_number_of_deletions, 0);
 
     assert_ne!(result.change_map.get(&BString::from("a")), None);
     assert_eq!(result.change_map.get(&BString::from("a")).unwrap(), &(0, 0));
@@ -374,9 +370,6 @@ fn check_correct_number_of_result_start_hash_2a8baaceb3d79f157aaf6a7967278eb6528
         "2a8baaceb3d79f157aaf6a7967278eb65288e073"
     );
     assert_eq!(result_0.change_map.clone().iter().count(), 2);
-    assert_eq!(result_0.total_number_of_files_changed, 2);
-    assert_eq!(result_0.total_number_of_insertions, 2);
-    assert_eq!(result_0.total_number_of_deletions, 0);
 
     let result_1 = result_vec.get(1).expect("Failed to get second");
     assert_eq!(
@@ -384,9 +377,6 @@ fn check_correct_number_of_result_start_hash_2a8baaceb3d79f157aaf6a7967278eb6528
         "11899e89f0d6c9d7fd68aa79f356c9a49a9f319a"
     );
     assert_eq!(result_1.change_map.clone().iter().count(), 4);
-    assert_eq!(result_1.total_number_of_files_changed, 4);
-    assert_eq!(result_1.total_number_of_insertions, 4);
-    assert_eq!(result_1.total_number_of_deletions, 0);
 }
 
 #[test]
@@ -419,9 +409,6 @@ fn check_correct_number_of_result_start_hash_b6c93f947ec4c96039bac4971c681d7a18b
     );
     println!("{:?}", result_0.change_map);
     assert_eq!(result_0.change_map.clone().iter().count(), 2);
-    assert_eq!(result_0.total_number_of_files_changed, 2);
-    assert_eq!(result_0.total_number_of_insertions, 2);
-    assert_eq!(result_0.total_number_of_deletions, 0);
 
     assert_ne!(result_0.change_map.get(&BString::from("b")), None);
     assert_eq!(
@@ -468,9 +455,6 @@ fn check_correct_number_of_result_start_hash_f3b695021ac313bd223396abb70e2c47210
     );
     println!("{:?}", result_0.change_map);
     assert_eq!(result_0.change_map.clone().iter().count(), 4);
-    assert_eq!(result_0.total_number_of_files_changed, 4);
-    assert_eq!(result_0.total_number_of_insertions, 1);
-    assert_eq!(result_0.total_number_of_deletions, 2);
     assert_ne!(result_0.change_map.get(&BString::from("dir/link-2")), None);
     assert_ne!(result_0.change_map.get(&BString::from("no-link")), None);
     assert_ne!(

@@ -1,14 +1,12 @@
 use crate::git::objects::BlameOutcome;
-use crate::objects::blame_result::{BlameResult, BlameResultVec};
+use crate::objects::blame_result::BlameResult;
 use anyhow::bail;
 use gix::bstr::BStr;
 use gix::traverse::commit::Info;
 use log::{debug, error, trace, warn};
 use std::ops::Range;
 use std::sync::Arc;
-use polars::frame::DataFrame;
 use tqdm::tqdm;
-use shared::VecDataFrameExt;
 
 fn retrieve_blame<E>(
     odb: &gix::odb::Handle,
@@ -51,7 +49,7 @@ pub(crate) fn process(
     diff_results: gix::hashtable::HashMap<gix::ObjectId, Vec<String>>,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
     max_threads: usize,
-) -> anyhow::Result<DataFrame> {
+) -> anyhow::Result<Vec<BlameResult>> {
     let odb_handle = &repo.objects;
     let mut rewrite_cache =
         repo.diff_resource_cache(gix::diff::blob::pipeline::Mode::ToGit, Default::default())?;
@@ -247,10 +245,7 @@ pub(crate) fn process(
         )
     }
 
-    let vectorized = BlameResultVec(groups);
-    let lf = vectorized.to_df()?;
-
-    Ok(lf)
+    Ok(groups)
 }
 
 fn group_blame_operations(operations: Vec<BlameOperationResult>) -> Vec<BlameResult> {

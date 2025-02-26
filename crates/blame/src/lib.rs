@@ -1,5 +1,8 @@
 use log::{debug, trace};
 use polars::prelude::*;
+use shared::VecDataFrameExt;
+use crate::objects::blame_result::{BlameResult, BlameResultVec};
+
 mod git;
 pub(crate) mod objects;
 
@@ -46,7 +49,10 @@ pub fn lookup(
 
     let blame_results = process(repo, tmp, diff_algorithm, max_threads)?;
 
-    Ok(blame_results)
+    let vectorized = BlameResultVec(blame_results);
+    let lf = vectorized.to_df()?;
+
+    Ok(lf)
 }
 
 pub fn process(
@@ -54,7 +60,7 @@ pub fn process(
     defines: gix::hashtable::HashMap<gix::ObjectId, Vec<String>>,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
     max_threads: usize,
-) -> anyhow::Result<DataFrame> {
+) -> anyhow::Result<Vec<BlameResult>> {
     trace!(
         "process(repo={:?},#defines={},algo={:?},threads={})",
         repo,

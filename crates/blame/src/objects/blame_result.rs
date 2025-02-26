@@ -3,7 +3,7 @@ use polars::{df, prelude::*};
 use shared::VecDataFrameExt;
 
 #[derive(Debug, Clone)]
-pub(crate) struct BlameResult {
+pub struct BlameResult {
     pub blames: Vec<BlameOutcome>,
     pub commit_oid: gix::ObjectId,
 }

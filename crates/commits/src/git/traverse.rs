@@ -1,14 +1,13 @@
-use crate::git::metrics::{GitCommitMetric, GitCommitMetricVec};
+use crate::git::metrics::GitCommitMetric;
 use gix::Reference;
 use log::{debug, trace};
-use polars::prelude::*;
-use shared::{signature::Sig, VecDataFrameExt};
+use shared::signature::Sig;
 
 pub fn traverse_commit_graph(
     repo: gix::Repository,
     branches: Vec<String>,
     skip_merges: bool,
-) -> anyhow::Result<DataFrame> {
+) -> anyhow::Result<Vec<GitCommitMetric>> {
     let mailmap = repo.open_mailmap();
     let prefixed_branches: Vec<String> = branches
         .iter()
@@ -103,8 +102,5 @@ pub fn traverse_commit_graph(
         commit_metric_vec.append(&mut val);
     }
 
-    let vectorized = GitCommitMetricVec(commit_metric_vec);
-    let lf = vectorized.to_df()?;
-
-    Ok(lf)
+    Ok(commit_metric_vec)
 }

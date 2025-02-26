@@ -194,4 +194,34 @@ mod tests {
 
         assert_eq!(metrics.change_map, change_map);
     }
+
+    #[test]
+    fn test_df_empty_vec_result() {
+        let df: PolarsResult<DataFrame> = GitDiffOutcomeVec(vec![]).to_df();
+        assertables::assert_ok!(df);
+    }
+
+    #[test]
+    fn test_df_header() {
+        let df: DataFrame = GitDiffOutcomeVec(vec![]).to_df().expect("Empty vec must return empty df");
+        assert_eq!(df.get_column_names(), &["commit", "parent", "filename", "insertions", "deletions"]);
+    }
+
+    #[test]
+    fn test_df_empty_vec_check_length_0() {
+        let df: DataFrame = GitDiffOutcomeVec(vec![]).to_df().expect("Empty vec must return empty df");
+
+        fn check_col_length(df: &DataFrame, col_name: &str, len: usize) {
+            let col = df.column(col_name);
+            assertables::assert_ok!(col);
+            let values = col.unwrap();
+            assert_eq!(values.len(), len);
+        }
+
+        check_col_length(&df, "commit", 0);
+        check_col_length(&df, "parent", 0);
+        check_col_length(&df, "filename", 0);
+        check_col_length(&df, "insertions", 0);
+        check_col_length(&df, "deletions", 0);
+    }
 }

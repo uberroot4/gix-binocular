@@ -1,6 +1,6 @@
 use gix::date::time::Sign;
 use crate::git::traverse::util::{get_demo_repo, get_demo_repo_merges};
-use commits::traverse::traverse_commit_graph;
+use commits::traversal::main;
 use shared::logging;
 use assertables::assert_contains;
 use pretty_assertions::assert_eq;
@@ -17,7 +17,7 @@ fn teardown() {}
 #[test]
 fn check_correct_number_of_results_no_branches() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         local_repo,
         vec![],
         false,
@@ -28,7 +28,7 @@ fn check_correct_number_of_results_no_branches() {
 #[test]
 fn check_correct_number_of_results_main_branch() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         local_repo,
         vec!["main".to_string()],
         false,
@@ -39,7 +39,7 @@ fn check_correct_number_of_results_main_branch() {
 #[test]
 fn check_correct_number_of_results_main_branch_merges() {
     let local_repo = get_demo_repo_merges();
-    let result = traverse_commit_graph(
+    let result = main(
         local_repo,
         vec!["main".to_string()],
         false,
@@ -49,7 +49,7 @@ fn check_correct_number_of_results_main_branch_merges() {
 #[test]
 fn check_correct_number_of_results_main_branch_no_merges() {
     let local_repo = get_demo_repo_merges();
-    let result = traverse_commit_graph(
+    let result = main(
         local_repo,
         vec!["main".to_string()],
         true,
@@ -60,7 +60,7 @@ fn check_correct_number_of_results_main_branch_no_merges() {
 #[test]
 fn check_correct_number_of_results_dev_branch_unknown_merges() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         local_repo,
         vec!["dev".to_string()],
         false,
@@ -71,7 +71,7 @@ fn check_correct_number_of_results_dev_branch_unknown_merges() {
 #[test]
 fn check_correct_number_of_results_dev_branch_unknown_no_merges() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         local_repo,
         vec!["dev".to_string()],
         true,
@@ -82,7 +82,7 @@ fn check_correct_number_of_results_dev_branch_unknown_no_merges() {
 #[test]
 fn check_correct_number_of_results_branch_one_commit_merges() {
     let local_repo = get_demo_repo_merges();
-    let result = traverse_commit_graph(
+    let result = main(
         local_repo,
         vec!["branch-that-has-one-commit".to_string()],
         false,
@@ -93,7 +93,7 @@ fn check_correct_number_of_results_branch_one_commit_merges() {
 #[test]
 fn check_correct_number_of_results_branch_one_commit_no_merges() {
     let local_repo = get_demo_repo_merges();
-    let result = traverse_commit_graph(
+    let result = main(
         local_repo,
         vec!["branch-that-has-one-commit".to_string()],
         true,
@@ -104,7 +104,7 @@ fn check_correct_number_of_results_branch_one_commit_no_merges() {
 #[test]
 fn check_correct_order_of_commits() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         local_repo,
         vec!["main".to_string()],
         true,
@@ -123,7 +123,7 @@ fn check_correct_order_of_commits() {
 #[test]
 fn check_correct_metric_properties() {
     let local_repo = get_demo_repo();
-    let result = traverse_commit_graph(
+    let result = main(
         local_repo,
         vec!["main".to_string()],
         true,
@@ -131,7 +131,6 @@ fn check_correct_metric_properties() {
 
     let result_0 = result.get(0).unwrap();
     assert_eq!(result_0.commit.to_string(), "0cf7a4fe3ad6c49ae7beb394a1c1df7cc5173ce4");
-    assert_eq!(result_0.commit_str, "0cf7a4fe3ad6c49ae7beb394a1c1df7cc5173ce4");
     assert_ne!(result_0.committer, None);
     assert_ne!(result_0.author, None);
     assert_contains!(result_0.parents, &String::from("a9f4112b75ecad0cb07a45e20e2a363f29729157"));
@@ -163,7 +162,7 @@ fn check_correct_metric_properties() {
 #[test]
 fn check_correct_metric_properties_mailmap() {
     let local_repo = get_demo_repo_merges();
-    let result = traverse_commit_graph(
+    let result = main(
         local_repo,
         vec!["mailmap-test".to_string()],
         true,
@@ -171,7 +170,6 @@ fn check_correct_metric_properties_mailmap() {
 
     let result_0 = result.get(0).unwrap();
     assert_eq!(result_0.commit.to_string(), "f1c027f839e1facea509b8efc2ddd9bf2ccc9c7e");
-    assert_eq!(result_0.commit_str, "f1c027f839e1facea509b8efc2ddd9bf2ccc9c7e");
     assert_ne!(result_0.committer, None);
     assert_ne!(result_0.author, None);
     assert_contains!(result_0.parents, &String::from("21995c9faa19ca2c03f4f66e5bf32578b7c3e945"));
@@ -204,7 +202,7 @@ fn check_correct_metric_properties_mailmap() {
 #[ignore]
 fn check_correct_metric_properties_no_committer_no_author() {
     let local_repo = get_demo_repo_merges();
-    let result = traverse_commit_graph(
+    let result = main(
         local_repo,
         vec!["no-committer-no-author-test".to_string()],
         true,
@@ -212,7 +210,6 @@ fn check_correct_metric_properties_no_committer_no_author() {
 
     let result_0 = result.get(0).unwrap();
     assert_eq!(result_0.commit.to_string(), "f1c027f839e1facea509b8efc2ddd9bf2ccc9c7e");
-    assert_eq!(result_0.commit_str, "f1c027f839e1facea509b8efc2ddd9bf2ccc9c7e");
     assert_contains!(result_0.parents, &String::from("21995c9faa19ca2c03f4f66e5bf32578b7c3e945"));
     assert_ne!(result_0.committer, None);
     assert_eq!(result_0.author, None);

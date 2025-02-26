@@ -1,11 +1,9 @@
-use crate::objects::{GitDiffOutcome, GitDiffOutcomeVec};
+use crate::objects::GitDiffOutcome;
 use crate::utils;
 use anyhow::Result;
 use gix::{diff::blob::Platform, Commit, ObjectId};
 use log::{debug, error, trace};
-use shared::VecDataFrameExt;
 use std::thread::JoinHandle;
-use polars::frame::DataFrame;
 use tqdm::tqdm;
 
 pub fn traverse_commit_graph(
@@ -13,7 +11,7 @@ pub fn traverse_commit_graph(
     commitlist: Vec<Commit>,
     num_threads: usize,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
-) -> Result<DataFrame> {
+) -> Result<Vec<GitDiffOutcome>> {
     let mailmap = repo.open_mailmap();
     trace!("Algorithm: {:?}", diff_algorithm);
     let prob_capacity = commitlist.len() * 2;
@@ -48,11 +46,11 @@ pub fn traverse_commit_graph(
         }
     }
 
-    let vectorized = GitDiffOutcomeVec(diff_results.clone());
-    let df = vectorized.to_df()?;
+    // let vectorized = GitDiffOutcomeVec(diff_results.clone());
+    // let df = vectorized.to_df()?;
     //println!("{:?}", df.head(Some(10)));
     //diff_results.truncate(limit);
-    Ok(df)
+    Ok(diff_results)
 }
 
 fn get_churn_channel(

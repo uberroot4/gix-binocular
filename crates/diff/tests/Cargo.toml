@@ -16,3 +16,4 @@ cartography-diff = { path = ".." }
 shared = { path = "../../shared" }
 pretty_assertions = { version = "1.4.1" }
 assertables = { version = "9.5.0" }
+polars = { workspace = true }

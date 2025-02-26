@@ -98,7 +98,6 @@ impl serde::ser::Serialize for BlameResult {
     {
         let mut state = serializer.serialize_struct("BlameResult", 2)?;
         state.serialize_field("commit", &self.commit_oid.to_string())?;
-        state.serialize_field("blames", &self.blames)?;
         state.end()
     }
 }

@@ -7,8 +7,6 @@ use shared::{time_to_utc_with_offset, VecDataFrameExt};
 #[derive(Debug, Clone)]
 pub(crate) struct GitCommitMetric {
     pub commit: gix::ObjectId,
-    #[deprecated]
-    pub commit_str: String,
     pub message: String,
     pub committer: Option<Sig>,
     pub author: Option<Sig>,
@@ -32,7 +30,6 @@ impl From<gix::revision::walk::Info<'_>> for GitCommitMetric {
         // .join(";");
         Self {
             commit: commit.id,
-            commit_str: commit.id.to_string(),
             //message: commit_ref.message.to_string().trim().to_string(),
             message: BASE64_STANDARD.encode(commit_ref.message.to_string().trim()),
             author: Some(Sig::from(commit_ref.author)),

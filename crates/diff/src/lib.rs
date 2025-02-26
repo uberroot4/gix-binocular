@@ -17,7 +17,6 @@ mod utils {
 }
 
 pub mod traversal {
-    use crate::objects::GitDiffOutcome;
     use log::{info, trace};
     use polars::frame::DataFrame;
 

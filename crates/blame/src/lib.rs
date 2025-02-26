@@ -1,4 +1,3 @@
-use crate::objects::blame_result::BlameResult;
 use log::{debug, trace};
 use polars::prelude::*;
 mod git;

@@ -25,7 +25,6 @@ impl VecDataFrameExt for BlameResultVec {
         let exploded: Vec<_> = blame_result_vec
             .iter()
             .flat_map(|blame_result| {
-                let commit = blame_result.commit_oid;
                 blame_result
                     .blames
                     .iter()

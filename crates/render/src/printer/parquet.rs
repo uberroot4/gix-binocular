@@ -9,7 +9,7 @@ pub struct ParquetPrinter {
 
 impl OutputPrinter for ParquetPrinter {
     fn print_df(&self, df: &mut DataFrame) {
-        let mut writer = crate::utils::get_writer(self.file_path.to_owned());
+        let writer = crate::utils::get_writer(self.file_path.to_owned());
         ParquetWriter::new(writer).finish(df).unwrap();
     }
 }

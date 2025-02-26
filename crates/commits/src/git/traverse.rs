@@ -1,9 +1,8 @@
 use crate::git::metrics::{GitCommitMetric, GitCommitMetricVec};
 use gix::Reference;
 use log::{debug, trace};
-use polars::df;
 use polars::prelude::*;
-use shared::{signature::Sig, time_to_utc_with_offset, VecDataFrameExt};
+use shared::{signature::Sig, VecDataFrameExt};
 
 pub fn traverse_commit_graph(
     repo: gix::Repository,

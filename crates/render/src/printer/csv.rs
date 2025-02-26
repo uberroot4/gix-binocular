@@ -9,7 +9,7 @@ pub struct CSVPrinter {
 
 impl OutputPrinter for CSVPrinter {
     fn print_df(&self, df: &mut DataFrame) {
-        use std::io::prelude::*;
+        //use std::io::prelude::*;
 
         let mut ffile: Box<dyn std::io::Write> = match &self.file_path {
             None => Box::from(std::io::stdout()),

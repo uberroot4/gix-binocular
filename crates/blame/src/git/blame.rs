@@ -54,8 +54,7 @@ pub(crate) fn process(
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
     max_threads: usize,
 ) -> anyhow::Result<DataFrame> {
-    let worktree_path = PathBuf::from(repo.work_dir().unwrap());
-    let odb_handle = gix::odb::at(worktree_path.join(".git/objects"))?;
+    let odb_handle = &repo.objects;
     let mut rewrite_cache =
         repo.diff_resource_cache(gix::diff::blob::pipeline::Mode::ToGit, Default::default())?;
     rewrite_cache

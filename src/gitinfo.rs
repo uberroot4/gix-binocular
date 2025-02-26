@@ -3,10 +3,8 @@ use cli::cmd::{Cli, Commands};
 use cli::diff::DiffAlgorithm;
 use cli::output_format::OutputFormat;
 use dotenv::dotenv;
-use log::{debug, info, trace};
-use polars::prelude::JsonWriter;
+use log::{debug, trace};
 use render::printer::{CSVPrinter, JSONPrinter, OutputPrinter, ParquetPrinter, Printer, VoidPrinter};
-use serde::Serialize;
 use shared::logging;
 use std::time::Instant;
 
@@ -51,7 +49,10 @@ fn main() {
         OutputFormat::Parquet => Printer::Parquet(ParquetPrinter {
             file_path: args.global_opts.output_file,
         }),
-        _ => Printer::Void(VoidPrinter {}),
+        _ => {
+            println!("No output specified!");
+            Printer::Void(VoidPrinter {})
+        },
     };
 
     let algo = match &args.command {
@@ -80,14 +81,7 @@ fn main() {
                 diff_args.follow,
                 args.global_opts.limit,
             );
-            match result {
-                Ok(mut groups) => {
-                    printer.print_df(&mut groups);
-                }
-                Err(e) => {
-                    panic!("{}", e)
-                }
-            }
+            result
         }
         Commands::Blame(blame_args) => {
             trace!("{:?}", blame_args);
@@ -99,14 +93,7 @@ fn main() {
                 algo,
                 blame_args.threads.unwrap_or(1),
             );
-            match result {
-                Ok(groups) => {
-                    printer.print(&groups);
-                }
-                Err(e) => {
-                    panic!("{}", e)
-                }
-            }
+            result
         }
         Commands::Commits(commit_args) => {
             trace!("{:?}", commit_args);
@@ -116,19 +103,18 @@ fn main() {
                 (*commit_args.branches).to_owned(),
                 args.global_opts.skip_merges,
             );
-            match result {
-                Ok(mut groups) => {
-                    printer.print_df(&mut groups);
-                }
-                Err(e) => {
-                    panic!("{}", e)
-                }
-            }
-        }
-        _other => {
-            eprintln!("Unknown Command {:?}", _other);
+            result
         }
     };
+
+    match result_df {
+        Ok(mut groups) => {
+            printer.print_df(&mut groups);
+        }
+        Err(e) => {
+            panic!("{}", e)
+        }
+    }
 
     let elapsed = now.elapsed();
     debug!("Elapsed: {:.2?}", elapsed);

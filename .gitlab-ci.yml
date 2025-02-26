@@ -48,7 +48,7 @@ build:gitinfo:
   extends: .rust-base
   stage: build
   script:
-    - cargo build --verbose --bin gitinfo
+    - cargo build --bin gitinfo
     - target/debug/gitinfo -h
     - target/debug/gitinfo diff -h
     - target/debug/gitinfo commits -h
@@ -157,7 +157,7 @@ build:gitinfo:release:
     - unit_test:crate:render
     - unit_test:crate:shared
   script:
-    - cargo build --verbose --release --bin gitinfo
+    - cargo build --release --bin gitinfo
   artifacts:
     # untracked: false
     # when: on_success

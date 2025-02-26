@@ -19,6 +19,8 @@ doc = false
 test = false
 doctest = false
 
+[profile.dev]
+debug = 1
 #[[bin]]
 #name = "clone"
 #path = "src/clone.rs"

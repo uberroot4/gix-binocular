@@ -19,7 +19,8 @@ doc = false
 test = false
 doctest = false
 
-[profile.dev]
+[profile.ci-dev]
+inherits = "dev"
 debug = 1
 #[[bin]]
 #name = "clone"

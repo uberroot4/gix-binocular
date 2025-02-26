@@ -48,7 +48,7 @@ build:gitinfo:
   extends: .rust-base
   stage: build
   script:
-    - cargo build --bin gitinfo
+    - cargo build --profile=ci-dev --bin gitinfo
     - target/debug/gitinfo -h
     - target/debug/gitinfo diff -h
     - target/debug/gitinfo commits -h

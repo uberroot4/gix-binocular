@@ -1,4 +1,3 @@
-use crate::objects::ChangesInfo;
 use gix::bstr::BString;
 use gix::ObjectId;
 use polars::prelude::*;
@@ -9,9 +8,6 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct GitDiffOutcome {
     pub change_map: HashMap<BString, (u32, u32)>,
-    pub total_number_of_files_changed: u64,
-    pub total_number_of_insertions: u32,
-    pub total_number_of_deletions: u32,
     pub commit: ObjectId,
     pub parent: Option<ObjectId>,
     pub committer: Option<Sig>,
@@ -27,23 +23,8 @@ impl GitDiffOutcome {
         committer: Option<Sig>,
         author: Option<Sig>,
     ) -> anyhow::Result<Self> {
-        let total_number_of_files_changed = change_map.values().count() as u64;
-        let totals = change_map
-            .values()
-            .fold((0u32, 0u32), |acc, val| (acc.0 + val.0, acc.1 + val.1));
-        let total_number_of_insertions = totals.0;
-        let total_number_of_deletions = totals.1;
-
-        debug_assert_eq!(
-            total_number_of_files_changed,
-            change_map.keys().len() as u64
-        );
-
         Ok(Self {
             change_map,
-            total_number_of_files_changed,
-            total_number_of_insertions,
-            total_number_of_deletions,
             commit,
             parent,
             committer,

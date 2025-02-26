@@ -1,8 +1,6 @@
 mod objects {
-    mod changes;
     mod outcome;
 
-    use changes::ChangesInfo;
     pub(crate) use outcome::{GitDiffOutcome, GitDiffOutcomeVec};
 }
 

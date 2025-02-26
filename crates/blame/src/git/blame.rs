@@ -5,7 +5,6 @@ use gix::bstr::BStr;
 use gix::traverse::commit::Info;
 use log::{debug, error, trace, warn};
 use std::ops::Range;
-use std::path::PathBuf;
 use std::sync::Arc;
 use polars::frame::DataFrame;
 use tqdm::tqdm;
@@ -32,7 +31,6 @@ where
     match lines_blamed {
         Ok(outcome) => anyhow::Ok(BlameOutcome {
             entries: outcome.entries,
-            statistics: outcome.statistics,
             file_path: file_path.to_owned(),
         }),
         Err(e) => {

@@ -1,10 +1,7 @@
 use crate::printer::{JSONPrinter, CSVPrinter, VoidPrinter, ParquetPrinter};
-use serde::Serialize;
 
 /// A trait for printing serializable objects.
 pub trait OutputPrinter {
-    #[deprecated]
-    fn print<T: Serialize>(&self, object: &T);
     fn print_df(&self, df: &mut polars::frame::DataFrame);
 }
 
@@ -45,12 +42,6 @@ pub enum Printer {
 
 /// Implement the trait for our enum, delegating to the contained printer.
 impl OutputPrinter for Printer {
-    fn print<T: Serialize>(&self, object: &T) {
-        match self {
-            _ => unimplemented!()
-        }
-    }
-
     fn print_df(&self, df: &mut polars::frame::DataFrame) {
         match self {
             Printer::Json(p) => p.print_df(df),

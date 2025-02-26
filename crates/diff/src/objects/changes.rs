@@ -1,6 +1,4 @@
-use serde::Serialize;
-
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub(crate) struct ChangesInfo {
     pub file: String,
     pub insertions: u32,

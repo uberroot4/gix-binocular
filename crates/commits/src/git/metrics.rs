@@ -1,7 +1,6 @@
 use base64::prelude::*;
 use polars::datatypes::{DataType, TimeUnit, TimeZone};
 use polars::{df, prelude::*};
-use serde::ser::SerializeStruct;
 use shared::signature::Sig;
 use shared::{time_to_utc_with_offset, VecDataFrameExt};
 
@@ -19,26 +18,6 @@ pub(crate) struct GitCommitMetric {
 
 // Newtype wrapper around Vec<MyType>
 pub(crate) struct GitCommitMetricVec(pub(crate) Vec<GitCommitMetric>);
-
-impl serde::ser::Serialize for GitCommitMetric {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::ser::Serializer,
-    {
-        // 3 is the number of fields in the struct.
-        let mut state = serializer.serialize_struct("GitCommitMetric", 8)?;
-        state.serialize_field("commit", &self.commit.to_string())?;
-        state.skip_field("commit_str")?;
-        state.serialize_field("message", &self.message)?;
-        state.serialize_field(
-            "committer",
-            &self.clone().committer.map_or(None, |p| Some(p)),
-        )?;
-        state.serialize_field("author", &self.clone().author.map_or(None, |p| Some(p)))?;
-        state.serialize_field("parents", &self.parents)?;
-        state.end()
-    }
-}
 
 impl From<gix::revision::walk::Info<'_>> for GitCommitMetric {
     fn from(info: gix::revision::walk::Info) -> Self {

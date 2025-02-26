@@ -1,7 +1,5 @@
-use std::ops::Range;
 use crate::git::objects::BlameOutcome;
 use polars::{df, prelude::*};
-use serde::ser::SerializeStruct;
 use shared::VecDataFrameExt;
 
 #[derive(Debug, Clone)]
@@ -91,13 +89,3 @@ impl VecDataFrameExt for BlameResultVec {
     }
 }
 
-impl serde::ser::Serialize for BlameResult {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::ser::Serializer,
-    {
-        let mut state = serializer.serialize_struct("BlameResult", 2)?;
-        state.serialize_field("commit", &self.commit_oid.to_string())?;
-        state.end()
-    }
-}

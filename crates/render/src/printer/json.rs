@@ -2,7 +2,6 @@ use super::base::OutputPrinter;
 use polars::frame::DataFrame;
 use polars::io::json;
 use polars::prelude::SerWriter;
-use serde::Serialize;
 use std::fs::File;
 use std::path::PathBuf;
 
@@ -11,10 +10,6 @@ pub struct JSONPrinter {
 }
 
 impl OutputPrinter for JSONPrinter {
-    fn print<T: Serialize>(&self, object: &T) {
-        unimplemented!()
-    }
-
     fn print_df(&self, df: &mut DataFrame) {
         use std::io::prelude::*;
 

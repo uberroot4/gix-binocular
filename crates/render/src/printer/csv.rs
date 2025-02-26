@@ -1,6 +1,5 @@
 use crate::printer::base::OutputPrinter;
 use polars::prelude::*;
-use serde::Serialize;
 use std::fs::File;
 use std::path::PathBuf;
 
@@ -9,10 +8,6 @@ pub struct CSVPrinter {
 }
 
 impl OutputPrinter for CSVPrinter {
-    fn print<T: Serialize>(&self, object: &T) {
-        unimplemented!()
-    }
-
     fn print_df(&self, df: &mut DataFrame) {
         use std::io::prelude::*;
 

@@ -21,7 +21,6 @@ base64 = "0.22.1"
 log = { workspace = true }
 anyhow = { workspace = true }
 shared = { path = "../shared" }
-serde = { workspace = true }
 polars = { workspace = true, features = ["lazy"] }
 chrono = { workspace = true }
 

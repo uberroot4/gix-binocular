@@ -1,7 +1,6 @@
 use std::num::NonZeroU32;
-use serde::Serialize;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub(crate) struct BlameEntry /*(blame::BlameEntry);*/ {
     pub start_in_blamed_file: u32,
     pub start_in_source_file: u32,

@@ -13,7 +13,8 @@ pub(crate) struct BlameResultVec(pub(crate) Vec<BlameResult>);
 impl VecDataFrameExt for BlameResultVec {
     fn to_df(&self) -> PolarsResult<DataFrame> {
         struct BlameResultDfHelper {
-            commit: String,
+            blame_commit: String,
+            owner_commit: String,
             file_path: String,
             start_in_source_file: u32,
             end_in_source_file: u32,
@@ -25,6 +26,7 @@ impl VecDataFrameExt for BlameResultVec {
         let exploded: Vec<_> = blame_result_vec
             .iter()
             .flat_map(|blame_result| {
+                let blame_commit = blame_result.commit_oid;
                 blame_result
                     .blames
                     .iter()
@@ -41,7 +43,7 @@ impl VecDataFrameExt for BlameResultVec {
                         })
                     })
                     .map(
-                        |(
+                        move |(
                             file_path,
                             commit_id,
                             start_in_source_file,
@@ -49,7 +51,8 @@ impl VecDataFrameExt for BlameResultVec {
                             start_in_blamed_file,
                             range_in_blamed_file,
                         )| BlameResultDfHelper {
-                            commit: commit_id.to_string(),
+                            blame_commit: blame_commit.to_string(),
+                            owner_commit: commit_id.to_string(),
                             file_path,
                             start_in_source_file,
                             end_in_source_file: range_in_source_file.end as u32,
@@ -61,7 +64,8 @@ impl VecDataFrameExt for BlameResultVec {
             .collect();
 
         let capacity = exploded.len();
-        let mut commit_vec = Vec::with_capacity(capacity);
+        let mut owner_commit_vec = Vec::with_capacity(capacity);
+        let mut blame_commit_vec = Vec::with_capacity(capacity);
         let mut file_path_vec = Vec::with_capacity(capacity);
         let mut start_in_source_file_vec = Vec::with_capacity(capacity);
         let mut end_in_source_file_vec = Vec::with_capacity(capacity);
@@ -69,7 +73,8 @@ impl VecDataFrameExt for BlameResultVec {
         let mut end_in_blamed_file_vec = Vec::with_capacity(capacity);
 
         for val in exploded {
-            commit_vec.push(val.commit);
+            blame_commit_vec.push(val.blame_commit);
+            owner_commit_vec.push(val.owner_commit);
             file_path_vec.push(val.file_path);
             start_in_source_file_vec.push(val.start_in_source_file);
             end_in_source_file_vec.push(val.end_in_source_file);
@@ -78,7 +83,8 @@ impl VecDataFrameExt for BlameResultVec {
         }
 
         df![
-            "commit" => commit_vec,
+            "blame_commit" => blame_commit_vec,
+            "owner_commit" => owner_commit_vec,
             "file_path" => file_path_vec,
             "start_in_source_file" => start_in_source_file_vec,
             "end_in_source_file" => end_in_source_file_vec,

@@ -15,15 +15,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ gitea.ref }}
-#      - name: Prerequisites
-#        run: |
-#          prerequisites=(
-#            make
-#            cmake
-#            gcc
-#            g++
-#            bash
-#            git
-#          )
-#         apk add "${prerequisites[@]}"
-##          apk update
+      - name: Prerequisites
+        run: |
+          prerequisites=(
+            make
+            cmake
+            gcc
+            g++
+            bash
+            git
+          )
+          apk update
+          apk add "${prerequisites[@]}"

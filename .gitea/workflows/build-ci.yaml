@@ -28,11 +28,11 @@ jobs:
           )
           apk update
           apk add --no-cache "${prerequisites[@]}"
-          rustc -V >> $GITEA_OUTPUT
-          cargo --version >> $GITEA_OUTPUT
-          bash --version >> $GITEA_OUTPUT
-          /usr/bin/env bash --version >> $GITEA_OUTPUT
-          git --version >> $GITEA_OUTPUT
+          rustc -V >> $env:GITHUB_OUTPUT
+          cargo --version >> $env:GITHUB_OUTPUT
+          bash --version >> $env:GITHUB_OUTPUT
+          /usr/bin/env bash --version >> $env:GITHUB_OUTPUT
+          git --version >> $env:GITHUB_OUTPUT
         shell: ash
       - name: "Build executable (dev)"
         run: cargo build --profile=ci-dev --bin gitinfo

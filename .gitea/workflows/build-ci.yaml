@@ -1,5 +1,5 @@
-name: ci
-run-name: ci
+name: build-ci
+run-name: build-ci
 on: [push]
 
 jobs:
@@ -7,6 +7,7 @@ jobs:
     runs-on: ubuntu-latest-slim
 #    container: rust:1-alpine3.21
     steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
       - name: Check out repository code
         uses: actions/checkout@v4
         with:

@@ -27,4 +27,4 @@ jobs:
           )
           apk update
           apk add "${prerequisites[@]}"
-        shell: bash
+        shell: ash

@@ -9,9 +9,9 @@ jobs:
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
 #    steps:
-#      - uses: actions/checkout@v4
-#        with:
-#          ref: ${{ gitea.ref }}
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ gitea.ref }}
 #      - name: Prerequisites
 #        run: |
 #          prerequisites=(

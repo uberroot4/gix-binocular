@@ -1,26 +1,26 @@
-name: build-ci
-run-name: build-ci
+name: ci
+run-name: ci
 on: [push]
 
 jobs:
   pure-rust-build:
     runs-on: ubuntu-latest-slim
-#    container: rust:1-alpine3.21
     steps:
-      - run: echo "🎉 The job was  automatically triggered by a ${{ gitea.event_name }} event."
-      - name: Check out repository code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ gitea.ref }}
-      - name: Prerequisites
-        run: |
-          prerequisites=(
-            make
-            cmake
-            gcc
-            g++
-            bash
-            git
-          )
-         apk add "${prerequisites[@]}"
+      - run: echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
+#    container: rust:1-alpine3.21
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ gitea.ref }}
+#      - name: Prerequisites
+#        run: |
+#          prerequisites=(
+#            make
+#            cmake
+#            gcc
+#            g++
+#            bash
+#            git
+#          )
+#         apk add "${prerequisites[@]}"
 ##          apk update

@@ -8,7 +8,7 @@ jobs:
     container: rust:1-alpine3.21
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
-      - name: Prerequisites (1)
+      - name: Install nodejs
         run: |
           apk update
           apk add --no-cache nodejs

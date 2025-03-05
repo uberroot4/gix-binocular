@@ -16,7 +16,7 @@ jobs:
         with:
           ref: ${{ gitea.ref }}
       - name: Prerequisites
-        run: |
+        run: >
           prerequisites=(
             make
             cmake
@@ -28,11 +28,11 @@ jobs:
           )
           apk update
           apk add --no-cache "${prerequisites[@]}"
-          rustc -V >> $env:GITHUB_OUTPUT
-          cargo --version >> $env:GITHUB_OUTPUT
-          bash --version >> $env:GITHUB_OUTPUT
-          /usr/bin/env bash --version >> $env:GITHUB_OUTPUT
-          git --version >> $env:GITHUB_OUTPUT
+          rustc -V
+          cargo --version
+          bash --version
+          /usr/bin/env bash --version
+          git --version
         shell: ash
       - name: "Build executable (dev)"
         run: cargo build --profile=ci-dev --bin gitinfo

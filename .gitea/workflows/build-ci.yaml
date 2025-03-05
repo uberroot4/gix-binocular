@@ -27,11 +27,11 @@ jobs:
           )
           apk update
           apk add "${prerequisites[@]}"
-          rustc -V
-          cargo --version
-          bash --version
-          /usr/bin/env bash --version
-          git --version
+          rustc -V >> $GITHUB_OUTPUT
+          cargo --version >> $GITHUB_OUTPUT
+          bash --version >> $GITHUB_OUTPUT
+          /usr/bin/env bash --version >> $GITHUB_OUTPUT
+          git --version >> $GITHUB_OUTPUT
         shell: ash
       - name: "Build executable (dev)"
         run: cargo build --profile=ci-dev --bin gitinfo

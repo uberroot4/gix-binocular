@@ -8,7 +8,10 @@ jobs:
     container: rust:1-alpine3.21
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
-#    steps:
+      - name: Prerequisites (1)
+        run: |
+          apk update
+          apk add node
       - uses: actions/checkout@v4
         with:
           ref: ${{ gitea.ref }}

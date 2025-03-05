@@ -11,7 +11,7 @@ jobs:
       - name: Prerequisites (1)
         run: |
           apk update
-          apk add node
+          apk add --no-cache nodejs
       - uses: actions/checkout@v4
         with:
           ref: ${{ gitea.ref }}

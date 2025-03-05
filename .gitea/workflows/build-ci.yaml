@@ -33,3 +33,5 @@ jobs:
           /usr/bin/env bash --version
           git --version
         shell: ash
+      - name: "Build executable (dev)"
+        run: cargo build --profile=ci-dev --bin gitinfo

@@ -24,9 +24,10 @@ jobs:
             g++
             bash
             git
+            musl-dev
           )
           apk update
-          apk add "${prerequisites[@]}"
+          apk add --no-cache "${prerequisites[@]}"
           rustc -V >> $GITHUB_OUTPUT
           cargo --version >> $GITHUB_OUTPUT
           bash --version >> $GITHUB_OUTPUT

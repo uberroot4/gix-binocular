@@ -1,0 +1,23 @@
+name: ci
+on: [push]
+
+jobs:
+  pure-rust-build:
+    runs-on: ubuntu-latest-slim
+    container: rust:1-alpine3.21
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ gitea.ref }}
+      - name: Prerequisites
+        run: |
+          prerequisites=(
+            make
+            cmake
+            gcc
+            g++
+            bash
+            git
+          )
+         apk add "${prerequisites[@]}"
+#          apk update

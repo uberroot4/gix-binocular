@@ -34,7 +34,7 @@ jobs:
             g++
             bash
             git
-            libc-dev
+            musl-dev
           )
           apk update
           apk add --no-cache "${prerequisites[@]}"

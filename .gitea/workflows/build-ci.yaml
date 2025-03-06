@@ -16,9 +16,18 @@ jobs:
         with:
           ref: ${{ gitea.ref }}
       - name: Prerequisites
-        run: |
+        run: >
+          prerequisites=(
+            make
+            cmake
+            gcc
+            g++
+            bash
+            git
+            libc-dev
+          )
           apk update
-          apk add --no-cache make cmake gcc g++ bash git musl-dev
+          apk add --no-cache "${prerequisites[@]}"
           rustc -V
           cargo --version
           bash --version

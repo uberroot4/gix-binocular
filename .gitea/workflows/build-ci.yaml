@@ -28,11 +28,12 @@ jobs:
       - name: "📋 Prerequisites"
         run: |
           apk update
-          apk add --no-cache make cmake gcc g++ bash git musl-dev
+          apk add --no-cache make cmake gcc g++ bash git musl-dev tar
           rustc -V
           cargo --version
           bash --version
           /usr/bin/env bash --version
           git --version
+          tar --version
       - name: "🔨 Build executable (dev)"
         run: cargo build --profile=ci-dev --bin gitinfo

@@ -25,8 +25,8 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Prerequisites
-        run: >
+      - name: "📋 Prerequisites"
+        run: |
           prerequisites=(
             make
             cmake

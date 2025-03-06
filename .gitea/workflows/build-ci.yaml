@@ -5,7 +5,10 @@ on: [push]
 jobs:
   pure-rust-build:
     runs-on: ubuntu-latest-slim
-    container: rust:1-alpine3.21
+    container:
+      image: rust:1-alpine3.21
+      volumes:
+        - /cache:/opt/hostedtoolcache # this is where Runner store their cache default
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
       - name: Install nodejs

@@ -10,6 +10,7 @@ jobs:
       volumes:
         - /cache:/opt/hostedtoolcache # this is where Runner store their cache default
     steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
       - uses: actions/checkout@v4
         with:
           ref: ${{ gitea.ref }}

@@ -6,23 +6,13 @@ jobs:
   pure-rust-build:
     runs-on: ubuntu-latest-slim
     container:
-      image: rust:1-alpine3.21
+      image: rust-ci:1-alpine3.21
       volumes:
         - /cache:/opt/hostedtoolcache # this is where Runner store their cache default
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
-      - name: "📋 Prerequisites"
-        run: |
-          apk update
-          apk add --no-cache nodejs zstd make cmake gcc g++ bash git musl-dev tar
       - uses: actions/checkout@v4
         with:
           ref: ${{ gitea.ref }}
-      # selecting a toolchain either by action or manual `rustup` calls should happen
-      # before the plugin, as the cache uses the current rustc version as its cache key
-      - run: rustup toolchain install stable --profile minimal
-      - name: "⚡ Cache"
-        uses: Swatinem/rust-cache@v2
       - name: "📋 Print command version"
         run: |
           rustc -V
@@ -31,5 +21,7 @@ jobs:
           /usr/bin/env bash --version
           git --version
           tar --version
+      - name: "⚡ Cache"
+        uses: Swatinem/rust-cache@v2
       - name: "🔨 Build executable (dev)"
         run: cargo build --profile=ci-dev --bin gitinfo

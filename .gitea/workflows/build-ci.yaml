@@ -11,10 +11,10 @@ jobs:
         - /cache:/opt/hostedtoolcache # this is where Runner store their cache default
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ gitea.event_name }} event."
-      - name: Install nodejs
+      - name: "📋 Prerequisites"
         run: |
           apk update
-          apk add --no-cache nodejs
+          apk add --no-cache nodejs zstd make cmake gcc g++ bash git musl-dev tar
       - uses: actions/checkout@v4
         with:
           ref: ${{ gitea.ref }}
@@ -23,10 +23,8 @@ jobs:
       - run: rustup toolchain install stable --profile minimal
       - name: "⚡ Cache"
         uses: Swatinem/rust-cache@v2
-      - name: "📋 Prerequisites"
+      - name: "📋 Print command version"
         run: |
-          apk update
-          apk add --no-cache make cmake gcc g++ bash git musl-dev tar
           rustc -V
           cargo --version
           bash --version

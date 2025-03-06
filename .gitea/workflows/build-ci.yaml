@@ -15,6 +15,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ gitea.ref }}
+      - name: "⚡ Cache"
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Prerequisites
         run: >
           prerequisites=(
@@ -33,5 +43,5 @@ jobs:
           bash --version
           /usr/bin/env bash --version
           git --version
-      - name: "Build executable (dev)"
+      - name: "🔨 Build executable (dev)"
         run: cargo build --profile=ci-dev --bin gitinfo

@@ -4,10 +4,10 @@ use gix::date::Time;
 pub fn time_to_utc_with_offset(time: Time) -> chrono::DateTime<chrono::Utc> {
     // Adjust the offset based on the sign.
     // Assume that `time::Sign` has variants `Plus` and `Minus`.
-    let offset_seconds = match time.sign {
-        gix::date::time::Sign::Plus => time.offset,
-        gix::date::time::Sign::Minus => -time.offset,
-    } as i64;
+    // let offset_seconds = match time.sign {
+    //     gix::date::time::Sign::Plus => time.offset,
+    //     gix::date::time::Sign::Minus => -time.offset,
+    // } as i64;
 
     // The seconds field is defined as the number of seconds since UNIX epoch in UTC.
     // However, if you need to interpret it as a local time in the given offset,
@@ -21,5 +21,5 @@ pub fn time_to_utc_with_offset(time: Time) -> chrono::DateTime<chrono::Utc> {
         ),
         Some(dt_utc) => dt_utc,
     }
-        .add(chrono::Duration::seconds(offset_seconds))
+        // .add(chrono::Duration::seconds(time.offset as i64))
 }

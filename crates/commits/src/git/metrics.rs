@@ -116,11 +116,16 @@ impl VecDataFrameExt for GitCommitMetricVec {
         let convert_dt_column = |df: &mut DataFrame, column: &str| {
             df.with_column(
                 df.column(column)
-                    .unwrap()
-                    .cast(&DataType::Datetime(
-                        TimeUnit::Milliseconds,
-                        Some(TimeZone::from("Utc".to_owned())),
-                    ))
+                    .map(|col| {
+                        let cst = col.cast(&DataType::Datetime(
+                            TimeUnit::Milliseconds,
+                            Some(TimeZone::from("Utc".to_owned())),
+                        ));
+                        match cst {
+                            Ok(cst) => cst,
+                            Err(_) => panic!("Could not convert dt column '{}'", column),
+                        }
+                    })
                     .unwrap(),
             )
             .expect(&*format!("Could not convert dt column '{}'", column));

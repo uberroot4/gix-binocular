@@ -78,6 +78,16 @@ jobs:
             runner-os: ubuntu-latest
             host-triple: x86_64-unknown-linux-gnu
             file-ending: so
+          - container-arch: arm64
+            runner-arch: arm64
+            runner-os: macos-latest
+            host-triple: aarch64-apple-darwin
+            file-ending: dylib
+          - container-arch: x86_64
+            runner-arch: x86_64
+            runner-os: macos-latest
+            host-triple: x86_64-apple-darwin
+            file-ending: dylib
 #          - container-arch: arm64
 #            runner-arch: arm64
 #            runner-os: ubuntu-latest
@@ -136,6 +146,7 @@ jobs:
           done
       - uses: actions/upload-artifact@v4
         with:
+          name: ${{ matrix.host-triple }}
           path: target/${{ matrix.host-triple }}/release/libbinocular_ffi.${{ matrix.file-ending }}
 
 #  test:

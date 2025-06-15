@@ -1,11 +1,13 @@
 #[derive(Debug, clap::Parser, Clone)]
 #[clap(name = "commits", about = "commits")]
 pub struct Args {
-    //// Alternative git directory to use
-    //#[clap(name = "dir", long = "git-dir")]
-    //pub git_dir: PathBuf,
-
     /// Commits are sorted as they are mentioned in the commit graph.
-    #[clap(name = "branches")]
+    #[clap(name = "branches", required=true)]
     pub branches: Vec<String>,
+
+    // #[clap(long="from", required=false)]
+    // pub source_commit: String,
+    //
+    // #[clap(long="to", required=false)]
+    // pub target_commit: Option<String>,
 }

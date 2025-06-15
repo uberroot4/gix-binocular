@@ -1,58 +1,94 @@
-use log::{debug, trace};
-use polars::prelude::*;
-use shared::VecDataFrameExt;
-use crate::objects::blame_result::{BlameResult, BlameResultVec};
+use log::trace;
+#[cfg(feature = "polars")]
+use {crate::extensions::polars::ToDataFrameExt, polars::prelude::*};
 
 mod git;
 pub(crate) mod objects;
 
-#[cfg(feature = "cli")]
-mod input;
+#[cfg(any(feature = "cli", feature = "preprocess"))]
+mod preprocess;
 
-#[cfg(feature = "cli")]
-pub fn lookup(
+mod extensions;
+
+pub mod types {
+    pub use crate::objects::blame_result::BlameResult;
+    pub use crate::git::objects::BlameOutcome;
+}
+
+#[cfg(feature = "preprocess")]
+pub mod input {
+    use crate::preprocess::input::read_json_content;
+    use log::{debug, trace};
+
+    pub fn preprocess(
+        defines_file_path: String,
+    ) -> anyhow::Result<gix::hashtable::HashMap<gix::ObjectId, Vec<String>>> {
+        let _span = gix::trace::coarse!("preprocess({})", defines_file_path);
+
+        let defines = read_json_content(defines_file_path)?;
+
+        let mut tmp: gix::hashtable::HashMap<gix::ObjectId, Vec<String>> =
+            gix::hashtable::HashMap::with_capacity_and_hasher(
+                defines.len(),
+                gix::hashtable::hash::Builder::default(),
+            );
+        debug!(
+            "Initialized Map with {} capacity for {} definitions",
+            tmp.capacity(),
+            defines.len()
+        );
+        assert!(tmp.capacity() >= defines.len());
+
+        for define in defines.iter() {
+            trace!(
+                "Found {} with {} file entries",
+                define.commit,
+                define.files.len()
+            )
+        }
+
+        for define in defines {
+            tmp.entry(define.commit)
+                .or_default()
+                .extend(define.files.iter().cloned())
+        }
+
+        trace!(
+            "Stored {} defines in HashMap for {} blame suspects",
+            tmp.len(),
+            tmp.iter().map(|(_k, v)| v.len()).sum::<usize>()
+        );
+        for (idx, (k, v)) in tmp.iter().enumerate() {
+            trace!("{:4} {} has {} values", idx, k, v.len())
+        }
+        Ok(tmp)
+    }
+}
+
+#[cfg(all(feature = "cli", feature = "polars"))]
+pub fn process_with_lookup(
     repo: &gix::Repository,
     defines_file_path: String,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
     max_threads: usize,
 ) -> anyhow::Result<DataFrame> {
+    gix::trace::coarse!("lookup");
     trace!("lookup({:?}, {})", repo, defines_file_path);
-    let defines = input::read_json_content(defines_file_path)?;
-
-    let mut tmp: gix::hashtable::HashMap<gix::ObjectId, Vec<String>> =
-        gix::hashtable::HashMap::with_capacity_and_hasher(
-            defines.len(),
-            gix::hashtable::hash::Builder::default(),
-        );
-    debug!("Initialized Map with {} capacity for {} definitions", tmp.capacity(), defines.len());
-    assert!(tmp.capacity() >= defines.len());
-
-    for define in defines.iter() {
-        trace!(
-            "Found {} with {} file entries",
-            define.commit,
-            define.files.len()
-        )
-    }
-
-    for define in defines {
-        tmp.entry(define.commit)
-            .or_default()
-            .extend(define.files.iter().cloned())
-    }
-
-    trace!("Stored {} defines in HashMap for {} blame suspects", tmp.len(), tmp.iter().map(|(_k,v)| v.len()).sum::<usize>());
-    for (idx, (k, v)) in tmp.iter().enumerate() {
-        trace!("{:4} {} has {} values", idx, k, v.len())
-    }
-
+    let tmp = crate::input::preprocess(defines_file_path)?;
 
     let blame_results = process(repo, tmp, diff_algorithm, max_threads)?;
 
-    let vectorized = BlameResultVec(blame_results);
-    let lf = vectorized.to_df()?;
+    blame_results.to_df()
+}
 
-    Ok(lf)
+#[cfg(feature = "polars")]
+pub fn process_to_df(
+    repo: &gix::Repository,
+    defines: gix::hashtable::HashMap<gix::ObjectId, Vec<String>>,
+    diff_algorithm: Option<gix::diff::blob::Algorithm>,
+    max_threads: usize,
+) -> anyhow::Result<DataFrame> {
+    crate::process(repo, defines, diff_algorithm, max_threads)?.to_df()
 }
 
 pub fn process(
@@ -60,7 +96,14 @@ pub fn process(
     defines: gix::hashtable::HashMap<gix::ObjectId, Vec<String>>,
     diff_algorithm: Option<gix::diff::blob::Algorithm>,
     max_threads: usize,
-) -> anyhow::Result<Vec<BlameResult>> {
+) -> anyhow::Result<Vec<types::BlameResult>> {
+    let _span = gix::trace::coarse!(
+        "process(repo={:?},#defines={},algo={:?},threads={})",
+        repo,
+        defines.len(),
+        diff_algorithm,
+        max_threads
+    );
     trace!(
         "process(repo={:?},#defines={},algo={:?},threads={})",
         repo,

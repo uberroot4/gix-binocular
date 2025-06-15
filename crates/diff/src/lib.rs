@@ -1,16 +1,19 @@
 mod objects {
     mod outcome;
 
-    pub(crate) use outcome::{GitDiffOutcome, GitDiffOutcomeVec};
+    pub use outcome::GitDiffOutcome;
+    pub(crate) use outcome::GitDiffOutcomeVec;
 }
+
+pub use objects::GitDiffOutcome;
 
 mod git {
     pub(crate) mod commit;
-    pub mod traverse;
+    pub(crate) mod traverse;
 }
 
-mod utils {
-    pub(crate) mod git_helper;
+pub mod utils {
+    pub mod git_helper;
     pub(crate) mod thread_helper;
 }
 
@@ -71,5 +74,3 @@ pub mod traversal {
         Ok(df)
     }
 }
-
-pub use crate::git::traverse;

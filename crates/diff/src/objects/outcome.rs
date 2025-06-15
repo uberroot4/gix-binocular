@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct GitDiffOutcome {
-    pub change_map: HashMap<BString, (u32, u32)>,
+    pub change_map: HashMap<BString, (u32, u32, String)>,
     pub commit: ObjectId,
     pub parent: Option<ObjectId>,
     pub committer: Option<Sig>,
@@ -17,7 +17,7 @@ pub(crate) struct GitDiffOutcomeVec(pub(crate) Vec<GitDiffOutcome>);
 
 impl GitDiffOutcome {
     pub fn new(
-        change_map: HashMap<BString, (u32, u32)>,
+        change_map: HashMap<BString, (u32, u32, String)>,
         commit: ObjectId,
         parent: Option<ObjectId>,
         committer: Option<Sig>,
@@ -41,6 +41,7 @@ impl VecDataFrameExt for GitDiffOutcomeVec {
             filename: String,
             insertions: u32,
             deletions: u32,
+            kind: String,
         }
 
         let exploded: Vec<_> = self
@@ -52,13 +53,14 @@ impl VecDataFrameExt for GitDiffOutcomeVec {
                 let parent = diff.parent;
                 diff.change_map
                     .iter()
-                    .map(move |(filename, (insertions, deletions))| {
+                    .map(move |(filename, (insertions, deletions, kind))| {
                         OutcomeDfHelper {
                             commit: commit.to_string(),
                             parent: parent.map(|p| p.to_string()),
                             filename: filename.to_string(),
                             insertions: *insertions,
                             deletions: *deletions,
+                            kind: String::from(kind),
                         }
                     })
             })
@@ -70,6 +72,7 @@ impl VecDataFrameExt for GitDiffOutcomeVec {
         let mut filename_vec = Vec::with_capacity(capacity);
         let mut insertions_vec = Vec::with_capacity(capacity);
         let mut deletions_vec = Vec::with_capacity(capacity);
+        let mut kind_vec = Vec::with_capacity(capacity);
 
         for val in exploded {
             commit_vec.push(val.commit);
@@ -77,6 +80,7 @@ impl VecDataFrameExt for GitDiffOutcomeVec {
             filename_vec.push(val.filename);
             insertions_vec.push(val.insertions);
             deletions_vec.push(val.deletions);
+            kind_vec.push(val.kind);
         }
 
         let df = df![
@@ -85,6 +89,7 @@ impl VecDataFrameExt for GitDiffOutcomeVec {
             "filename" => filename_vec,
             "insertions" => insertions_vec,
             "deletions" => deletions_vec,
+            "kinds" => kind_vec,
         ]?;
         debug_assert_eq!(capacity, df.height());
         Ok(df)

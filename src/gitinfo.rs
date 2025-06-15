@@ -4,7 +4,9 @@ use cli::diff::DiffAlgorithm;
 use cli::output_format::OutputFormat;
 use dotenv::dotenv;
 use log::{debug, trace};
-use render::printer::{CSVPrinter, JSONPrinter, OutputPrinter, ParquetPrinter, Printer, VoidPrinter};
+use render::printer::{
+    CSVPrinter, JSONPrinter, OutputPrinter, ParquetPrinter, Printer, VoidPrinter,
+};
 use shared::logging;
 use std::time::Instant;
 
@@ -52,7 +54,7 @@ fn main() {
         _ => {
             println!("No output specified!");
             Printer::Void(VoidPrinter {})
-        },
+        }
     };
 
     let algo = match &args.command {
@@ -69,7 +71,7 @@ fn main() {
     let result_df = match &args.command {
         Commands::Diff(diff_args) => {
             trace!("{:?}", diff_args);
-            use cartography_diff::traversal::process;
+            use binocular_diff::traversal::process;
 
             let result = process(
                 &repo,
@@ -85,9 +87,9 @@ fn main() {
         }
         Commands::Blame(blame_args) => {
             trace!("{:?}", blame_args);
-            use cartography_blame::lookup;
+            use binocular_blame::process_with_lookup;
 
-            let result = lookup(
+            let result = process_with_lookup(
                 &repo,
                 (*blame_args.defines_file).parse().unwrap(),
                 algo,

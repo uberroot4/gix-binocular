@@ -1,24 +1,15 @@
 use crate::git::metrics::GitCommitMetric;
 use gix::actor::SignatureRef;
-use gix::traverse::commit::simple::CommitTimeOrder::NewestFirst;
 use gix::traverse::commit::topo::Sorting;
 use gix::traverse::commit::Parents;
 use gix::{Commit, Reference};
-use log::{debug, info, trace};
+use log::{debug, trace};
 use shared::signature::Sig;
-
-fn apply_mailmap(repo: &gix::Repository, mut gcm: &GitCommitMetric) {
-    // let author = &gcm.author;
-    // let committer = &gcm.committer;
-    // gcm.author = Option::from(author.unwrap_or(gcm.author.unwrap()));
-    // gcm.committer = Option::from(committer.unwrap_or(gcm.committer.unwrap()));
-}
 
 pub fn traverse_from_to(
     repo: &gix::Repository,
     source_commit: &Commit,
     target_commit: &Option<Commit>,
-    // ) -> anyhow::Result<()> {
 ) -> anyhow::Result<Vec<GitCommitMetric>> {
     let mailmap = repo.open_mailmap();
     let tc_id = match target_commit {
@@ -32,14 +23,15 @@ pub fn traverse_from_to(
         }
     };
 
-    let apply_mailmap = |commit: &Commit, gix_sig: Result<SignatureRef<'_>, _>| {
+    let apply_mailmap = |gix_sig: Result<SignatureRef<'_>, _>| {
         gix_sig.ok().map(|sig| Sig::from(mailmap.resolve(sig)))
     };
 
     let sorting = Sorting::TopoOrder;
     let parents = Parents::All;
     let commit_graph = repo.commit_graph().ok();
-    let walk_result: Vec<_> =
+
+    let traverse_result =
         gix::traverse::commit::topo::Builder::from_iters(&repo, [source_commit.id], tc_id)
             .with_commit_graph(commit_graph)
             .sorting(sorting)
@@ -48,23 +40,25 @@ pub fn traverse_from_to(
             .filter_map(|info| {
                 info.ok()
                     .and_then(|info| Some(gix::revision::walk::Info::new(info, &repo)))
-            })
-            .map(|a| {
-                let commit = &a.object().unwrap();
-                let mut gcm = GitCommitMetric::from(a);
-                match apply_mailmap(&commit, commit.committer()) {
-                    None => {}
-                    Some(mailmap_committer) => gcm.committer = Some(mailmap_committer),
-                }
+            });
 
-                match apply_mailmap(&commit, commit.author()) {
-                    None => {}
-                    Some(mailmap_author) => gcm.author = Some(mailmap_author),
-                }
+    let walk_result: Vec<_> = traverse_result
+        .map(|a| {
+            let commit = &a.object().unwrap();
+            let mut gcm = GitCommitMetric::from(a);
+            match apply_mailmap(commit.committer()) {
+                None => {}
+                Some(mailmap_committer) => gcm.committer = Some(mailmap_committer),
+            }
 
-                gcm
-            })
-            .collect();
+            match apply_mailmap(commit.author()) {
+                None => {}
+                Some(mailmap_author) => gcm.author = Some(mailmap_author),
+            }
+
+            gcm
+        })
+        .collect();
 
     Ok(walk_result)
 }
@@ -84,37 +78,27 @@ pub fn traverse_commit_graph(
             }
         })
         .collect();
-    debug!(
-        "prefixed_branches ({:?}): {:?}",
-        prefixed_branches.len(),
-        prefixed_branches
-    );
     let references = repo.references()?;
+
     let local_branches = references.local_branches()?;
     let remote_branches = references.remote_branches()?;
-    debug!(
-        "local_branches: {:?}",
-        references.local_branches()?.collect::<Vec<_>>()
-    );
     let local_and_remote_branches = local_branches
         .chain(remote_branches)
         .flatten()
         .collect::<Vec<Reference>>();
-    debug!("local_and_remote_branches: {:?}", local_and_remote_branches);
+    println!("local_and_remote_branches: {:?}", local_and_remote_branches);
 
     let available_branches: Vec<&Reference> = local_and_remote_branches
         .iter()
         .filter(|r| prefixed_branches.contains(&r.name().as_bstr().to_string()))
         .collect();
-
-    trace!(
-        "available_branches: {:?}",
-        available_branches
-            .clone()
-            .iter()
-            .map(|b| b.name().as_bstr().to_string())
-            .collect::<Vec<String>>()
-    );
+    if available_branches.is_empty() {
+        // bail!("No branches with '{:?}' available", branches);
+        return Err(anyhow::anyhow!(
+            "No branches with '{:?}' available",
+            branches
+        ));
+    }
 
     let mut commit_metric_vec: Vec<GitCommitMetric> = Vec::new();
     for branch in available_branches {

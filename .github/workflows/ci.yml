@@ -1,0 +1,470 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+      - 'run-ci/**'
+      - '**/run-ci/**'
+    tags-ignore:
+      - '*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CLICOLOR: '1'
+
+jobs:
+  msrv:
+    name: cargo check MSRV
+
+    strategy:
+      matrix:
+        os:
+          - windows-2022
+          - ubuntu-latest
+
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash  # Use `bash` even in the Windows job.
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v3
+      - name: Read the MSRV
+        run: |
+          msrv="$(just msrv)"
+          tee -a "$GITHUB_ENV" <<<"MSRV=$msrv"
+      - name: Set up MSRV and nightly toolchains
+        run: |
+          rustup toolchain install "$MSRV" nightly --profile minimal --no-self-update
+      - name: Downgrade locked dependencies to lowest allowed versions
+        run: |
+          # TODO(msrv): Use `cargo update --minimal-versions` when `--minimal-versions` is available.
+          cargo +nightly update -Zminimal-versions
+      - name: Run some `cargo build` commands on `gix`
+        run: just check-rust-version "$MSRV"
+
+  msrv-badge:
+    name: Check MSRV badge
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v3
+      - name: Ensure we start out clean
+        run: git diff --exit-code
+      - name: Regenerate the MSRV badge
+        run: just msrv-badge
+      - name: Check for changes
+        run: git diff --exit-code
+
+  pure-rust-build:
+    runs-on: ubuntu-latest
+
+    container: debian:stable-slim
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prerequisites
+        run: |
+          prerequisites=(
+            ca-certificates
+            curl
+            gcc  # rustc calls gcc to invoke the linker.
+            libc-dev  # rustc, in the toolchain we are using, dynamically links to the system libc.
+          )
+          apt-get update
+          apt-get install --no-install-recommends -y -- "${prerequisites[@]}"
+        shell: bash  # This step needs `bash`, and the default in container jobs is `sh`.
+      - name: Verify that we are in an environment with limited dev tools
+        run: |
+          set -x
+          for package in cmake g++ libssl-dev make pkgconf pkg-config; do
+            if dpkg-query --status -- "$package"; then
+              exit 1
+            fi
+          done
+          for cmd in cmake g++ make pkgconf pkg-config; do
+            if command -v -- "$cmd"; then
+              exit 1
+            fi
+          done
+      - name: Install Rust via Rustup
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
+            sh -s -- -y --profile minimal
+      - name: Add Rust tools to path
+        run: echo "PATH=$HOME/.cargo/bin:$PATH" >> "$GITHUB_ENV"
+      - name: Generate dependency tree
+        run: cargo tree --locked --no-default-features --features max-pure > tree.txt
+      - name: Scan for dependencies that build C or C++ code
+        run: |
+          pattern='.*\b(-sys|cc|cmake|pkg-config|vcpkg)\b.*'
+          ! GREP_COLORS='ms=30;48;5;214' grep --color=always -Ex -C 1000000 -e "$pattern" tree.txt
+        continue-on-error: true
+      - name: Check for unrecognized *-sys dependencies
+        run: |
+          ! grep -qP '(?<!\b(linux-raw|libz-rs))-sys\b' tree.txt
+      - name: Wrap cc1 (and cc1plus if present) to record calls
+        run: |
+          set -o noclobber  # Catch any collisions with existing entries in /usr/local.
+
+          # Define the wrapper script for a compiler driver (for cc1 or cc1plus). This wrapper
+          # records calls, then delegates to the executable it wraps. When recording calls, writes
+          # to the log are synchronized so fragments of separate log entries aren't interleaved,
+          # even in concurrent runs. This wrapper knows what executable it is wrapping because,
+          # when deployed, this wrapper (or a symlink) replaces that executable, which will itself
+          # have been moved aside by being renamed with a `.orig` suffix, so this can call it.
+          cat >/usr/local/bin/wrapper1 <<'EOF'
+          #!/bin/sh
+          set -e
+          printf '%s\n' "$0 $*" |
+            flock /run/lock/wrapper1.fbd136bd-9b1b-448d-84a9-e18be53ae63c.lock \
+            tee -a -- /var/log/wrapper1.log ~/display >/dev/null  # We'll link ~/display later.
+          exec "$0.orig" "$@"
+          EOF
+
+          # Define the script that performs the wrapping. This script shall be run once for each
+          # executable to be wrapped, renaming it with a `.orig` suffix and replacing it with a
+          # symlink to the wrapper script, defined above.
+          cat >/usr/local/bin/wrap1 <<'EOF'
+          #!/bin/sh
+          set -e
+          dir="$(dirname -- "$1")"
+          base="$(basename -- "$1")"
+          cd -- "$dir"
+          mv -- "$base" "$base.orig"
+          ln -s -- /usr/local/bin/wrapper1 "$base"
+          EOF
+
+          # Define a helper file that, when sourced, wires up the `~/display` symlink `wrapper1`
+          # uses to report calls as GitHub Actions step output (in addition to writing them to a
+          # log file). This is needed because stdout and stderr are both redirected elsewhere when
+          # the wrapper actually runs, and `/dev/tty` is not usable. This must be sourced in the
+          # same step as the `cargo` command that causes wrapped executables to be run, because
+          # different steps write to different pipe objects. (This also needs the shell that
+          # sourced it to remain running. But that is not the cause of the underlying limitation.)
+          cat >/usr/local/bin/set-display.sh <<'EOF'
+          ln -s -- "/proc/$$/fd/1" ~/display
+          EOF
+
+          chmod +x /usr/local/bin/wrapper1 /usr/local/bin/wrap1
+          mkdir /run/lock/wrapper1.fbd136bd-9b1b-448d-84a9-e18be53ae63c.lock
+
+          find /usr/lib/gcc \( -name cc1 -o -name cc1plus \) \
+            -print -exec /usr/local/bin/wrap1 {} \;
+      - name: Build max-pure with limited dev tools and log cc1
+        run: |
+          . /usr/local/bin/set-display.sh
+          cargo install --debug --locked --no-default-features --features max-pure --path .
+      - name: Show logged C and C++ compilations (should be none)
+        run: |
+          ! cat /var/log/wrapper1.log
+        continue-on-error: true
+
+#  test:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: dtolnay/rust-toolchain@stable
+#      - uses: Swatinem/rust-cache@v2
+#      - name: Setup dependencies
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y --no-install-recommends liblzma-dev
+#      - uses: extractions/setup-just@v3
+#      - uses: taiki-e/install-action@v2
+#        with:
+#          tool: nextest
+#      - name: test
+#        env:
+#          GIX_TEST_IGNORE_ARCHIVES: '1'
+#        run: just ci-test
+#
+#  test-journey:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: dtolnay/rust-toolchain@stable
+#      - uses: Swatinem/rust-cache@v2
+#      - uses: extractions/setup-just@v3
+#      - name: Run journey tests
+#        run: just ci-journey-tests
+#
+#  test-fast:
+#    strategy:
+#      matrix:
+#        os:
+#          - windows-latest
+#          - macos-latest
+#          - ubuntu-latest
+#          - ubuntu-24.04-arm
+#
+#    runs-on: ${{ matrix.os }}
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: dtolnay/rust-toolchain@stable
+#      - uses: Swatinem/rust-cache@v2
+#      - name: cargo check default features
+#        if: startsWith(matrix.os, 'windows')
+#        run: cargo check --workspace --bins --examples
+#      - uses: taiki-e/install-action@v2
+#        with:
+#          tool: nextest
+#      - name: Test (nextest)
+#        env:
+#          GIX_TEST_CREATE_ARCHIVES_EVEN_ON_CI: '1'
+#        run: cargo nextest run --workspace --no-fail-fast
+#      - name: Check that tracked archives are up to date
+#        run: git diff --exit-code  # If this fails, the fix is usually to commit a regenerated archive.
+
+#  test-fixtures-windows:
+#    runs-on: windows-latest
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: dtolnay/rust-toolchain@stable
+#      - uses: Swatinem/rust-cache@v2
+#      - uses: taiki-e/install-action@v2
+#        with:
+#          tool: nextest
+#      - name: Test (nextest)
+#        id: nextest
+#        env:
+#          GIX_TEST_IGNORE_ARCHIVES: '1'
+#        run: cargo nextest --profile=with-xml run --workspace --no-fail-fast
+#        continue-on-error: true
+#      - name: Check for errors
+#        run: |
+#          [xml]$junit_xml = Get-Content -Path 'target/nextest/with-xml/junit.xml'
+#          if ($junit_xml.testsuites.errors -ne 0) { exit 1 }
+#      - name: Collect actual failures
+#        run: |
+#          [xml]$junit_xml = Get-Content -Path 'target/nextest/with-xml/junit.xml'
+#
+#          $actual_failures = $junit_xml.SelectNodes("//testcase[failure]") |
+#            ForEach-Object { "$($_.classname) $($_.name)" } |
+#            Sort-Object
+#
+#          Write-Output $actual_failures
+#          Set-Content -Path 'actual-failures.txt' -Value $actual_failures
+#      - name: Compare expected and actual failures
+#        run: |
+#          # Fail on any differences, even unexpectedly passing tests, so they can be investigated.
+#          git --no-pager diff --no-index --exit-code --unified=1000000 --color=always -- `
+#            etc/test-fixtures-windows-expected-failures-see-issue-1358.txt actual-failures.txt
+
+#  test-32bit:
+#    strategy:
+#      matrix:
+#        container-arch: [ i386, arm32v7 ]
+#        include:
+#          - container-arch: i386
+#            runner-arch: amd64
+#            runner-os: ubuntu-latest
+#            host-triple: i686-unknown-linux-gnu
+#          - container-arch: arm32v7
+#            runner-arch: arm64
+#            runner-os: ubuntu-24.04-arm
+#            host-triple: armv7-unknown-linux-gnueabihf
+#
+#    runs-on: ${{ matrix.runner-os }}
+#
+#    container: ${{ matrix.container-arch }}/debian:stable-slim
+#
+#    steps:
+#      - name: Prerequisites
+#        run: |
+#          prerequisites=(
+#            build-essential
+#            ca-certificates
+#            cmake
+#            curl
+#            git
+#            jq
+#            libssl-dev
+#            libstdc++6:${{ matrix.runner-arch }}  # To support external 64-bit Node.js for actions.
+#            pkgconf
+#          )
+#          dpkg --add-architecture ${{ matrix.runner-arch }}
+#          apt-get update
+#          apt-get install --no-install-recommends -y -- "${prerequisites[@]}"
+#        shell: bash  # This step needs `bash`, and the default in container jobs is `sh`.
+#      - uses: actions/checkout@v4
+#      - name: Install Rust via Rustup
+#        run: |
+#          # Specify toolchain to avoid possible misdetection based on the 64-bit running kernel.
+#          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
+#            sh -s -- -y --default-host ${{ matrix.host-triple }} --profile minimal
+#      - name: Add Rust tools to path
+#        run: echo "PATH=$HOME/.cargo/bin:$PATH" >> "$GITHUB_ENV"
+#      - uses: Swatinem/rust-cache@v2
+#      - uses: taiki-e/install-action@v2
+#        with:
+#          tool: nextest
+#      - name: Make `system` scope nonempty for "GitInstallation" tests
+#        run: git config --system gitoxide.imaginary.arbitraryVariable arbitraryValue
+#      - name: Test (nextest)
+#        env:
+#          GIX_TEST_IGNORE_ARCHIVES: '1'
+#        run: cargo nextest run --workspace --no-fail-fast
+
+#  test-32bit-windows-size:
+#    runs-on: windows-latest
+#
+#    env:
+#      TARGET: i686-pc-windows-msvc
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: dtolnay/rust-toolchain@stable
+#        with:
+#          targets: ${{ env.TARGET }}
+#      - uses: Swatinem/rust-cache@v2
+#      - uses: taiki-e/install-action@v2
+#        with:
+#          tool: nextest
+#      - name: Test (nextest)
+#        run: cargo nextest run --target $env:TARGET --workspace --no-fail-fast size
+
+#  test-wasm32:
+#    runs-on: ubuntu-latest
+#
+#    strategy:
+#      matrix:
+##        target: [ wasm32-unknown-unknown, wasm32-wasip1, wasm32-wasip2 ]
+#        target: [ wasm32-wasip2 ]
+#
+#    env:
+#      TARGET: ${{ matrix.target }}
+#
+#    steps:
+#      - uses: actions/checkout@v4
+##      - uses: dtolnay/rust-toolchain@nightly
+##        with:
+##          targets: ${{ env.TARGET }}
+#      - name: Install Rust
+#        run: |
+#          rustup update nightly
+#          rustup default nightly
+#          rustup target add "$TARGET"
+#      - uses: Swatinem/rust-cache@v2
+#      - uses: taiki-e/install-action@v2
+#        with:
+#          tool: nextest
+#      - name: Test (nextest)
+#        run: cargo +nightly nextest run --no-default-features --target $TARGET --package gix --no-fail-fast size
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: clippy,rustfmt
+      - uses: extractions/setup-just@v3
+      - name: Run cargo clippy
+        run: just clippy -D warnings -A unknown-lints --no-deps
+      - name: Run cargo doc
+        run: just doc
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
+      - name: Install cargo diet
+        env:
+          CARGO_DIET_TAG: v1.2.7
+        run: |
+          curl -LSfs "https://raw.githubusercontent.com/the-lean-crate/cargo-diet/refs/tags/$CARGO_DIET_TAG/ci/install.sh" |
+            sh -s -- --git the-lean-crate/cargo-diet --target x86_64-unknown-linux-musl --tag "$CARGO_DIET_TAG"
+      - name: Run cargo diet
+        run: just check-size
+        # Let's not fail CI for this, it will fail locally often enough, and a crate a little bigger
+        # than allows is no problem either if it comes to that.
+        continue-on-error: true
+
+#  wasm:
+#    name: WebAssembly
+#
+#    runs-on: ubuntu-latest
+#
+#    strategy:
+#      matrix:
+#        target: [ wasm32-unknown-unknown, wasm32-wasip1, wasm32-wasip2 ]
+#
+#    env:
+#      TARGET: ${{ matrix.target }}
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#      - name: Install Rust
+#        run: |
+#          rustup update nightly
+#          rustup default nightly
+#          rustup target add "$TARGET"
+#      - uses: Swatinem/rust-cache@v2
+#      - name: 'WASI only: crates without feature toggle'
+#        if: endsWith(matrix.target, '-wasi')
+#        run: |
+#          set +x
+#          for crate in gix-sec; do
+#            cargo build -p "$crate" --target "$TARGET"
+#          done
+#      - name: crates without feature toggles
+#        run: |
+#          crates=(
+#            gix-actor
+#            gix-attributes
+#            gix-bitmap
+#            gix-chunk
+#            gix-command
+#            gix-commitgraph
+#            gix-config-value
+#            gix-date
+#            gix-glob
+#            gix-hash
+#            gix-hashtable
+#            gix-mailmap
+#            gix-object
+#            gix-packetline
+#            gix-path
+#            gix-pathspec
+#            gix-prompt
+#            gix-quote
+#            gix-refspec
+#            gix-revision
+#            gix-traverse
+#            gix-url
+#            gix-validate
+#          )
+#          set +x
+#          for crate in "${crates[@]}"; do
+#            cargo build -p "$crate" --target "$TARGET"
+#          done
+#      - name: features of gix-features
+#        run: |
+#          set +x
+#          for feature in progress parallel io-pipe crc32 zlib cache-efficiency-debug; do
+#            cargo build -p gix-features --features "$feature" --target "$TARGET"
+#          done
+#      - name: crates with 'wasm' feature
+#        run: |
+#          set +x
+#          for crate in gix-pack; do
+#            cargo build -p "$crate" --features wasm --target "$TARGET"
+#          done
+#      - name: gix-pack with all features (including wasm)
+#        run: cargo build -p gix-pack --all-features --target "$TARGET"

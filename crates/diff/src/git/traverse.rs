@@ -4,6 +4,7 @@ use anyhow::Result;
 use gix::{diff::blob::Platform, Commit, ObjectId};
 use log::{debug, error, trace};
 use std::thread::JoinHandle;
+#[cfg(feature = "progress")]
 use tqdm::tqdm;
 
 pub fn traverse_commit_graph(
@@ -19,7 +20,13 @@ pub fn traverse_commit_graph(
     let (churn_threads, churn_tx) = get_churn_channel(repo, num_threads, &mailmap, diff_algorithm)?;
 
     let mut count = 0;
-    for commit in tqdm(commitlist).desc(Some("Commits sent")) {
+
+    #[cfg(feature = "progress")]
+    let iterable_list = tqdm(commitlist).desc(Some("Commits sent"));
+    #[cfg(not(feature = "progress"))]
+    let iterable_list = commitlist;
+
+    for commit in iterable_list {
         match churn_tx.send(commit.id) {
             Ok(_) => {}
             Err(e) => {

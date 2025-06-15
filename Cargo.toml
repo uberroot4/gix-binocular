@@ -1,13 +1,13 @@
 [package]
-name = "gix-test"
+name = "gix-binocular"
 edition = "2021"
 
 [workspace.package]
 edition = "2021"
 version = "0.0.1"
 authors = ["Manuel Stöger <manuel.stoeger@inso-world.com>"]
-description = "gix testing"
-documentation = "gix testing"
+description = "gix binocular"
+documentation = "gix binocular"
 license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -18,10 +18,39 @@ path = "src/gitinfo.rs"
 doc = false
 test = false
 doctest = false
+required-features = ["cli", "polars"]
+
+[[bin]]
+name = "gix_tests"
+path = "src/demo/gix_tests.rs"
+doc = false
+test = false
+doctest = false
+required-features = ["cli"]
+
+[[bin]]
+name = "instrument_blame"
+path = "src/demo/blame.rs"
+doc = false
+test = false
+doctest = false
+required-features = ["cache", "preprocess"]
 
 [profile.ci-dev]
 inherits = "dev"
 debug = 1
+
+[profile.ci-release]
+inherits = "release"
+debug = true
+
+#[[bin]]
+#name = "demo"
+#path = "src/demo.rs"
+#doc = false
+#test = false
+#doctest = false
+
 #[[bin]]
 #name = "clone"
 #path = "src/clone.rs"
@@ -29,6 +58,14 @@ debug = 1
 #doc = false
 #test = false
 #doctest = false
+
+[features]
+progress = ["binocular-diff/progress", "binocular-blame/progress"]
+cli = ["binocular-blame/cli"]
+preprocess = ["binocular-blame/preprocess"]
+cache = ["binocular-blame/cache"]
+polars = ["binocular-blame/polars"]
+default = ["cli"]
 
 [workspace]
 members = [
@@ -40,11 +77,18 @@ members = [
     "crates/render",
     "crates/shared",
     "crates/blame",
+    #    "web-fs",
     "crates/pyo3-bindings",
+    #    "crates/neon-npm",
+    # libgit2
+    "crates/ffi"
 ]
 
 [workspace.dependencies]
-gix = { version = "=0.70.0", default-features = true, features = ["blame"] }
+#gix = { version = "=0.72.1", default-features = true, features = ["blame"] }
+#gix = { path = "../wasm/gitoxide/gix", default-features = false }
+#gix = { git = "https://github.com/cruessler/gitoxide.git", branch = "gix-blame", features = ["tracing"] }
+gix = { git = "https://github.com/uberroot4/gitoxide.git", branch = "feature/463", default-features = false }
 clap = { version = "4.1.1", features = ["derive", "cargo"] }
 log = "0.4.21"
 env_logger = "0.11.3"
@@ -56,18 +100,12 @@ chrono = { version = "0.4.39" }
 dotenv = { version = "0.15.0" }
 shared = { path = "./crates/shared", default-features = true }
 commits = { path = "./crates/commits", default-features = false }
-cartography-diff = { path = "./crates/diff", default-features = false }
+binocular-diff = { path = "./crates/diff", default-features = false }
 render = { path = "./crates/render", default-features = false }
 cli = { path = "./crates/cli", default-features = false }
-cartography-blame = { path = "./crates/blame", default-features = false, features = ["cli"] }
+binocular-blame = { path = "./crates/blame", default-features = false }
 clap = { workspace = true }
-gix = { workspace = true }
+gix = { workspace = true, default-features = true, features = ["max-performance-safe"] }
 log = { workspace = true }
 
-[dev-dependencies]
-criterion = "0.5.1"
-pretty_assertions = { version = "1.4.1" }
-
-[[bench]]
-name = "gitinfo"
-harness = false
+[build-dependencies]

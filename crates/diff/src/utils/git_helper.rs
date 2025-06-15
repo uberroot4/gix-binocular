@@ -1,4 +1,5 @@
 use gix::bstr::BString;
+use gix::object::tree::diff::Change;
 use std::collections::HashMap;
 
 pub fn calculate_changes(
@@ -6,7 +7,7 @@ pub fn calculate_changes(
     current: &gix::Tree,
     rewrite_cache: &mut gix::diff::blob::Platform,
     diff_cache: &mut gix::diff::blob::Platform,
-) -> HashMap<BString, (u32, u32)> {
+) -> HashMap<BString, (u32, u32, String)> {
     let change_map = gitoxide_diff_calculation(previous, current, rewrite_cache, diff_cache);
 
     change_map
@@ -17,7 +18,7 @@ fn gitoxide_diff_calculation(
     current: &gix::Tree<'_>,
     _rewrite_cache: &mut gix::diff::blob::Platform,
     diff_cache: &mut gix::diff::blob::Platform,
-) -> HashMap<BString, (u32, u32)> {
+) -> HashMap<BString, (u32, u32, String)> {
     let mut platform = previous.changes().unwrap();
 
     let opts_fn = |opts: &mut gix::diff::Options| {
@@ -33,6 +34,15 @@ fn gitoxide_diff_calculation(
             &current,
             // rewrite_cache,
             |change| -> Result<_, gix::object::blob::diff::init::Error> {
+                let change_kind = match change {
+                    Change::Addition { .. } => "Addition",
+                    Change::Deletion { .. } => "Deletion",
+                    Change::Modification { .. } => "Modification",
+                    Change::Rewrite { .. } => "Rewrite",
+                }
+                .to_string();
+                // println!("{:?}", change);
+
                 if let Ok(cache) = change.diff(diff_cache).map(|p| p.resource_cache) {
                     if let Ok(prep) = cache.prepare_diff() {
                         let tokens = prep.interned_input();
@@ -47,10 +57,11 @@ fn gitoxide_diff_calculation(
                                 );
                                 // println!("change {:?}\t|\t{:?}|{:?}:\t{:?}", change.location, counts.insertions, counts.removals, counts.removals + counts.insertions);
                                 // println!(" {:?}", change.location);
-                                *change_map
-                                    .entry(change.location().into())
-                                    .or_insert((u32::MIN, u32::MIN)) =
-                                    (counts.insertions, counts.removals);
+                                *change_map.entry(change.location().into()).or_insert((
+                                    u32::MIN,
+                                    u32::MIN,
+                                    change_kind.clone(),
+                                )) = (counts.insertions, counts.removals, change_kind.clone());
                             }
                             _ => (),
                         }

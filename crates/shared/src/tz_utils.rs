@@ -1,4 +1,3 @@
-use std::ops::Add;
 use gix::date::Time;
 
 pub fn time_to_utc_with_offset(time: Time) -> chrono::DateTime<chrono::Utc> {

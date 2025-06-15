@@ -16,11 +16,16 @@ doctest = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-gix = { workspace = true, features = ["max-performance-safe", "mailmap"] }
 base64 = "0.22.1"
 log = { workspace = true }
 anyhow = { workspace = true }
 shared = { path = "../shared" }
+
+[target.'cfg(target_os = "wasi")'.dependencies]
+gix = { workspace = true, default-features = false, features = ["mailmap"] }
+
+[target.'cfg(not(target_os = "wasi"))'.dependencies]
+gix = { workspace = true, default-features = true, features = ["mailmap"] }
 polars = { workspace = true, features = ["lazy"] }
 
 [dev-dependencies]

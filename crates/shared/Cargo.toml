@@ -23,6 +23,8 @@ no_std_io = { version = "0.6.0", optional = true }
 defmt = { version = "0.3.8", optional = true }
 gix = { workspace = true }
 serde = { version = "1.0.217" }
+
+[target.'cfg(not(target_os = "wasi"))'.dependencies]
 polars = { workspace = true }
 
 [dev-dependencies]

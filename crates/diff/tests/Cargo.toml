@@ -1,5 +1,5 @@
 [package]
-name = "cartography-diff-test"
+name = "binocular-diff-test"
 version = "0.0.0"
 edition = "2021"
 publish = false
@@ -12,7 +12,7 @@ path = "./main.rs"
 [dev-dependencies]
 gix-testtools = { version = "=0.15.0" }
 gix = { workspace = true, features = ["max-performance-safe", "blob-diff", "revision", "mailmap", "blame"] }
-cartography-diff = { path = ".." }
+binocular-diff = { path = ".." }
 shared = { path = "../../shared" }
 pretty_assertions = { version = "1.4.1" }
 assertables = { version = "9.5.0" }

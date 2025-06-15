@@ -1,5 +1,5 @@
 [package]
-name = "cartography-diff"
+name = "binocular-diff"
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
@@ -11,13 +11,17 @@ include = ["src/**/*"]
 [lib]
 doctest = false
 
+[features]
+progress = ["dep:tqdm"]
+default = ["progress"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 crossbeam-channel = { version = "0.5.14" }
 gix = { workspace = true, features = ["max-performance-safe", "blob-diff", "revision", "mailmap", ] }
 shared = { path = "../shared" }
-tqdm = { version = "0.7.0" }
+tqdm = { version = "0.7.0", optional = true }
 polars = { workspace = true }
 
 log = { workspace = true }

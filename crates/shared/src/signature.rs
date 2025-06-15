@@ -33,7 +33,7 @@ impl From<gix::actor::SignatureRef<'_>> for Sig {
         Self {
             name: BString::from(value.name),
             email: BString::from(value.email),
-            time: value.time,
+            time: value.time().expect("Datetime must be present for commit"),
         }
     }
 }

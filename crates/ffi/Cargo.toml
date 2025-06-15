@@ -1,0 +1,31 @@
+[package]
+name = "binocular-ffi"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+documentation.workspace = true
+license.workspace = true
+
+[[bin]]
+# This can be whatever name makes sense for your project, but the rest of this tutorial assumes uniffi-bindgen.
+name = "uniffi-bindgen"
+path = "uniffi-bindgen.rs"
+
+[lib]
+crate-type = ["lib", "cdylib"]
+#name = "uniffi_binocular"
+
+[dependencies]
+gix = { workspace = true }
+commits = { path = "../commits" }
+shared = { path = "../shared" }
+binocular-diff = { path = "../diff", default-features = false }
+binocular-blame = { path = "../blame", default-features = false }
+uniffi = { version = "0.29.2", features = ["cli"] }
+anyhow = { workspace = true }
+log = { workspace = true }
+thiserror = "2.0.12"
+
+[build-dependencies]
+uniffi = { version = "0.29.2", features = ["build"] }

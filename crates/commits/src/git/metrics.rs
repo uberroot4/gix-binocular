@@ -1,9 +1,11 @@
 use base64::prelude::*;
-use polars::datatypes::{DataType, TimeUnit, TimeZone};
-use polars::{df, prelude::*};
+#[cfg(not(target_os = "wasi"))]
+use polars::{
+    datatypes::{DataType, TimeUnit, TimeZone},
+    df, prelude::*};
 use shared::signature::Sig;
+#[cfg(not(target_os = "wasi"))]
 use shared::{time_to_utc_with_offset, VecDataFrameExt};
-
 #[derive(Debug, Clone)]
 pub struct GitCommitMetric {
     pub commit: gix::ObjectId,
@@ -40,6 +42,7 @@ impl From<gix::revision::walk::Info<'_>> for GitCommitMetric {
     }
 }
 
+#[cfg(not(target_os = "wasi"))]
 impl VecDataFrameExt for GitCommitMetricVec {
     fn to_df(&self) -> PolarsResult<DataFrame> {
         let commit_metric_vec = &self.0;

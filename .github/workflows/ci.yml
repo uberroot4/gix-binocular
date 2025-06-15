@@ -101,6 +101,12 @@ jobs:
     container: ${{ matrix.container-arch }}/debian:stable-slim
 
     steps:
+      - name: Install Docker
+        if: startsWith(matrix.os, 'macos')
+        - run: |
+            brew install docker
+            colima start
+            docker run -e "ACCEPT_EULA=Y"
       - uses: actions/checkout@v4
       - name: Prerequisites
         run: |

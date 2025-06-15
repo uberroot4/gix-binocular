@@ -78,7 +78,7 @@ members = [
     "crates/shared",
     "crates/blame",
     #    "web-fs",
-    "crates/pyo3-bindings",
+#    "crates/pyo3-bindings",
     #    "crates/neon-npm",
     # libgit2
     "crates/ffi"

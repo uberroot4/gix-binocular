@@ -150,6 +150,26 @@ jobs:
           name: ${{ matrix.host-triple }}
           path: target/${{ matrix.host-triple }}/release/libbinocular_ffi.${{ matrix.file-ending }}
 
+  collect-artifacts:
+    needs: pure-rust-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: '*'
+          merge-multiple: true
+      - name: Create release archive
+        run: |
+          cd artifacts
+          tar czf ../binocular-ffi-libs.tar.gz *
+      - name: Upload combined artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binocular-ffi-libs
+          path: binocular-ffi-libs.tar.gz
+
 #  test:
 #    runs-on: ubuntu-latest
 #

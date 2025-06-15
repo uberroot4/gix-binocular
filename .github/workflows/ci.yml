@@ -74,12 +74,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - container-arch: amd64
+          - container: amd64/debian:stable-slim
             runner-arch: amd64
             runner-os: ubuntu-latest
             host-triple: x86_64-unknown-linux-gnu
             file-ending: so
-          - container-arch: arm64
+          - container: arm64/macos-latest
             runner-arch: arm64
             runner-os: macos-latest
             host-triple: aarch64-apple-darwin
@@ -98,17 +98,18 @@ jobs:
 #            runner-os: ubuntu-latest
 #            host-triple: armv7-unknown-linux-gnueabihf
     runs-on: ${{ matrix.runner-os }}
-#    container: ${{ matrix.container-arch }}/debian:stable-slim
+    container: ${{ matrix.container }}
 
     steps:
       - name: Install Docker
-        if: startsWith(matrix.os, 'macos')
+        if: startsWith(matrix.runner-os, 'macos')
         run: |
             brew install docker
             colima start
             docker run -e "ACCEPT_EULA=Y"
       - uses: actions/checkout@v4
       - name: Prerequisites
+        if: startsWith(matrix.runner-os, 'ubuntu')
         run: |
           prerequisites=(
             ca-certificates

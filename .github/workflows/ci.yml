@@ -103,7 +103,7 @@ jobs:
     steps:
       - name: Install Docker
         if: startsWith(matrix.os, 'macos')
-        - run: |
+        run: |
             brew install docker
             colima start
             docker run -e "ACCEPT_EULA=Y"

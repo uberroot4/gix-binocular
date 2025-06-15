@@ -99,12 +99,6 @@ jobs:
     container: ${{ matrix.container }}
 
     steps:
-      - name: Install Docker
-        if: startsWith(matrix.runner-os, 'macos')
-        run: |
-            brew install colima docker
-            colima start
-            docker run --rm hello-world
       - uses: actions/checkout@v4
       - name: Prerequisites
         if: startsWith(matrix.runner-os, 'ubuntu')

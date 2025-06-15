@@ -163,7 +163,13 @@ jobs:
       - name: Create release archive
         run: |
           cd artifacts
-          tar czf ../binocular-ffi-libs.tar.gz *
+          # Create the same directory structure as in the build
+          for dir in */; do
+            mkdir -p ../target/$dir/release
+            cp $dir/libbinocular_ffi.* ../target/$dir/release/
+          done
+          cd ..
+          tar czf binocular-ffi-libs.tar.gz target
       - name: Upload combined artifact
         uses: actions/upload-artifact@v4
         with:

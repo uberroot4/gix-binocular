@@ -73,11 +73,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - container-arch: linux/amd64
+          - container-arch: amd64
             runner-arch: amd64
             runner-os: ubuntu-latest
             host-triple: x86_64-unknown-linux-gnu
-          - container-arch: linux/arm64/v8
+          - container-arch: arm64/v8
             runner-arch: arm64
             runner-os: ubuntu-latest
             host-triple: aarch64-unknown-linux-gnu

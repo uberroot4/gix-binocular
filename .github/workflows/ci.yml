@@ -102,9 +102,9 @@ jobs:
       - name: Install Docker
         if: startsWith(matrix.runner-os, 'macos')
         run: |
-            brew install docker
+            brew install colima docker
             colima start
-            docker run -e "ACCEPT_EULA=Y"
+            docker run --rm hello-world
       - uses: actions/checkout@v4
       - name: Prerequisites
         if: startsWith(matrix.runner-os, 'ubuntu')

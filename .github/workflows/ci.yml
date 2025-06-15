@@ -124,6 +124,7 @@ jobs:
       - name: Add Rust tools to path
         run: echo "PATH=$HOME/.cargo/bin:$PATH" >> "$GITHUB_ENV"
       - name: crates without feature toggles
+        shell: bash
         run: |
           crates=(
             binocular-ffi

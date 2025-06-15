@@ -79,13 +79,11 @@ jobs:
             runner-os: ubuntu-latest
             host-triple: x86_64-unknown-linux-gnu
             file-ending: so
-          - container: macos-latest
-            runner-arch: arm64
+          - runner-arch: arm64
             runner-os: macos-latest
             host-triple: aarch64-apple-darwin
             file-ending: dylib
-          - container: macos-latest
-            runner-arch: x86_64
+          - runner-arch: x86_64
             runner-os: macos-latest
             host-triple: x86_64-apple-darwin
             file-ending: dylib
@@ -122,6 +120,7 @@ jobs:
           apt-get install --no-install-recommends -y -- "${prerequisites[@]}"
         shell: bash  # This step needs `bash`, and the default in container jobs is `sh`.
       - name: Verify that we are in an environment with limited dev tools
+        if: startsWith(matrix.runner-os, 'ubuntu')
         run: |
           set -x
           for package in cmake g++ libssl-dev make pkgconf pkg-config; do

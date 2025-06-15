@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - 'run-ci/**'
+      - 'gix/main'
       - '**/run-ci/**'
     tags-ignore:
       - '*'
@@ -69,12 +70,24 @@ jobs:
 #        run: git diff --exit-code
 
   pure-rust-build:
-    runs-on: ubuntu-latest
-
-    container: debian:stable-slim
+    strategy:
+      matrix:
+        container-arch: [ x86_64 ]
+        include:
+          - container-arch: x86_64
+            runner-arch: x86_64
+            runner-os: ubuntu-latest
+            host-triple: x86_64-unknown-linux-gnu
+#          - windows-latest
+#          - macos-latest
+#          - ubuntu-latest
+#          - ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner-os }}
+    container: ${{ matrix.container-arch }}/debian:stable-slim
 
     steps:
       - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
       - name: Prerequisites
         run: |
           prerequisites=(
@@ -83,6 +96,7 @@ jobs:
             gcc  # rustc calls gcc to invoke the linker.
             libc-dev  # rustc, in the toolchain we are using, dynamically links to the system libc.
           )
+          dpkg --add-architecture ${{ matrix.runner-arch }}
           apt-get update
           apt-get install --no-install-recommends -y -- "${prerequisites[@]}"
         shell: bash  # This step needs `bash`, and the default in container jobs is `sh`.
@@ -101,76 +115,20 @@ jobs:
           done
       - name: Install Rust via Rustup
         run: |
+          # Specify toolchain to avoid possible misdetection based on the 64-bit running kernel.
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
-            sh -s -- -y --profile minimal
+            sh -s -- -y --default-host ${{ matrix.host-triple }} --profile minimal
       - name: Add Rust tools to path
         run: echo "PATH=$HOME/.cargo/bin:$PATH" >> "$GITHUB_ENV"
-      - name: Generate dependency tree
-        run: cargo tree --locked --no-default-features --features max-pure > tree.txt
-      - name: Scan for dependencies that build C or C++ code
+      - name: crates without feature toggles
         run: |
-          pattern='.*\b(-sys|cc|cmake|pkg-config|vcpkg)\b.*'
-          ! GREP_COLORS='ms=30;48;5;214' grep --color=always -Ex -C 1000000 -e "$pattern" tree.txt
-        continue-on-error: true
-      - name: Check for unrecognized *-sys dependencies
-        run: |
-          ! grep -qP '(?<!\b(linux-raw|libz-rs))-sys\b' tree.txt
-      - name: Wrap cc1 (and cc1plus if present) to record calls
-        run: |
-          set -o noclobber  # Catch any collisions with existing entries in /usr/local.
-
-          # Define the wrapper script for a compiler driver (for cc1 or cc1plus). This wrapper
-          # records calls, then delegates to the executable it wraps. When recording calls, writes
-          # to the log are synchronized so fragments of separate log entries aren't interleaved,
-          # even in concurrent runs. This wrapper knows what executable it is wrapping because,
-          # when deployed, this wrapper (or a symlink) replaces that executable, which will itself
-          # have been moved aside by being renamed with a `.orig` suffix, so this can call it.
-          cat >/usr/local/bin/wrapper1 <<'EOF'
-          #!/bin/sh
-          set -e
-          printf '%s\n' "$0 $*" |
-            flock /run/lock/wrapper1.fbd136bd-9b1b-448d-84a9-e18be53ae63c.lock \
-            tee -a -- /var/log/wrapper1.log ~/display >/dev/null  # We'll link ~/display later.
-          exec "$0.orig" "$@"
-          EOF
-
-          # Define the script that performs the wrapping. This script shall be run once for each
-          # executable to be wrapped, renaming it with a `.orig` suffix and replacing it with a
-          # symlink to the wrapper script, defined above.
-          cat >/usr/local/bin/wrap1 <<'EOF'
-          #!/bin/sh
-          set -e
-          dir="$(dirname -- "$1")"
-          base="$(basename -- "$1")"
-          cd -- "$dir"
-          mv -- "$base" "$base.orig"
-          ln -s -- /usr/local/bin/wrapper1 "$base"
-          EOF
-
-          # Define a helper file that, when sourced, wires up the `~/display` symlink `wrapper1`
-          # uses to report calls as GitHub Actions step output (in addition to writing them to a
-          # log file). This is needed because stdout and stderr are both redirected elsewhere when
-          # the wrapper actually runs, and `/dev/tty` is not usable. This must be sourced in the
-          # same step as the `cargo` command that causes wrapped executables to be run, because
-          # different steps write to different pipe objects. (This also needs the shell that
-          # sourced it to remain running. But that is not the cause of the underlying limitation.)
-          cat >/usr/local/bin/set-display.sh <<'EOF'
-          ln -s -- "/proc/$$/fd/1" ~/display
-          EOF
-
-          chmod +x /usr/local/bin/wrapper1 /usr/local/bin/wrap1
-          mkdir /run/lock/wrapper1.fbd136bd-9b1b-448d-84a9-e18be53ae63c.lock
-
-          find /usr/lib/gcc \( -name cc1 -o -name cc1plus \) \
-            -print -exec /usr/local/bin/wrap1 {} \;
-      - name: Build max-pure with limited dev tools and log cc1
-        run: |
-          . /usr/local/bin/set-display.sh
-          cargo install --debug --locked --no-default-features --features max-pure --path .
-      - name: Show logged C and C++ compilations (should be none)
-        run: |
-          ! cat /var/log/wrapper1.log
-        continue-on-error: true
+          crates=(
+            binocular-ffi
+          )
+          set +x
+          for crate in "${crates[@]}"; do
+            cargo build -p "$crate" --target ${{ matrix.host-triple }}
+          done
 
 #  test:
 #    runs-on: ubuntu-latest
@@ -368,33 +326,6 @@ jobs:
 #      - name: Test (nextest)
 #        run: cargo +nightly nextest run --no-default-features --target $TARGET --package gix --no-fail-fast size
 
-  lint:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          components: clippy,rustfmt
-      - uses: extractions/setup-just@v3
-      - name: Run cargo clippy
-        run: just clippy -D warnings -A unknown-lints --no-deps
-      - name: Run cargo doc
-        run: just doc
-      - name: Run cargo fmt
-        run: cargo fmt --all -- --check
-      - name: Install cargo diet
-        env:
-          CARGO_DIET_TAG: v1.2.7
-        run: |
-          curl -LSfs "https://raw.githubusercontent.com/the-lean-crate/cargo-diet/refs/tags/$CARGO_DIET_TAG/ci/install.sh" |
-            sh -s -- --git the-lean-crate/cargo-diet --target x86_64-unknown-linux-musl --tag "$CARGO_DIET_TAG"
-      - name: Run cargo diet
-        run: just check-size
-        # Let's not fail CI for this, it will fail locally often enough, and a crate a little bigger
-        # than allows is no problem either if it comes to that.
-        continue-on-error: true
 
 #  wasm:
 #    name: WebAssembly

@@ -91,7 +91,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: Swatinem/rust-cache@v2
       - name: Prerequisites
         run: |
           prerequisites=(
@@ -124,6 +123,7 @@ jobs:
             sh -s -- -y --default-host ${{ matrix.host-triple }} --profile minimal
       - name: Add Rust tools to path
         run: echo "PATH=$HOME/.cargo/bin:$PATH" >> "$GITHUB_ENV"
+      - uses: Swatinem/rust-cache@v2
       - name: crates without feature toggles
         shell: bash
         run: |

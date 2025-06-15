@@ -162,18 +162,42 @@ jobs:
           merge-multiple: true
       - name: Create release archive
         run: |
+          # Debug: List contents of artifacts directory
+          echo "Contents of artifacts directory:"
+          ls -la artifacts/
+          
           # Create target directory structure
           mkdir -p target
+          
+          # Debug: List contents of each artifact directory
+          echo "Contents of each artifact directory:"
+          for dir in artifacts/*/; do
+            if [ -d "$dir" ]; then
+              echo "Directory: $dir"
+              ls -la "$dir"
+            fi
+          done
+          
           # Move each artifact to its correct location
           for dir in artifacts/*/; do
             if [ -d "$dir" ]; then
               target_dir="target/$(basename "$dir")/release"
               mkdir -p "$target_dir"
-              cp "$dir"libbinocular_ffi.* "$target_dir/" 2>/dev/null || true
+              echo "Copying from $dir to $target_dir"
+              cp "$dir"libbinocular_ffi.* "$target_dir/" 2>/dev/null || echo "No files found in $dir"
             fi
           done
+          
+          # Debug: List contents of target directory
+          echo "Contents of target directory:"
+          find target -type f
+          
           # Create the archive
           tar czf binocular-ffi-libs.tar.gz target
+          
+          # Debug: List contents of archive
+          echo "Contents of archive:"
+          tar tvf binocular-ffi-libs.tar.gz
       - name: Upload combined artifact
         uses: actions/upload-artifact@v4
         with:

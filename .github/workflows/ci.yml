@@ -87,10 +87,10 @@ jobs:
             runner-os: macos-latest
             host-triple: x86_64-apple-darwin
             file-ending: dylib
-#          - container-arch: arm64
-#            runner-arch: arm64
-#            runner-os: ubuntu-latest
-#            host-triple: aarch64-unknown-linux-gnu
+          - container-arch: arm64/alpine:3.22.0
+            runner-arch: arm64
+            runner-os: ubuntu-latest
+            host-triple: aarch64-unknown-linux-gnu
 #          - container-arch: arm32v7
 #            runner-arch: arm64
 #            runner-os: ubuntu-latest
@@ -145,9 +145,6 @@ jobs:
           for crate in "${crates[@]}"; do
             cargo build --release -p "$crate" --target ${{ matrix.host-triple }}
           done
-#      - name: rename library
-#        run: |
-#          mv target/${{ matrix.host-triple }}/release/libbinocular_ffi.${{ matrix.file-ending }} target/${{ matrix.host-triple }}/release/lib${{ matrix.host-triple }}.${{ matrix.file-ending }}
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.host-triple }}

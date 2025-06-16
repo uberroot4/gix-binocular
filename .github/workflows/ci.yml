@@ -79,7 +79,7 @@ jobs:
             runner-os: ubuntu-latest
             host-triple: x86_64-unknown-linux-gnu
             file-ending: so
-          - container: arm64/debian:stable-slim
+          - container: arm64v8/debian:stable-slim
             runner-arch: arm64
             runner-os: ubuntu-latest
             host-triple: aarch64-unknown-linux-gnu

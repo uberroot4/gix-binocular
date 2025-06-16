@@ -79,8 +79,8 @@ jobs:
             runner-os: ubuntu-latest
             host-triple: x86_64-unknown-linux-gnu
             file-ending: so
-          - container: arm64/v8/alpine:3.22.0
-            runner-arch: arm64
+          - container: arm64/alpine:3.22.0
+            runner-arch: arm64/v8
             runner-os: ubuntu-latest
             host-triple: aarch64-unknown-linux-musl
             file-ending: so

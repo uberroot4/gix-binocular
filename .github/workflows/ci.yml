@@ -145,13 +145,13 @@ jobs:
           for crate in "${crates[@]}"; do
             cargo build --release -p "$crate" --target ${{ matrix.host-triple }}
           done
-      - name: rename library
-        run: |
-          mv target/${{ matrix.host-triple }}/release/libbinocular_ffi.${{ matrix.file-ending }} target/${{ matrix.host-triple }}/release/lib${{ matrix.host-triple }}.${{ matrix.file-ending }}
+#      - name: rename library
+#        run: |
+#          mv target/${{ matrix.host-triple }}/release/libbinocular_ffi.${{ matrix.file-ending }} target/${{ matrix.host-triple }}/release/lib${{ matrix.host-triple }}.${{ matrix.file-ending }}
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.host-triple }}
-          path: target/${{ matrix.host-triple }}/release/lib${{ matrix.host-triple }}.${{ matrix.file-ending }}
+          path: target/${{ matrix.host-triple }}/release/libbinocular_ffi.${{ matrix.file-ending }}
 
   collect-artifacts:
     needs: pure-rust-build

@@ -101,23 +101,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Prerequisites
-        if: startsWith(matrix.runner-os, 'ubuntu') && matrix.container != null
+      - name: Prerequisites (alpine-only)
+        if: startsWith(matrix.runner-os, 'ubuntu') && matrix.container != null && contains(matrix.container, 'alpine')
+        shell: sh
         run: |
-          if [[ "${{ matrix.container }}" == *"alpine"* ]]; then
-            apk update
-            apk add --no-cache ca-certificates curl gcc musl-dev
-          else
-            prerequisites=(
-              ca-certificates
-              curl
-              gcc  # rustc calls gcc to invoke the linker.
-              libc-dev  # rustc, in the toolchain we are using, dynamically links to the system libc.
-            )
-            dpkg --add-architecture ${{ matrix.runner-arch }}
-            apt-get update
-            apt-get install --no-install-recommends -y -- "${prerequisites[@]}"
-          fi
+          apk update
+          apk add --no-cache ca-certificates curl gcc musl-dev bash
+      - name: Prerequisites (non-alpine)
+        if: startsWith(matrix.runner-os, 'ubuntu') && matrix.container != null && !contains(matrix.container, 'alpine')
+        run: |
+          prerequisites=(
+            ca-certificates
+            curl
+            gcc  # rustc calls gcc to invoke the linker.
+            libc-dev  # rustc, in the toolchain we are using, dynamically links to the system libc.
+          )
+          dpkg --add-architecture ${{ matrix.runner-arch }}
+          apt-get update
+          apt-get install --no-install-recommends -y -- "${prerequisites[@]}"
         shell: bash  # This step needs `bash`, and the default in container jobs is `sh`.
 #      - name: Verify that we are in an environment with limited dev tools
 #        if: startsWith(matrix.runner-os, 'ubuntu') && matrix.container != null

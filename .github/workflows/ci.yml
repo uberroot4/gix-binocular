@@ -79,12 +79,10 @@ jobs:
             runner-os: ubuntu-latest
             host-triple: x86_64-unknown-linux-gnu
             file-ending: so
-          - container: arm64v8/debian:stable-slim
-            runner-arch: arm64
-            runner-os: ubuntu-latest
+          - runner-arch: arm64
+            runner-os: ubuntu-24.04-arm
             host-triple: aarch64-unknown-linux-gnu
             file-ending: so
-            setup-qemu: true
 #          - container: arm64v8/alpine:3.22.0
 #            runner-arch: arm64
 #            runner-os: ubuntu-latest
@@ -102,35 +100,22 @@ jobs:
     container: ${{ matrix.container }}
 
     steps:
-      - name: Set up QEMU
-        if: matrix.setup-qemu
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-      - name: Set up Docker Buildx
-        if: matrix.setup-qemu
-        uses: docker/setup-buildx-action@v3
       - uses: actions/checkout@v4
       - name: Prerequisites
-        if: startsWith(matrix.runner-os, 'ubuntu')
+        if: startsWith(matrix.runner-os, 'ubuntu') && matrix.container != null
         run: |
-          if [[ "${{ matrix.container }}" == *"alpine"* ]]; then
-            apk update
-            apk add --no-cache ca-certificates curl gcc musl-dev
-          else
-            prerequisites=(
-              ca-certificates
-              curl
-              gcc  # rustc calls gcc to invoke the linker.
-              libc-dev  # rustc, in the toolchain we are using, dynamically links to the system libc.
-            )
-            dpkg --add-architecture ${{ matrix.runner-arch }}
-            apt-get update
-            apt-get install --no-install-recommends -y -- "${prerequisites[@]}"
-          fi
+          prerequisites=(
+            ca-certificates
+            curl
+            gcc  # rustc calls gcc to invoke the linker.
+            libc-dev  # rustc, in the toolchain we are using, dynamically links to the system libc.
+          )
+          dpkg --add-architecture ${{ matrix.runner-arch }}
+          apt-get update
+          apt-get install --no-install-recommends -y -- "${prerequisites[@]}"
         shell: bash  # This step needs `bash`, and the default in container jobs is `sh`.
       - name: Verify that we are in an environment with limited dev tools
-        if: startsWith(matrix.runner-os, 'ubuntu') && !contains(matrix.container, 'alpine')
+        if: startsWith(matrix.runner-os, 'ubuntu') && matrix.container != null
         run: |
           set -x
           for package in cmake g++ libssl-dev make pkgconf pkg-config; do

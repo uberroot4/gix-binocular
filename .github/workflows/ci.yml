@@ -79,10 +79,10 @@ jobs:
             runner-os: ubuntu-latest
             host-triple: x86_64-unknown-linux-gnu
             file-ending: so
-          - container: arm64/alpine:3.22.0
-            runner-arch: arm64/v8
+          - container: arm64/debian:stable-slim
+            runner-arch: arm64
             runner-os: ubuntu-latest
-            host-triple: aarch64-unknown-linux-musl
+            host-triple: aarch64-unknown-linux-gnu
             file-ending: so
           - runner-arch: arm64
             runner-os: macos-latest

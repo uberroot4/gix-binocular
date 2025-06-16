@@ -83,11 +83,11 @@ jobs:
             runner-os: ubuntu-24.04-arm
             host-triple: aarch64-unknown-linux-gnu
             file-ending: so
-#          - container: arm64v8/alpine:3.22.0
-#            runner-arch: arm64
-#            runner-os: ubuntu-latest
-#            host-triple: aarch64-unknown-linux-musl
-#            file-ending: so
+          - container: alpine:3.22.0
+            runner-arch: arm64
+            runner-os: ubuntu-24.04-arm
+            host-triple: aarch64-unknown-linux-musl
+            file-ending: so
           - runner-arch: arm64
             runner-os: macos-latest
             host-triple: aarch64-apple-darwin

@@ -184,7 +184,7 @@ jobs:
           # Move each artifact to its correct location
           for dir in artifacts/*/; do
             if [ -d "$dir" ]; then
-              target_dir="target/$(basename "$dir")/release"
+              target_dir="target/$(basename "$dir")"
               mkdir -p "$target_dir"
               echo "Copying from $dir to $target_dir"
               cp "$dir"libbinocular_ffi.* "$target_dir/" 2>/dev/null || echo "No files found in $dir"

@@ -1,4 +1,4 @@
-name: ci
+name: ci-uniffi
 
 on:
   push:
@@ -20,6 +20,7 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
   CLICOLOR: '1'
+  MAVEN_CLI_OPTS: '--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true'
 
 jobs:
   #  msrv:
@@ -203,17 +204,6 @@ jobs:
             fi
           done
           
-#          # Debug: List contents of target directory
-#          echo "Contents of target directory:"
-#          find target -type f
-#
-#          # Create the archive
-#          tar czf binocular-ffi-libs.tar.gz target
-#
-#          # Debug: List contents of archive
-#          echo "Contents of archive:"
-#          tar tvf binocular-ffi-libs.tar.gz
-
       - name: Build uniffi Kotlin File
         run: |
           cargo run --release\
@@ -221,8 +211,7 @@ jobs:
               --bin uniffi-bindgen generate\
                 --library kotlin/src/main/resources/x86_64-unknown-linux-gnu/libbinocular_ffi.so\
                 --language kotlin\
-                --out-dir kotlin/src/main/kotlin\
-                --no-format
+                --out-dir kotlin/src/main/kotlin
 
       - name: Upload combined artifact
         uses: actions/upload-artifact@v4
@@ -230,12 +219,6 @@ jobs:
           name: binocular-ffi-libs.${{ matrix.distribution }}.${{ matrix.java_version }}
           path: kotlin
 
-#      - name: Show contents
-#        run: |
-#          for dir in kotlin/src/main/*/; do
-#            ls -la $dir
-#          done
-#
       - name: Cache local Maven repository
         uses: actions/cache@v4
         with:
@@ -248,6 +231,18 @@ jobs:
         uses: actions/setup-java@v4
         with:
           cache: 'maven'
-          cache-dependency-path: '**/pom.xml'
+          cache-dependency-path: 'kotlin/pom.xml'
           java-version: ${{ matrix.java_version }}
           distribution: ${{ matrix.distribution }}
+
+      - name: Verify Parent with Maven
+        working-directory: kotlin
+        run: mvn $MAVEN_CLI_OPTS validate
+
+      - name: Compile with Maven
+        working-directory: kotlin
+        run: mvn $MAVEN_CLI_OPTS compile
+
+      - name: Run tests
+        working-directory: kotlin
+        run: mvn $MAVEN_CLI_OPTS test

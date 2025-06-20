@@ -255,7 +255,7 @@ jobs:
         run: mvn $MAVEN_CLI_OPTS test
 
   publish:
-    needs: test-ffi
+    needs: test-ffi-artifacts
     runs-on: ubuntu-latest
     permissions:
       contents: read

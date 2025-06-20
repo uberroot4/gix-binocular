@@ -168,6 +168,8 @@ jobs:
         run: echo "PATH=$HOME/.cargo/bin:$PATH" >> "$GITHUB_ENV"
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          cache-all-crates: 'true'
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4

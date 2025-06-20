@@ -243,11 +243,11 @@ jobs:
           path: kotlin-artifact-tmp
           pattern: binocular-ffi-libs.${{ matrix.distribution }}.${{ matrix.java_version }}
           merge-multiple: false
-          
+
       - name: Move artifact contents to kotlin/
         run: |
           mkdir -p kotlin
-          mv kotlin-artifact-tmp/* kotlin/
+          mv kotlin-artifact-tmp/*/ kotlin/
           rmdir kotlin-artifact-tmp
 
       - name: ls -la

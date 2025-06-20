@@ -83,11 +83,11 @@ jobs:
             runner-os: ubuntu-24.04-arm
             host-triple: aarch64-unknown-linux-gnu
             file-ending: so
-#          - container: alpine:3.22.0
-#            runner-arch: amd64
-#            runner-os: ubuntu-latest
-#            host-triple: aarch64-unknown-linux-musl
-#            file-ending: so
+          #          - container: alpine:3.22.0
+          #            runner-arch: amd64
+          #            runner-os: ubuntu-latest
+          #            host-triple: aarch64-unknown-linux-musl
+          #            file-ending: so
           - runner-arch: arm64
             runner-os: macos-latest
             host-triple: aarch64-apple-darwin
@@ -128,7 +128,7 @@ jobs:
       - name: Add Rust tools to path
         run: echo "PATH=$HOME/.cargo/bin:$PATH" >> "$GITHUB_ENV"
       - uses: Swatinem/rust-cache@v2
-      - name: crates without feature toggles
+      - name: Build library for target ${{ matrix.host-triple }}
         shell: bash
         run: |
           crates=(

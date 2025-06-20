@@ -89,14 +89,14 @@ jobs:
           #            runner-os: ubuntu-latest
           #            host-triple: aarch64-unknown-linux-musl
           #            file-ending: so
-          - runner-arch: arm64
-            runner-os: macos-latest
-            host-triple: aarch64-apple-darwin
-            file-ending: dylib
-          - runner-arch: x86_64
-            runner-os: macos-latest
-            host-triple: x86_64-apple-darwin
-            file-ending: dylib
+#          - runner-arch: arm64
+#            runner-os: macos-latest
+#            host-triple: aarch64-apple-darwin
+#            file-ending: dylib
+#          - runner-arch: x86_64
+#            runner-os: macos-latest
+#            host-triple: x86_64-apple-darwin
+#            file-ending: dylib
     runs-on: ${{ matrix.runner-os }}
     container: ${{ matrix.container }}
 

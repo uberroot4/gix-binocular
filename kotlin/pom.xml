@@ -9,11 +9,29 @@
     <packaging>jar</packaging>
     <description>FFI project for Binocular</description>
 
+    <url>
+        https://busy.inso-world.com/projects/binocular/
+    </url>
     <licenses>
         <license>
             <name>MIT</name>
         </license>
     </licenses>
+    <developers>
+        <developer>
+            <id>stoegerm</id>
+            <name>Manuel Stöger</name>
+            <email>manuel.stoeger@inso-world.com</email>
+            <url>https://www.inso-world.com/profile-manuel-stoeger.html</url>
+            <organization>INSO/BUSY</organization>
+            <organizationUrl>https://www.inso-world.com</organizationUrl>
+            <roles>
+                <role>researcher</role>
+                <role>developer</role>
+            </roles>
+            <timezone>Europe/Vienna</timezone>
+        </developer>
+    </developers>
 
     <properties>
         <java.version>23</java.version>
@@ -149,4 +167,12 @@
             </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/uberroot4/gix-binocular</url>
+        </repository>
+    </distributionManagement>
 </project>

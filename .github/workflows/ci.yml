@@ -249,37 +249,6 @@ jobs:
         working-directory: kotlin
         run: mvn $MAVEN_CLI_OPTS test
 
-  publish:
-    needs: test-ffi-artifacts
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        java_version: [ '23', '24' ]
-        distribution: [ 'temurin' ]
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache local Maven repository
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}.${{ matrix.distribution }}.${{ matrix.java_version }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}.${{ matrix.distribution }}.${{ matrix.java_version }}--maven-
-
-      - name: Set up JDK ${{ matrix.distribution }}/${{ matrix.java_version }}
-        uses: actions/setup-java@v4
-        with:
-          cache: 'maven'
-          cache-dependency-path: 'kotlin/pom.xml'
-          java-version: ${{ matrix.java_version }}
-          distribution: ${{ matrix.distribution }}
-
       - name: Publish package
         working-directory: kotlin
         run: mvn --batch-mode deploy

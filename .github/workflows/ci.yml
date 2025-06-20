@@ -219,16 +219,7 @@ jobs:
         working-directory: kotlin
         run: |
           sed -i 's/public /internal /g' src/main/kotlin/com/inso_world/binocular/internal/binocular_ffi.kt
-          awk '
-          /^interface UniffiCleaner\b/ { print; next }
-          /^object NoPointer\b/ { print; next }
-          /^interface Disposable\b/ { print; next }
-          /^(interface|fun|data class|sealed class|class) / {
-              print "internal " $0
-              next
-          }
-          { print }
-          ' src/main/kotlin/com/inso_world/binocular/internal/binocular_ffi.kt > src/main/kotlin/com/inso_world/binocular/internal/binocular_ffi.kt.tmp && mv src/main/kotlin/com/inso_world/binocular/internal/binocular_ffi.kt.tmp src/main/kotlin/com/inso_world/binocular/internal/binocular_ffi.kt
+          sed -i 's/^fun /internal fun /g' src/main/kotlin/com/inso_world/binocular/internal/binocular_ffi.kt
       - name: Upload combined artifact
         uses: actions/upload-artifact@v4
         with:
@@ -249,9 +240,15 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: kotlin
+          path: kotlin-artifact-tmp
           pattern: binocular-ffi-libs.${{ matrix.distribution }}.${{ matrix.java_version }}
           merge-multiple: false
+          
+      - name: Move artifact contents to kotlin/
+        run: |
+          mkdir -p kotlin
+          mv kotlin-artifact-tmp/* kotlin/
+          rmdir kotlin-artifact-tmp
 
       - name: ls -la
         run: |

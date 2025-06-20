@@ -219,42 +219,12 @@ jobs:
         working-directory: kotlin
         run: |
           sed -i 's/public /internal /g' src/main/kotlin/com/inso_world/binocular/internal/binocular_ffi.kt
-          sed -i 's/^fun /internal fun /g' src/main/kotlin/com/inso_world/binocular/internal/binocular_ffi.kt
+          sed -i 's/^fun \` /internal fun /g' src/main/kotlin/com/inso_world/binocular/internal/binocular_ffi.kt
       - name: Upload combined artifact
         uses: actions/upload-artifact@v4
         with:
           name: binocular-ffi-libs.${{ matrix.distribution }}.${{ matrix.java_version }}
           path: kotlin
-
-  test-ffi:
-    needs: test-ffi-artifacts
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        java_version: [ '23', '24' ]
-        distribution: [ 'temurin' ]
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: kotlin-artifact-tmp
-          pattern: binocular-ffi-libs.${{ matrix.distribution }}.${{ matrix.java_version }}
-          merge-multiple: false
-
-      - name: Move artifact contents to kotlin/
-        run: |
-          mkdir -p kotlin
-          mv kotlin-artifact-tmp/*/ kotlin/
-          rmdir kotlin-artifact-tmp
-
-      - name: ls -la
-        run: |
-          ls -la .
-          echo "kotlin"
-          ls -la kotlin
 
       - name: Cache local Maven repository
         uses: actions/cache@v4

@@ -213,11 +213,6 @@ jobs:
 #          # Debug: List contents of archive
 #          echo "Contents of archive:"
 #          tar tvf binocular-ffi-libs.tar.gz
-#      - name: Upload combined artifact
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: binocular-ffi-libs
-#          path: binocular-ffi-libs.tar.gz
 
       - name: Build uniffi Kotlin File
         run: |
@@ -229,24 +224,30 @@ jobs:
                 --out-dir kotlin/src/main/kotlin\
                 --no-format
 
-      - name: Show contents
-        run: |
-          for dir in kotlin/src/main/*/; do
-            ls -la $dir
-          done
-
-      - name: Cache local Maven repository
-        uses: actions/cache@v4
+      - name: Upload combined artifact
+        uses: actions/upload-artifact@v4
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}.${{ matrix.distribution }}.${{ matrix.java_version }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}.${{ matrix.distribution }}.${{ matrix.java_version }}--maven-
+          name: binocular-ffi-libs
+          path: kotlin
 
-      - name: Set up JDK ${{ matrix.distribution }}/${{ matrix.java_version }}
-        uses: actions/setup-java@v4
-        with:
-          cache: 'maven'
-          cache-dependency-path: '**/pom.xml'
-          java-version: ${{ matrix.java_version }}
-          distribution: ${{ matrix.distribution }}
+#      - name: Show contents
+#        run: |
+#          for dir in kotlin/src/main/*/; do
+#            ls -la $dir
+#          done
+#
+#      - name: Cache local Maven repository
+#        uses: actions/cache@v4
+#        with:
+#          path: ~/.m2/repository
+#          key: ${{ runner.os }}.${{ matrix.distribution }}.${{ matrix.java_version }}-maven-${{ hashFiles('**/pom.xml') }}
+#          restore-keys: |
+#            ${{ runner.os }}.${{ matrix.distribution }}.${{ matrix.java_version }}--maven-
+#
+#      - name: Set up JDK ${{ matrix.distribution }}/${{ matrix.java_version }}
+#        uses: actions/setup-java@v4
+#        with:
+#          cache: 'maven'
+#          cache-dependency-path: '**/pom.xml'
+#          java-version: ${{ matrix.java_version }}
+#          distribution: ${{ matrix.distribution }}

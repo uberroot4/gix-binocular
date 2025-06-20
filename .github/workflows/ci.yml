@@ -227,7 +227,7 @@ jobs:
       - name: Upload combined artifact
         uses: actions/upload-artifact@v4
         with:
-          name: binocular-ffi-libs
+          name: binocular-ffi-libs.${{ matrix.distribution }}.${{ matrix.java_version }}
           path: kotlin
 
 #      - name: Show contents
@@ -236,18 +236,18 @@ jobs:
 #            ls -la $dir
 #          done
 #
-#      - name: Cache local Maven repository
-#        uses: actions/cache@v4
-#        with:
-#          path: ~/.m2/repository
-#          key: ${{ runner.os }}.${{ matrix.distribution }}.${{ matrix.java_version }}-maven-${{ hashFiles('**/pom.xml') }}
-#          restore-keys: |
-#            ${{ runner.os }}.${{ matrix.distribution }}.${{ matrix.java_version }}--maven-
-#
-#      - name: Set up JDK ${{ matrix.distribution }}/${{ matrix.java_version }}
-#        uses: actions/setup-java@v4
-#        with:
-#          cache: 'maven'
-#          cache-dependency-path: '**/pom.xml'
-#          java-version: ${{ matrix.java_version }}
-#          distribution: ${{ matrix.distribution }}
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}.${{ matrix.distribution }}.${{ matrix.java_version }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}.${{ matrix.distribution }}.${{ matrix.java_version }}--maven-
+
+      - name: Set up JDK ${{ matrix.distribution }}/${{ matrix.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          cache: 'maven'
+          cache-dependency-path: '**/pom.xml'
+          java-version: ${{ matrix.java_version }}
+          distribution: ${{ matrix.distribution }}

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.inso-world</groupId>
+    <artifactId>ffi</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>binocular-ffi</name>
+    <packaging>jar</packaging>
+    <description>FFI project for Binocular</description>
+
+    <licenses>
+        <license>
+            <name>MIT</name>
+        </license>
+    </licenses>
+
+    <properties>
+        <java.version>23</java.version>
+        <kotlin.version>2.1.20</kotlin.version>
+    </properties>
+
+    <build>
+        <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>
+        <testSourceDirectory>${project.basedir}/src/test/kotlin</testSourceDirectory>
+        <resources>
+            <resource>
+                <filtering>false</filtering>
+                <directory>${project.basedir}/src/main/resources</directory>
+                <!--        <includes>-->
+                <!--          <include>**/*.dylib</include>-->
+                <!--          <include>**/*.yml</include>-->
+                <!--          <include>**/*.yaml</include>-->
+                <!--        </includes>-->
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <configuration>
+                    <args>
+                        <arg>-Xjsr305=strict</arg>
+                    </args>
+                    <compilerPlugins>
+                        <plugin>spring</plugin>
+                        <plugin>all-open</plugin>
+                        <plugin>jpa</plugin>
+                    </compilerPlugins>
+                    <pluginOptions>
+                        <option>all-open:annotation=jakarta.persistence.Entity</option>
+                        <option>all-open:annotation=jakarta.persistence.Embeddable</option>
+                        <option>all-open:annotation=jakarta.persistence.MappedSuperclass</option>
+                    </pluginOptions>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-allopen</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-noarg</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+</project>

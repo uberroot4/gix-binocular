@@ -22,52 +22,52 @@ env:
   CLICOLOR: '1'
 
 jobs:
-#  msrv:
-#    name: cargo check MSRV
-#
-#    strategy:
-#      matrix:
-#        os:
-#          - windows-2022
-#          - ubuntu-latest
-#
-#    runs-on: ${{ matrix.os }}
-#
-#    defaults:
-#      run:
-#        shell: bash  # Use `bash` even in the Windows job.
-#
-#    steps:
-#      - uses: actions/checkout@v4
-#      - uses: extractions/setup-just@v3
-#      - name: Read the MSRV
-#        run: |
-#          msrv="$(just msrv)"
-#          tee -a "$GITHUB_ENV" <<<"MSRV=$msrv"
-#      - name: Set up MSRV and nightly toolchains
-#        run: |
-#          rustup toolchain install "$MSRV" nightly --profile minimal --no-self-update
-#      - name: Downgrade locked dependencies to lowest allowed versions
-#        run: |
-#          # TODO(msrv): Use `cargo update --minimal-versions` when `--minimal-versions` is available.
-#          cargo +nightly update -Zminimal-versions
-#      - name: Run some `cargo build` commands on `gix`
-#        run: just check-rust-version "$MSRV"
-#
-#  msrv-badge:
-#    name: Check MSRV badge
-#
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#      - uses: actions/checkout@v4
-#      - uses: extractions/setup-just@v3
-#      - name: Ensure we start out clean
-#        run: git diff --exit-code
-#      - name: Regenerate the MSRV badge
-#        run: just msrv-badge
-#      - name: Check for changes
-#        run: git diff --exit-code
+  #  msrv:
+  #    name: cargo check MSRV
+  #
+  #    strategy:
+  #      matrix:
+  #        os:
+  #          - windows-2022
+  #          - ubuntu-latest
+  #
+  #    runs-on: ${{ matrix.os }}
+  #
+  #    defaults:
+  #      run:
+  #        shell: bash  # Use `bash` even in the Windows job.
+  #
+  #    steps:
+  #      - uses: actions/checkout@v4
+  #      - uses: extractions/setup-just@v3
+  #      - name: Read the MSRV
+  #        run: |
+  #          msrv="$(just msrv)"
+  #          tee -a "$GITHUB_ENV" <<<"MSRV=$msrv"
+  #      - name: Set up MSRV and nightly toolchains
+  #        run: |
+  #          rustup toolchain install "$MSRV" nightly --profile minimal --no-self-update
+  #      - name: Downgrade locked dependencies to lowest allowed versions
+  #        run: |
+  #          # TODO(msrv): Use `cargo update --minimal-versions` when `--minimal-versions` is available.
+  #          cargo +nightly update -Zminimal-versions
+  #      - name: Run some `cargo build` commands on `gix`
+  #        run: just check-rust-version "$MSRV"
+  #
+  #  msrv-badge:
+  #    name: Check MSRV badge
+  #
+  #    runs-on: ubuntu-latest
+  #
+  #    steps:
+  #      - uses: actions/checkout@v4
+  #      - uses: extractions/setup-just@v3
+  #      - name: Ensure we start out clean
+  #        run: git diff --exit-code
+  #      - name: Regenerate the MSRV badge
+  #        run: just msrv-badge
+  #      - name: Check for changes
+  #        run: git diff --exit-code
 
   pure-rust-build:
     strategy:
@@ -146,14 +146,34 @@ jobs:
   collect-artifacts:
     needs: pure-rust-build
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        java_version: [ '23', '24' ]
+        distribution: [ 'temurin' ]
+
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust via Rustup
+        run: |
+          # Specify toolchain to avoid possible misdetection based on the 64-bit running kernel.
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
+            sh -s -- -y --default-host x86_64-unknown-linux-gnu --profile minimal
+
+      - name: Add Rust tools to path
+        run: echo "PATH=$HOME/.cargo/bin:$PATH" >> "$GITHUB_ENV"
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
           pattern: '*'
           merge-multiple: false
-      - name: Create release archive
+
+      - name: Combine artifacts
         run: |
           # Debug: List contents of artifacts directory
           echo "Contents of artifacts directory:"
@@ -174,25 +194,57 @@ jobs:
           # Move each artifact to its correct location
           for dir in artifacts/*/; do
             if [ -d "$dir" ]; then
-              target_dir="target/$(basename "$dir")"
+              target_dir="kotlin/src/main/resources/$(basename "$dir")"
               mkdir -p "$target_dir"
               echo "Copying from $dir to $target_dir"
               cp "$dir"libbinocular_ffi.* "$target_dir/" 2>/dev/null || echo "No files found in $dir"
             fi
           done
           
-          # Debug: List contents of target directory
-          echo "Contents of target directory:"
-          find target -type f
-          
-          # Create the archive
-          tar czf binocular-ffi-libs.tar.gz target
-          
-          # Debug: List contents of archive
-          echo "Contents of archive:"
-          tar tvf binocular-ffi-libs.tar.gz
-      - name: Upload combined artifact
-        uses: actions/upload-artifact@v4
+#          # Debug: List contents of target directory
+#          echo "Contents of target directory:"
+#          find target -type f
+#
+#          # Create the archive
+#          tar czf binocular-ffi-libs.tar.gz target
+#
+#          # Debug: List contents of archive
+#          echo "Contents of archive:"
+#          tar tvf binocular-ffi-libs.tar.gz
+#      - name: Upload combined artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: binocular-ffi-libs
+#          path: binocular-ffi-libs.tar.gz
+
+      - name: Build uniffi Kotlin File
+        run: |
+          cargo run --release\
+              --package binocular-ffi\
+              --bin uniffi-bindgen generate\
+                --library kotlin/src/main/resources/x86_64-unknown-linux-gnu/libbinocular_ffi.so\
+                --language kotlin\
+                --out-dir kotlin/src/main/kotlin\
+                --no-format
+
+      - name: Show contents
+        run: |
+          for dir in kotlin/src/main/*/; do
+            ls -la $dir
+          done
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
         with:
-          name: binocular-ffi-libs
-          path: binocular-ffi-libs.tar.gz
+          path: ~/.m2/repository
+          key: ${{ runner.os }}.${{ matrix.distribution }}.${{ matrix.java_version }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}.${{ matrix.distribution }}.${{ matrix.java_version }}--maven-
+
+      - name: Set up JDK ${{ matrix.distribution }}/${{ matrix.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          cache: 'maven'
+          cache-dependency-path: '**/pom.xml'
+          java-version: ${{ matrix.java_version }}
+          distribution: ${{ matrix.distribution }}

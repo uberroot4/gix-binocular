@@ -286,6 +286,7 @@ jobs:
           distribution: ${{ matrix.distribution }}
 
       - name: Publish package
+        working-directory: kotlin
         run: mvn --batch-mode deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

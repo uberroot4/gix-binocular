@@ -216,10 +216,10 @@ jobs:
       - name: Internalize UniFFI
         working-directory: kotlin
         run: |
-          sed -i '' 's/public /internal /g' src/main/kotlin/com/inso_world/binocular/internal/binocular_ffi.kt
-          sed -i '' -E '/^(internal |private |protected )/!{
-          /^(interface UniffiCleaner|object NoPointer|interface Disposable)/!s/^(fun|class|object|interface) /internal \1 /
-          }' src/main/kotlin/com/inso_world/binocular/internal/binocular_ffi.kt
+          sed -i 's/public /internal /g' src/main/kotlin/com/inso_world/binocular/uniffi/binocular_ffi.kt
+          sed -i -E '/^(internal |private |protected )/!{
+            /^(interface UniffiCleaner|object NoPointer|interface Disposable)/!s/^(fun|class|object|interface) /internal \1 /
+          }' src/main/kotlin/com/inso_world/binocular/uniffi/binocular_ffi.kt
 
       - name: Upload combined artifact
         uses: actions/upload-artifact@v4

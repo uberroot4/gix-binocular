@@ -255,7 +255,9 @@ jobs:
 
       - name: ls -la
         run: |
-          ls -la
+          ls -la .
+          echo "kotlin"
+          ls -la kotlin
 
       - name: Cache local Maven repository
         uses: actions/cache@v4

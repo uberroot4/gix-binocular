@@ -223,7 +223,7 @@ jobs:
           /^interface UniffiCleaner\b/ { print; next }
           /^object NoPointer\b/ { print; next }
           /^interface Disposable\b/ { print; next }
-          /^(interface|class|data class|sealed class|fun) / {
+          /^(interface|fun|data class|sealed class|class) / {
               print "internal " $0
               next
           }

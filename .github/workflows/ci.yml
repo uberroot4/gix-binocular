@@ -143,14 +143,6 @@ jobs:
           for crate in "${crates[@]}"; do
             cargo build --release -p "$crate" --target ${{ matrix.host-triple }}
           done
-          
-      - name: Show target contents
-        if: startsWith(matrix.runner-os, 'win')
-        run: |
-          echo %cd%
-          dir /a
-          chdir target
-          dir /a
 
       - uses: actions/upload-artifact@v4
         name: Upload Artifacts (non Windows)
@@ -158,6 +150,7 @@ jobs:
         with:
           name: ${{ matrix.host-triple }}
           path: target/${{ matrix.host-triple }}/release/libbinocular_ffi.${{ matrix.file-ending }}
+          
       - uses: actions/upload-artifact@v4
         name: Upload Artifacts (Windows-only)
         if: startsWith(matrix.runner-os, 'windows')

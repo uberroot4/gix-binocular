@@ -101,8 +101,8 @@ jobs:
             runner-os: windows-latest
             host-triple: x86_64-pc-windows-msvc
             file-ending: dll
-          - runner-arch: arm64
-            runner-os: windows-11-arm
+          - runner-arch: x86_64
+            runner-os: windows-latest
             host-triple: aarch64-pc-windows-msvc
             file-ending: dll
     runs-on: ${{ matrix.runner-os }}

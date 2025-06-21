@@ -147,9 +147,10 @@ jobs:
       - name: Show target contents
         if: startsWith(matrix.runner-os, 'win')
         run: |
-          pwd
-          ls -la
-          ls -la target
+          echo %cd%
+          dir /a
+          chdir target
+          dir /a
 
       - uses: actions/upload-artifact@v4
         with:

@@ -153,9 +153,18 @@ jobs:
           dir /a
 
       - uses: actions/upload-artifact@v4
+        name: Upload Artifacts (non Windows)
+        if: !startsWith(matrix.runner-os, 'windows')
         with:
           name: ${{ matrix.host-triple }}
-          path: target/${{ matrix.host-triple }}/release/(lib)?(binocular_ffi).${{ matrix.file-ending }}
+          path: target/${{ matrix.host-triple }}/release/libbinocular_ffi.${{ matrix.file-ending }}
+      - uses: actions/upload-artifact@v4
+        name: Upload Artifacts (Windows-only)
+        if: startsWith(matrix.runner-os, 'windows')
+        with:
+          name: ${{ matrix.host-triple }}
+          path: target/${{ matrix.host-triple }}/release/binocular_ffi.${{ matrix.file-ending }}
+
 
   test-ffi-artifacts:
     needs: pure-rust-build

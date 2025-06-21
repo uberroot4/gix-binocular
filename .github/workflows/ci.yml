@@ -75,28 +75,28 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - container: amd64/debian:stable-slim
-            runner-arch: amd64
-            runner-os: ubuntu-latest
-            host-triple: x86_64-unknown-linux-gnu
-            file-ending: so
-          - runner-arch: arm64
-            runner-os: ubuntu-24.04-arm
-            host-triple: aarch64-unknown-linux-gnu
-            file-ending: so
+#          - container: amd64/debian:stable-slim
+#            runner-arch: amd64
+#            runner-os: ubuntu-latest
+#            host-triple: x86_64-unknown-linux-gnu
+#            file-ending: so
+#          - runner-arch: arm64
+#            runner-os: ubuntu-24.04-arm
+#            host-triple: aarch64-unknown-linux-gnu
+#            file-ending: so
           #          - container: alpine:3.22.0
           #            runner-arch: amd64
           #            runner-os: ubuntu-latest
           #            host-triple: aarch64-unknown-linux-musl
           #            file-ending: so
-          - runner-arch: arm64
-            runner-os: macos-latest
-            host-triple: aarch64-apple-darwin
-            file-ending: dylib
-          - runner-arch: x86_64
-            runner-os: macos-latest
-            host-triple: x86_64-apple-darwin
-            file-ending: dylib
+#          - runner-arch: arm64
+#            runner-os: macos-latest
+#            host-triple: aarch64-apple-darwin
+#            file-ending: dylib
+#          - runner-arch: x86_64
+#            runner-os: macos-latest
+#            host-triple: x86_64-apple-darwin
+#            file-ending: dylib
           - runner-arch: x86_64
             runner-os: windows-latest
             host-triple: x86_64-pc-windows-msvc
@@ -150,7 +150,7 @@ jobs:
           pwd
           ls -la
           ls -la target
-          
+
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.host-triple }}

@@ -75,11 +75,11 @@ jobs:
       fail-fast: true
       matrix:
         include:
-#          - container: amd64/debian:stable-slim
-#            runner-arch: amd64
-#            runner-os: ubuntu-latest
-#            host-triple: x86_64-unknown-linux-gnu
-#            file-ending: so
+          - container: amd64/debian:stable-slim
+            runner-arch: amd64
+            runner-os: ubuntu-latest
+            host-triple: x86_64-unknown-linux-gnu
+            file-ending: so
 #          - runner-arch: arm64
 #            runner-os: ubuntu-24.04-arm
 #            host-triple: aarch64-unknown-linux-gnu
@@ -155,7 +155,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.host-triple }}
-          path: target/${{ matrix.host-triple }}/release/
+          path: target/${{ matrix.host-triple }}/release/(lib)?(binocular_ffi).${{ matrix.file-ending }}
 
   test-ffi-artifacts:
     needs: pure-rust-build

@@ -143,6 +143,14 @@ jobs:
           for crate in "${crates[@]}"; do
             cargo build --release -p "$crate" --target ${{ matrix.host-triple }}
           done
+          
+      - name: Show target contents
+        if: startsWith(matrix.runner-os, 'win')
+        run: |
+          pwd
+          ls -la
+          ls -la target
+          
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.host-triple }}

@@ -145,14 +145,14 @@ jobs:
           done
 
       - uses: actions/upload-artifact@v4
-        name: Upload Artifacts (non Windows)
+#        name: Upload Artifacts (non Windows)
         if: !startsWith(matrix.runner-os, 'windows')
         with:
           name: ${{ matrix.host-triple }}
           path: target/${{ matrix.host-triple }}/release/libbinocular_ffi.${{ matrix.file-ending }}
-          
+
       - uses: actions/upload-artifact@v4
-        name: Upload Artifacts (Windows-only)
+#        name: Upload Artifacts (Windows-only)
         if: startsWith(matrix.runner-os, 'windows')
         with:
           name: ${{ matrix.host-triple }}

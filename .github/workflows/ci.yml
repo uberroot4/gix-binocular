@@ -147,14 +147,15 @@ jobs:
       - name: Show target contents
         if: startsWith(matrix.runner-os, 'win')
         run: |
-          pwd
-          ls -la
-          ls -la target
+          echo %cd%
+          dir /a
+          chdir target
+          dir /a
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.host-triple }}
-          path: target/${{ matrix.host-triple }}/release/libbinocular_ffi.${{ matrix.file-ending }}
+          path: target/${{ matrix.host-triple }}/release/
 
   test-ffi-artifacts:
     needs: pure-rust-build

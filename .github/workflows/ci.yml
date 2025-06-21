@@ -89,14 +89,18 @@ jobs:
           #            runner-os: ubuntu-latest
           #            host-triple: aarch64-unknown-linux-musl
           #            file-ending: so
-#          - runner-arch: arm64
-#            runner-os: macos-latest
-#            host-triple: aarch64-apple-darwin
-#            file-ending: dylib
-#          - runner-arch: x86_64
-#            runner-os: macos-latest
-#            host-triple: x86_64-apple-darwin
-#            file-ending: dylib
+          - runner-arch: arm64
+            runner-os: macos-latest
+            host-triple: aarch64-apple-darwin
+            file-ending: dylib
+          - runner-arch: x86_64
+            runner-os: macos-latest
+            host-triple: x86_64-apple-darwin
+            file-ending: dylib
+          - runner-arch: x86_64
+            runner-os: windows-latest
+            host-triple: x86_64-pc-windows-msvc
+            file-ending: dll
     runs-on: ${{ matrix.runner-os }}
     container: ${{ matrix.container }}
 
@@ -147,16 +151,6 @@ jobs:
   test-ffi-artifacts:
     needs: pure-rust-build
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        java_version: [ '23', '24' ]
-        distribution: [ 'temurin' ]
 
     steps:
       - name: Checkout
@@ -222,5 +216,5 @@ jobs:
       - name: Upload combined artifact
         uses: actions/upload-artifact@v4
         with:
-          name: binocular-ffi-libs.${{ matrix.distribution }}.${{ matrix.java_version }}
+          name: binocular-ffi-kotlin
           path: kotlin
